@@ -38,9 +38,9 @@ const entities = {
     ),
     Matter.Bodies.rectangle(
       canvas.width,
-      canvas.width / 2,
+      canvas.height / 2,
       wallThickness,
-      canvas.width,
+      canvas.height,
       { isStatic: true }
     ),
     Matter.Bodies.rectangle(
@@ -91,11 +91,13 @@ io.on("connection", socket => {
   socket.on("player click", coordinates => {
     entities.boxes.forEach(box => {
       // servers://stackoverflow.com/a/50472656/6243352
-      const force = 0.01;
+      const force = 1;
       const deltaVector = Matter.Vector.sub(box.position, coordinates);
       const normalizedDelta = Matter.Vector.normalise(deltaVector);
       const forceVector = Matter.Vector.mult(normalizedDelta, force);
-      Matter.Body.applyForce(box, box.position, forceVector);
+      // make it decrease based on dist
+      const betterVector = Matter.Vector.div(forceVector, Matter.Vector.magnitude(deltaVector));
+      Matter.Body.applyForce(box, box.position, betterVector);
     });
   });
   socket.on("player start", direction => {
