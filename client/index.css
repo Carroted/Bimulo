@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  padding: 1em;
+}
+
+#game {
+  overflow: hidden;
+}
+
+html,
+:root,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Simulo Web Prototype</title>
+  <meta name="description" content="Multi-engine multiplayer 2D physics app">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+<body>
+
+  <div id="main">
+    <canvas width="300" height="200" id="game"></canvas>
+    <p>
+      Grab a friend (or open another window) and click to agitate the boxes.
+      <span id="online">0</span> users online.
+    </p>
+    <p>
+      Made with <a href="https://glitch.com/~matterjs-socketio">glitch</a>,
+      <a href="https://brm.io/matter-js">matter.js</a> and <a href="https://socket.io/">socket.io</a>.
+    </p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/index.js" defer></script>
+
+</body>
+
+</html>
