@@ -82,6 +82,8 @@ setInterval(() => {
   });
 }, frameRate);
 
+var players = {};
+
 io.on("connection", socket => {
   online++;
   socket.on("disconnect", () => --online);
@@ -111,6 +113,14 @@ io.on("connection", socket => {
     else {
       right = false;
     }
+  });
+
+  socket.on("player mouse", player => {
+    players[socket.id] = player;
+    socket.broadcast.emit("state", {
+      id: socket.id,
+      player: players[socket.id]
+    });
   });
 });
 

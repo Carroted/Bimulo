@@ -67,6 +67,10 @@ function onPointerDown(e) {
         dragStart2.y = getEventLocation(e).y;
     }
     // if its not those buttons, we will see how much cursor moves first
+
+    if (e.button == 0) {
+        socket.emit("player click", { x: mousePos.x, y: mousePos.y });
+    }
 }
 
 function onPointerUp(e) {
@@ -91,6 +95,10 @@ function onPointerMove(e) {
 
     lastMouseX = getEventLocation(e).x;
     lastMouseY = getEventLocation(e).y;
+
+    // send mouse position to server
+    var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+    socket.emit("player mouse", { x: mousePos.x, y: mousePos.y });
 }
 
 var touchStartElement = null;
@@ -166,6 +174,10 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
 
         console.log(zoomAmount)
+
+        // mouse moved, lets send
+        var mousePos = transformPoint(lastX, lastY);
+        socket.emit("player mouse", { x: mousePos.x, y: mousePos.y });
     }
 }
 
@@ -457,6 +469,7 @@ function draw() {
     }
 
     for (var id in players) {
+        console.log('ID: ' + id);
         var player = players[id];
         ctx.fillStyle = 'blue';
         drawRect(player.x, player.y, 4, 4);
