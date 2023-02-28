@@ -69,13 +69,26 @@ function onPointerDown(e) {
     // if its not those buttons, we will see how much cursor moves first
 
     if (e.button == 0) {
-        socket.emit("player click", { x: mousePos.x, y: mousePos.y });
+        player = {
+            x: mousePos.x,
+            y: mousePos.y,
+            down: true
+        };
+        socket.emit("player mouse down", player);
+        pointerDown = true;
     }
 }
 
 function onPointerUp(e) {
     if (e.button == 0) {
         pointerDown = false;
+        var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+        player = {
+            x: mousePos.x,
+            y: mousePos.y,
+            down: false
+        };
+        socket.emit("player mouse up", player);
     }
     isDragging = false;
     initialPinchDistance = null;
@@ -98,7 +111,12 @@ function onPointerMove(e) {
 
     // send mouse position to server
     var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-    socket.emit("player mouse", { x: mousePos.x, y: mousePos.y });
+    player = {
+        x: mousePos.x,
+        y: mousePos.y,
+        down: pointerDown
+    };
+    socket.emit("player mouse", player);
 }
 
 var touchStartElement = null;
@@ -461,8 +479,7 @@ function draw() {
         ctx.fillRect((Math.round(pos.x / 4) * 4), (Math.round(pos.y / 4) * 4), 4, 4);
     }*/
 
-    ctx.fillStyle = 'red';
-    ctx.fillRect(mousePos.x, mousePos.y, 4, 4);
+    var cursor = getImage('/cursor.png');
 
     // fill
     ctx.fillStyle = '#9ac4f1';
@@ -478,10 +495,14 @@ function draw() {
         console.log('ID: ' + id);
         var player = players[id];
         ctx.fillStyle = 'blue';
-        drawRect(player.x, player.y, 4, 4);
+        //drawRect(player.x, player.y, 4, 4);
+        // draw image getImage('/cursor.png')
+        ctx.drawImage(cursor, player.x, player.y, 10, cursor.height * (10 / cursor.width));
     }
 
+    ctx.fillStyle = 'red';
 
+    ctx.drawImage(cursor, mousePos.x, mousePos.y, 10, cursor.height * (10 / cursor.width));
 }
 
 function transformPoint(x, y) {

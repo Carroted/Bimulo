@@ -8,6 +8,7 @@ body {
 
 #game {
   overflow: hidden;
+  cursor: none;
 }
 
 html,
