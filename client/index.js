@@ -428,7 +428,12 @@ function draw() {
     // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
     ctx.setTransform(cameraZoom, 0, 0, cameraZoom, cameraOffset.x, cameraOffset.y);
 
-    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
+    ctx.fillStyle = '#151832';
+    var origin = transformPoint(0, 0);
+    var end = transformPoint(window.innerWidth, window.innerHeight);
+    var width = end.x - origin.x;
+    var height = end.y - origin.y;
+    ctx.fillRect(origin.x, origin.y, width, height);
     /*
         var map = getImage('/sprites/map.png');
         ctx.drawImage(map, 0, 0, map.width * 4, map.height * 4);
@@ -436,9 +441,7 @@ function draw() {
 
     // draw map
     //ctx.drawImage(canvasMap, 0, 0);
-    // draw black background
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
 
     var mousePos = transformPoint(lastX, lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
     /*
@@ -461,7 +464,10 @@ function draw() {
     ctx.fillStyle = 'red';
     ctx.fillRect(mousePos.x, mousePos.y, 4, 4);
 
-    ctx.fillStyle = 'green';
+    // fill
+    ctx.fillStyle = '#9ac4f1';
+    // no border
+    ctx.strokeStyle = 'transparent';
     /* the entities are verts */
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];

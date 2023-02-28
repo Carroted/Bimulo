@@ -33,7 +33,7 @@ const entities = {
     Matter.Bodies.rectangle(
       0, canvas.height / 2,
       wallThickness,
-      canvas.height,
+      canvas.height / 2,
       { isStatic: true }
     ),
     Matter.Bodies.rectangle(
