@@ -91,13 +91,11 @@ io.on("connection", socket => {
   socket.on("player click", coordinates => {
     entities.boxes.forEach(box => {
       // servers://stackoverflow.com/a/50472656/6243352
-      const force = 1;
+      const force = 0.012;
       const deltaVector = Matter.Vector.sub(box.position, coordinates);
       const normalizedDelta = Matter.Vector.normalise(deltaVector);
       const forceVector = Matter.Vector.mult(normalizedDelta, force);
-      // make it decrease based on dist
-      const betterVector = Matter.Vector.div(forceVector, Matter.Vector.magnitude(deltaVector));
-      Matter.Body.applyForce(box, box.position, betterVector);
+      Matter.Body.applyForce(box, box.position, forceVector);
     });
   });
   socket.on("player start", direction => {
