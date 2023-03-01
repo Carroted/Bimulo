@@ -4,12 +4,13 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@geckos.io/server": "^2.3.0",
     "express": "^4.17.2",
     "matter-js": "^0.19.0",
     "socket.io": "^4.4.1"
   },
+  "type": "module",
   "engines": {
-    "node": "16.x"
+    "node": ">=14.0.0"
   }
 }
-

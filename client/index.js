@@ -1,4 +1,9 @@
-var socket = io();
+// get port we are running on
+const port = window.location.port;
+const socket = geckos({
+    port: port ? port : 80
+});
+
 var entities = [];
 
 function drawVerts(verts) {
@@ -257,8 +262,49 @@ function setName(name) {
     socket.emit('update player', player);
 }
 
-socket.on('connect', function () {
+socket.onConnect(error => {
+    if (error) {
+        console.error(error.message)
+    }
+
     socket.emit('new player', player);
+
+
+
+    socket.on('rank', function (data) {
+        player.rank = data;
+    });
+
+    socket.on('message', function (message) {
+        // bah
+    });
+
+
+    socket.on('state', function (data) {
+        // data has id (socketid) and player (player object)
+        players[data.id] = data.player;
+        draw();
+    });
+
+    socket.on('states', function (playersArray) {
+        players = {};
+        for (var i = 0; i < playersArray.length; i++) {
+            players[playersArray[i].id] = playersArray[i].player;
+        }
+
+
+        draw();
+    });
+
+
+    socket.on('disconnected', function (id) {
+        delete players[id];
+        draw();
+    });
+
+    socket.on("update state", ({ boxes, walls, carBox, online }) => {
+        entities = [...boxes, ...walls, carBox]; // o7
+    });
 });
 
 // polyfill for roundRect
@@ -286,36 +332,6 @@ function roundTri(x, y, w, h) {
 }
 
 
-socket.on('rank', function (data) {
-    player.rank = data;
-});
-
-socket.on('message', function (message) {
-    // bah
-});
-
-
-socket.on('state', function (data) {
-    // data has id (socketid) and player (player object)
-    players[data.id] = data.player;
-    draw();
-});
-
-socket.on('states', function (playersArray) {
-    players = {};
-    for (var i = 0; i < playersArray.length; i++) {
-        players[playersArray[i].id] = playersArray[i].player;
-    }
-
-
-    draw();
-});
-
-
-socket.on('disconnected', function (id) {
-    delete players[id];
-    draw();
-});
 
 
 document.addEventListener('keydown', function (e) {
@@ -435,9 +451,7 @@ function outlinedImage(img, s, color, x, y, width, height) {
     ctx2 = null;
 }
 
-socket.on("update state", ({ boxes, walls, carBox, online }) => {
-    entities = [...boxes, ...walls, carBox]; // o7
-});
+
 
 function draw() {
     canvas.width = window.innerWidth;

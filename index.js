@@ -1,9 +1,14 @@
-const express = require("express");
-const Matter = require("matter-js");
+import express from "express";
+import Matter from "matter-js";
+import geckos from '@geckos.io/server';
+// http for .createServer
+import http from "http";
 
 const app = express();
-const server = require("http").createServer(app);
-const io = require("socket.io")(server);
+const server = http.createServer(app);
+const io = geckos();
+
+io.addServer(server);
 
 app.use(express.static("client"));
 
@@ -81,7 +86,7 @@ setInterval(() => {
         });*/
   });
   Matter.Engine.update(engine, frameRate);
-  io.emit("update state", {
+  io.room('default').emit("update state", {
     boxes: entities.boxes.map(toVertices),
     walls: entities.walls.map(toVertices),
     carBox: toVertices(entities.carBox),
@@ -92,7 +97,8 @@ setInterval(() => {
 var players = {};
 var playerSprings = {};
 
-io.on("connection", socket => {
+io.onConnection(socket => {
+  socket.join('default');
   online++;
   players[socket.id] = { x: 0, y: 0, down: false };
   socket.on("disconnect", () => --online);
