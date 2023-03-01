@@ -181,7 +181,7 @@ io.on("connection", socket => {
           pointB: localPos,
           bodyB: box,
           pointA: { x: player.x, y: player.y },
-          stiffness: 0.1,
+          stiffness: 0,
           damping: 0,
           length: 0
         });
