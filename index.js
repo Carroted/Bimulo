@@ -26,6 +26,7 @@ const entities = {
       boxSize,
       Math.random() * boxSize + boxSize,
       Math.random() * boxSize + boxSize,
+      { density: 0.1 }
     )
   ),
   walls: [
