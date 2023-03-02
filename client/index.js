@@ -1,7 +1,7 @@
 // get port we are running on
 const port = window.location.port;
 const socket = geckos({
-    port: port ? port : 80
+    port: port ? port : 443 // typically, if not on localhost, we are on https
 });
 
 var entities = [];

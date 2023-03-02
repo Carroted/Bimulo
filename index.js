@@ -1,12 +1,13 @@
 import express from "express";
 import Matter from "matter-js";
-import geckos from '@geckos.io/server';
+import geckos, { iceServers } from '@geckos.io/server';
 // http for .createServer
 import http from "http";
 
+var local = false;
 const app = express();
 const server = http.createServer(app);
-const io = geckos();
+const io = geckos({ iceServers: local ? [] : iceServers });
 
 io.addServer(server);
 
