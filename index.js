@@ -7,6 +7,9 @@ const io = require("socket.io")(server);
 
 app.use(express.static("client"));
 
+// static serve node_modules/@tabler/icons/icons
+app.use("/icons", express.static(__dirname + "/node_modules/@tabler/icons/icons"));
+
 const frameRate = 1000 / 30;
 const canvas = { width: 800, height: 400 };
 const boxes = 20;
