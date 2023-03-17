@@ -540,10 +540,11 @@ function loop() {
     physics();
     draw();
 
+    window.requestAnimationFrame(loop);
 }
 
 function physics() {
     // fall d
 }
 
-setInterval(loop, 1000 / framerate);
+window.requestAnimationFrame(loop);
