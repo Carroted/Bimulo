@@ -5,6 +5,89 @@ const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 
+const Box2DFactory = require("box2d-wasm");
+const { assertFloatEqual } = require('./assertFloatEqual');
+Box2DFactory().then(box2D => {
+  const { b2BodyDef, b2_dynamicBody, b2PolygonShape, b2Vec2, b2World, b2Shape } = box2D;
+  const gravity = new b2Vec2(0, 10);
+  const world = new b2World(gravity);
+
+  const sideLengthMetres = 1;
+  const square = new b2PolygonShape();
+  square.SetAsBox(sideLengthMetres / 2, sideLengthMetres / 2);
+
+  const zero = new b2Vec2(0, 0);
+
+  const bd = new b2BodyDef();
+  bd.set_type(b2_dynamicBody);
+  bd.set_position(zero);
+
+  const body = world.CreateBody(bd);
+  body.CreateFixture(square, 1);
+  body.SetTransform(zero, 0);
+  body.SetLinearVelocity(zero);
+  body.SetAwake(true);
+  body.SetEnabled(true);
+
+  const timeStepMillis = 1 / 60;
+  const velocityIterations = 1;
+  const positionIterations = 1;
+  const floatCompareTolerance = 0.01;
+
+  const iterations = 6;
+  for (let i = 0; i < iterations; i++) {
+    const timeElapsedMillis = timeStepMillis * i;
+    {
+      const { y } = body.GetLinearVelocity();
+      assertFloatEqual(y, gravity.y * timeElapsedMillis, floatCompareTolerance);
+      {
+        const { y } = body.GetPosition();
+        assertFloatEqual(y, 0.5 * gravity.y * timeElapsedMillis ** 2, floatCompareTolerance);
+      }
+    }
+    // get verts from body
+    var node = world.GetBodyList();
+    while (node) {
+      var b = node;
+      node = node.GetNext();
+      var position = b.GetPosition();
+
+      // Draw the dynamic objects
+      if (b.GetType() == b2_dynamicBody) {
+        // Canvas Y coordinates start at opposite location, so we flip
+        var flipy = -position.y;
+        var fl = b.GetFixtureList();
+        if (!fl) {
+          continue;
+        }
+        var shape = fl.GetShape();
+        var shapeType = shape.GetType();
+        if (shapeType == b2Shape.e_circle) {
+          console.log("circle of radius " + shape.GetRadius() + " at " + position.x + ", " + flipy);
+        } else if (shapeType == b2Shape.e_polygon) {
+          const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
+          var vertexCount = polygonShape.get_m_count();
+          // iterate over vertices
+          for (let i = 0; i < vertexCount; i++) {
+            const vertex = polygonShape.get_m_vertices(i);
+            console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
+          }
+          console.log("polygon of " + vertexCount + " vertices at " + position.x + ", " + flipy);
+        }
+        else {
+          console.log("unknown shape type");
+        }
+      }
+    }
+
+
+
+    world.Step(timeStepMillis, velocityIterations, positionIterations);
+  }
+
+  console.log(`👍 Ran ${iterations} iterations of a falling body. Body had the expected position on each iteration.`);
+});
+
 app.use(express.static("client"));
 
 // static serve node_modules/@tabler/icons/icons

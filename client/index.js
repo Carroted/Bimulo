@@ -6,20 +6,7 @@ svgs.forEach(function (svg) {
     xhr.open('GET', src, true);
     xhr.onload = function () {
         if (xhr.status === 200) {
-            // remove the data-src attribute
-            svg.removeAttribute('data-src');
-            // get remaining attributes
-            var attrs = svg.attributes;
-            // insert new element before the old one
-            svg.insertAdjacentHTML('beforebegin', xhr.responseText);
-            // get the new element
-            var newSvg = svg.previousSibling;
-            // copy attributes
-            for (var i = 0; i < attrs.length; i++) {
-                newSvg.setAttribute(attrs[i].name, attrs[i].value);
-            }
-            // remove the old element
-            svg.remove();
+            svg.outerHTML = xhr.responseText;
         }
     };
     xhr.send();

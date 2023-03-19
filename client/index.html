@@ -14,14 +14,61 @@
   <canvas width="300" height="200" id="game"></canvas>
 
   <div class="toolbar">
+    <div class="tool active">
+      <svg data-src="/icons/pointer.svg"></svg>
+    </div>
     <div class="tool">
-      <svg data-src="/icons/pointer.svg" class="active"></svg>
+      <svg data-src="/icons/tool.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/box.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/clock.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/shield.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/planet.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/users.svg"></svg>
+    </div>
+  </div>
+
+  <div class="toolbar secondary">
+    <div class="tool active">
       <svg data-src="/icons/square.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/triangle.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/circle.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/star.svg"></svg>
+    </div>
+    <div class="tool">
+      <svg data-src="/icons/polygon.svg"></svg>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/index.js" defer></script>
+
+  <script>
+    // on click tool, set active tool
+    const tools = document.querySelectorAll('.tool');
+    tools.forEach(tool => {
+      tool.addEventListener('click', () => {
+        // remove active class from all tools in that toolbar, without removing it from other toolbars
+        tool.parentElement.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+        tool.classList.add('active');
+      });
+    });
+  </script>
 
 </body>
 
