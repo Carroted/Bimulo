@@ -47,6 +47,7 @@ Box2DFactory().then(box2D => {
     }
     // get verts from body
     var node = world.GetBodyList();
+    /*
     while (node) {
       var b = node;
       node = node.GetNext();
@@ -78,7 +79,7 @@ Box2DFactory().then(box2D => {
           console.log("unknown shape type");
         }
       }
-    }
+    }*/
 
 
 
