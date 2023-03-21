@@ -5,9 +5,11 @@ const app = express();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 
-const Box2DFactory = require("box2d-wasm");
+const Box2D = require("box2d-wasm");
+const b2Scale = 30;
 const { assertFloatEqual } = require('./assertFloatEqual');
-Box2DFactory().then(box2D => {
+
+Box2D().then(box2D => {
   const { b2BodyDef, b2_dynamicBody, b2PolygonShape, b2Vec2, b2World, b2Shape } = box2D;
   const gravity = new b2Vec2(0, 10);
   const world = new b2World(gravity);
@@ -47,6 +49,7 @@ Box2DFactory().then(box2D => {
     }
     // get verts from body
     var node = world.GetBodyList();
+    /*
     while (node) {
       var b = node;
       node = node.GetNext();
@@ -78,14 +81,14 @@ Box2DFactory().then(box2D => {
           console.log("unknown shape type");
         }
       }
-    }
+    }*/
 
 
 
     world.Step(timeStepMillis, velocityIterations, positionIterations);
   }
 
-  console.log(`👍 Ran ${iterations} iterations of a falling body. Body had the expected position on each iteration.`);
+  console.log("👍 Ran ${iterations} iterations of a falling body. Body had the expected position on each iteration.");
 });
 
 app.use(express.static("client"));
