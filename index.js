@@ -10,7 +10,7 @@ const b2Scale = 30;
 const { assertFloatEqual } = require('./assertFloatEqual');
 
 Box2D().then(box2D => {
-  const { b2BodyDef, b2_dynamicBody, b2PolygonShape, b2Vec2, b2World, b2Shape } = box2D;
+  const { b2BodyDef, b2_dynamicBody, b2PolygonShape, b2Vec2, b2World, b2Shape, b2FixtureDef } = box2D;
   const gravity = new b2Vec2(0, 10);
   const world = new b2World(gravity);
 
@@ -103,6 +103,16 @@ const boxSize = 20;
 const wallThickness = 20;
 let online = 0;
 
+function newBox(bx, by, l, w, s){ /* xpos, ypos, length, width, static */
+  var fixDef = new b2FixtureDef();
+  var bodyDef = new b2BodyDef();
+  bodyDef.position.x = bx/b2Scale;
+  bodyDef.position.y = by/b2Scale;
+  fixDef.shape = newb2PolygonShape();
+  fixDef.shape.SetAsBox(l/b2Scale, w/b2Scale);
+  world.CreateBody(bodyDef).CreateFixture(fixDef)
+}
+
 const entities = {
   boxes: [...Array(boxes)].map(() =>
     Matter.Bodies.rectangle(
@@ -111,6 +121,14 @@ const entities = {
       Math.random() * boxSize + boxSize,
       Math.random() * boxSize + boxSize,
     )
+    /*
+    newBox(
+      Math.random() * canvas.width,
+      boxSize,
+      Math.random() * boxSize + boxSize,
+      Math.random() * boxSize + boxSize,
+    )
+    */
   ),
   walls: [
     Matter.Bodies.rectangle(
