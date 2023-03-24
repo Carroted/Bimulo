@@ -80,23 +80,36 @@ const worldScale = 20;
 
 function drawVerts(verts) {
     ctx.beginPath();
-    verts.forEach(e => ctx.lineTo(e.x * worldScale, -e.y * worldScale));
+    verts.forEach(e => ctx.lineTo(e.x * worldScale, e.y * worldScale));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
+/*
+function drawVertsAt(x, y, verts) {
+    ctx.beginPath();
+    verts.forEach(e => ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}*/
+
+function drawVertsAt(x, y, verts, rotation = 0) {
+    ctx.beginPath();
+    verts.forEach(e => {
+        const rotatedX = (e.x - x) * Math.cos(rotation) - (e.y - y) * Math.sin(rotation);
+        const rotatedY = (e.x - x) * Math.sin(rotation) + (e.y - y) * Math.cos(rotation);
+        ctx.lineTo(rotatedX * worldScale, -rotatedY * worldScale);
+    });
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 }
 
-function drawVertsAt(x, y, verts) {
-    ctx.beginPath();
-    verts.forEach(e => ctx.lineTo((e.x - x) * worldScale, (-e.y - y) * worldScale));
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-}
 
 function drawCircleAt(x, y, radius) {
     ctx.beginPath();
-    ctx.arc(x * worldScale, -y * worldScale, radius * worldScale, 0, 2 * Math.PI);
+    ctx.arc(x * worldScale, y * worldScale, radius * worldScale, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 }

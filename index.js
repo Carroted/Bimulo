@@ -170,11 +170,13 @@ server.listen(4613, () =>
   console.log("server listening on " + 4613)
 );
 
+var timeScale = 0.001;
+
 setTimeout(() => {
   // step constantly and send to clients with webrtc
   setInterval(() => {
     // step physics
-    world.Step(frameRate, velocityIterations, positionIterations);
+    world.Step(frameRate * timeScale, velocityIterations, positionIterations);
     // get body
     var node = world.GetBodyList();
 
@@ -208,7 +210,8 @@ setTimeout(() => {
           x: position.x,
           y: position.y,
           type: 'circle',
-          radius: circleShape.get_m_radius()
+          radius: circleShape.get_m_radius(),
+          angle: b.GetAngle()
         });
       } else if (shapeType == box2D.b2Shape.e_polygon) {
         const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
@@ -227,7 +230,8 @@ setTimeout(() => {
           x: position.x,
           y: position.y,
           type: 'polygon',
-          vertices: verts
+          vertices: verts,
+          angle: b.GetAngle()
         });
       }
       else {
