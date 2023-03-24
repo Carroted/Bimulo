@@ -9,7 +9,8 @@
     "express": "^4.17.2",
     "node-datachannel": "^0.4.1",
     "simple-peer": "^9.11.1",
-    "wrtc": "^0.4.7"
+    "wrtc": "^0.4.7",
+    "ws": "^8.13.0"
   },
   "engines": {
     "node": ">=16.x"

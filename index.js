@@ -1,5 +1,5 @@
 import express from "express";
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import nodeDataChannel from 'node-datachannel';
 
 const app = express();
@@ -7,7 +7,9 @@ const app = express();
 import http from "http";
 const server = http.createServer(app);
 
-const wss = new WebSocket.Server({ port: 3000 });
+const wss = new WebSocketServer({ port: 3000 });
+
+var dataChannels = [];
 
 wss.on('connection', (ws) => {
   let peer1 = new nodeDataChannel.PeerConnection('Peer1', { iceServers: ['stun:stun.l.google.com:19302'] });
@@ -33,25 +35,21 @@ wss.on('connection', (ws) => {
     }
   });
 
-  peer1.onDataChannel((dc) => {
-    console.log('Peer1 Got DataChannel: ', dc.getLabel());
-    dc1 = dc;
-    dc1.onMessage((msg) => {
-      console.log('Peer1 Received Msg:', msg);
-    });
-  });
-
-  dc1 = peer1.createDataChannel('test');
+  dc1 = peer1.createDataChannel('main');
   dc1.onMessage((msg) => {
     console.log('Peer1 Received Msg dc1:', msg);
   });
+  dc1.onOpen(() => {
+    dataChannels.push(dc1);
+  });
+
 
   // Send test message to client after some time
   setTimeout(() => {
     if (dc1) {
+      /*dc1.sendMessage('Hello from Peer1');
       dc1.sendMessage('Hello from Peer1');
-      dc1.sendMessage('Hello from Peer1');
-      dc1.sendMessage('Hello from Peer1');
+      dc1.sendMessage('Hello from Peer1');*/
     }
   }, 5000);
 });
@@ -99,81 +97,65 @@ const box2D = await Box2DFactory();
     }
   }*/
 
-// import our webrtc server
-import Peer from "simple-peer";
-import wrtc from "wrtc";
-// we will use peer as a server. yes, its for p2p, but if all clients are only connected to server and not each other, it works for authority multiplayer
-
-// create peer server with our existing http server
-const peerServer = new Peer({
-  initiator: true,
-  wrtc: wrtc,
-  trickle: false
-});
-peerServer.on("connect", () => {
-  // webrtc connection
-  // send verts to client
-  console.log("vomit everywhere");
-});
-peerServer.on("signal", (data) => {
-  console.log("signal vomit");
-  // send signal to client
-});
-peerServer.on("data", (data) => {
-  console.log("data vomit");
-  // receive data from client
-});
-
-var peers = [];
-// ploopy monkey
-const omniPeer = new Peer({
-  initiator: false,
-  wrtc: wrtc,
-  trickle: false
-});
-omniPeer.on("connect", () => {
-  // webrtc connection
-  console.log("OMNI vomit everywhere");
-});
-omniPeer.on("signal", (data) => {
-  console.log("OMNI signal vomit");
-  // send signal to client
-});
-omniPeer.on("data", (data) => {
-  console.log("OMNI data vomit");
-  // receive data from client
-});
-peers.push(omniPeer);
-
-const frameRate = 1000 / 10;
+const frameRate = 1000 / 30;
 const canvas = { width: 800, height: 400 };
 const boxes = 20;
 const boxSize = 20;
-const wallThickness = 20;
+const wallThickness = 50;
 let online = 0;
+
+const zero = new box2D.b2Vec2(0, 0);
 
 const gravity = new box2D.b2Vec2(0, 10);
 const world = new box2D.b2World(gravity);
 
+const bd_ground = new box2D.b2BodyDef();
+const ground = world.CreateBody(bd_ground);
+
+// ramp which boxes fall onto initially
+{
+  const shape = new box2D.b2EdgeShape();
+  shape.SetTwoSided(new box2D.b2Vec2(3, 4), new box2D.b2Vec2(6, 7));
+  ground.CreateFixture(shape, 0);
+}
+// floor which boxes rest on
+{
+  const shape = new box2D.b2EdgeShape();
+  shape.SetTwoSided(new box2D.b2Vec2(3, 18), new box2D.b2Vec2(22, 18));
+  ground.CreateFixture(shape, 0);
+}
+
 const sideLengthMetres = 1;
 const square = new box2D.b2PolygonShape();
 square.SetAsBox(sideLengthMetres / 2, sideLengthMetres / 2);
+const circle = new box2D.b2CircleShape();
+circle.set_m_radius(sideLengthMetres / 2);
 
-const zero = new box2D.b2Vec2(0, 0);
+const ZERO = new box2D.b2Vec2(0, 0);
+const temp = new box2D.b2Vec2(0, 0);
 
-const bd = new box2D.b2BodyDef();
-bd.set_type(box2D.b2_dynamicBody);
-bd.set_position(zero);
+const initPosition = (body, index) => {
+  temp.Set(4 + sideLengthMetres * (Math.random() - 0.5), -sideLengthMetres * index);
+  body.SetTransform(temp, 0);
+  body.SetLinearVelocity(ZERO);
+  body.SetAwake(1);
+  body.SetEnabled(1);
+}
 
-const body = world.CreateBody(bd);
-body.CreateFixture(square, 1);
-body.SetTransform(zero, 0);
-body.SetLinearVelocity(zero);
-body.SetAwake(true);
-body.SetEnabled(true);
+// make falling boxes
+const boxCount = 10;
+for (let i = 0; i < boxCount; i++) {
+  const bd = new box2D.b2BodyDef();
+  bd.set_type(box2D.b2_dynamicBody);
+  bd.set_position(ZERO);
+  const body = world.CreateBody(bd);
+  body.CreateFixture(i % 2 ? square : circle, 1);
+  initPosition(body, i);
+}
 
-const velocityIterations = 1;
-const positionIterations = 1;
+
+const velocityIterations = 3;
+const positionIterations = 2;
 
 app.use(express.static("client"));
 console.log('staticked the client folderation');
@@ -188,21 +170,80 @@ server.listen(4613, () =>
   console.log("server listening on " + 4613)
 );
 
-// step constantly and send to clients with webrtc
-setInterval(() => {
-  // step physics
-  world.Step(frameRate, velocityIterations, positionIterations);
-  // get body
-  var node = world.GetBodyList();
-  while (box2D.getPointer(node)) {
-    var b = node;
-    node = node.GetNext();
-    var position = b.GetPosition();
-    console.log("position: " + position.x + ", " + position.y);
+setTimeout(() => {
+  // step constantly and send to clients with webrtc
+  setInterval(() => {
+    // step physics
+    world.Step(frameRate, velocityIterations, positionIterations);
+    // get body
+    var node = world.GetBodyList();
 
-    // send to clients that are real
-  }
+    var shapes = [];
 
+    while (box2D.getPointer(node)) {
+      var b = node;
+      node = node.GetNext();
+      var position = b.GetPosition();
+      console.log("position: " + position.x + ", " + position.y);
+      b.GetType()
 
-  console.log("vomit");
-}, frameRate);
+      // or was it just an illusion?
+      // was it ever even real?
+      // was it all just a dream?
+      // or was our life not reality?
+      // or was it all just a dream?
+      // or was our life not achieved?
+      // or was our mind just a construct beyond the world above?
+
+      var fl = b.GetFixtureList();
+      if (!fl) {
+        continue;
+      }
+      var shape = fl.GetShape();
+      var shapeType = shape.GetType();
+      if (shapeType == box2D.b2Shape.e_circle) {
+        const circleShape = box2D.castObject(shape, box2D.b2CircleShape);
+        console.log("circle of radius " + circleShape.get_m_radius() + " at " + position.x + ", " + position.y);
+        shapes.push({
+          x: position.x,
+          y: position.y,
+          type: 'circle',
+          radius: circleShape.get_m_radius()
+        });
+      } else if (shapeType == box2D.b2Shape.e_polygon) {
+        const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
+        var vertexCount = polygonShape.get_m_count();
+        var verts = [];
+        // iterate over vertices
+        for (let i = 0; i < vertexCount; i++) {
+          const vertex = polygonShape.get_m_vertices(i);
+          console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
+          verts.push({
+            x: vertex.x,
+            y: vertex.y
+          });
+        }
+        shapes.push({
+          x: position.x,
+          y: position.y,
+          type: 'polygon',
+          vertices: verts
+        });
+      }
+      else {
+        console.log("unknown shape type");
+      }
+    }
+
+    dataChannels.forEach((dc) => {
+      dc.sendMessage(JSON.stringify({
+        type: 'world update',
+        data: {
+          shapes: shapes
+        }
+      }));
+    });
+
+    //console.log("vomit");
+  }, frameRate);
+}, 8000);

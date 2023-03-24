@@ -1,3 +1,67 @@
+const ws = new WebSocket('ws://localhost:3000');
+
+var activeDc = null;
+var entities = [];
+
+ws.onopen = () => {
+    console.log('WebSocket connection established');
+
+    ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+        if (msg.sdp) {
+            pc.setRemoteDescription(new RTCSessionDescription(msg))
+                .then(() => {
+                    if (msg.type === 'offer') {
+                        pc.createAnswer().then((answer) => {
+                            pc.setLocalDescription(answer)
+                                .then(() => {
+                                    ws.send(JSON.stringify(answer));
+                                });
+                        });
+                    }
+                });
+        } else if (msg.candidate) {
+            pc.addIceCandidate(new RTCIceCandidate({ sdpMid: msg.mid, candidate: msg.candidate }));
+        }
+
+        pc.ondatachannel = (event) => {
+            const dc = event.channel;
+
+            // Handle incoming data from server
+            dc.onmessage = (event) => {
+                //console.log(`Received data from server: ${event.data}`);
+                try {
+                    var formatted = JSON.parse(event.data);
+                    if (formatted.type !== null && formatted.type !== undefined && formatted.data !== null && formatted.data !== undefined) {
+                        if (formatted.type == 'world update') {
+                            entities = formatted.data.shapes;
+                            console.log(entities);
+                        }
+                    }
+                }
+                catch (e) {
+                    console.log(e);
+                }
+            };
+
+            // Send data to server
+            dc.onopen = () => {
+                dc.send('Hello, server!');
+                activeDc = dc;
+            };
+        };
+
+        // Handle ICE candidates
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
+            }
+        };
+    };
+};
+
 // load all svg data-src images
 var svgs = document.querySelectorAll('svg[data-src]');
 svgs.forEach(function (svg) {
@@ -12,21 +76,36 @@ svgs.forEach(function (svg) {
     xhr.send();
 });
 
-var socket = io();
-var entities = [];
+const worldScale = 20;
 
 function drawVerts(verts) {
     ctx.beginPath();
-    verts.forEach(e => ctx.lineTo(e.x, e.y));
+    verts.forEach(e => ctx.lineTo(e.x * worldScale, -e.y * worldScale));
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 }
 
+function drawVertsAt(x, y, verts) {
+    ctx.beginPath();
+    verts.forEach(e => ctx.lineTo((e.x - x) * worldScale, (-e.y - y) * worldScale));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
+
+function drawCircleAt(x, y, radius) {
+    ctx.beginPath();
+    ctx.arc(x * worldScale, -y * worldScale, radius * worldScale, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+}
+
+
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d'); // main layer
 
-let cameraOffset = { x: 0, y: 0 };
+let cameraOffset = { x: -(window.innerWidth / 2), y: (window.innerHeight / 2) };
 let cameraZoom = 1;
 let MAX_ZOOM = 5;
 let MIN_ZOOM = 0.1;
@@ -69,6 +148,15 @@ var keysDown = {};
 
 var pointerDown = false;
 
+function emitData(type, data) {
+    if (activeDc) {
+        activeDc.send(JSON.stringify({
+            type: type,
+            data: data
+        }));
+    }
+}
+
 function onPointerDown(e) {
     var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
 
@@ -88,7 +176,9 @@ function onPointerDown(e) {
             y: mousePos.y,
             down: true
         };
-        socket.emit("player mouse down", player);
+        if (activeDc) {
+            emitData("player mouse down", player);
+        }
         pointerDown = true;
     }
 }
@@ -102,7 +192,7 @@ function onPointerUp(e) {
             y: mousePos.y,
             down: false
         };
-        socket.emit("player mouse up", player);
+        emitData("player mouse up", player);
     }
     isDragging = false;
     initialPinchDistance = null;
@@ -130,7 +220,7 @@ function onPointerMove(e) {
         y: mousePos.y,
         down: pointerDown
     };
-    socket.emit("player mouse", player);
+    emitData("player mouse", player);
 }
 
 var touchStartElement = null;
@@ -209,7 +299,7 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
         // mouse moved, lets send
         var mousePos = transformPoint(lastX, lastY);
-        socket.emit("player mouse", { x: mousePos.x, y: mousePos.y });
+        emitData("player mouse", { x: mousePos.x, y: mousePos.y });
     }
 }
 
@@ -268,12 +358,10 @@ window.addEventListener('resize', function () {
 
 function setName(name) {
     player.name = name;
-    socket.emit('update player', player);
+    emitData('update player', player);
 }
 
-socket.on('connect', function () {
-    socket.emit('new player', player);
-});
+
 
 // polyfill for roundRect
 function roundRect(x, y, w, h, r) {
@@ -300,36 +388,6 @@ function roundTri(x, y, w, h) {
 }
 
 
-socket.on('rank', function (data) {
-    player.rank = data;
-});
-
-socket.on('message', function (message) {
-    // bah
-});
-
-
-socket.on('state', function (data) {
-    // data has id (socketid) and player (player object)
-    players[data.id] = data.player;
-    draw();
-});
-
-socket.on('states', function (playersArray) {
-    players = {};
-    for (var i = 0; i < playersArray.length; i++) {
-        players[playersArray[i].id] = playersArray[i].player;
-    }
-
-
-    draw();
-});
-
-
-socket.on('disconnected', function (id) {
-    delete players[id];
-    draw();
-});
 
 
 document.addEventListener('keydown', function (e) {
@@ -338,15 +396,15 @@ document.addEventListener('keydown', function (e) {
     keysDown[e.keyCode] = true;
     movementUpdate();
     if (e.keyCode === 37) {
-        socket.emit("player start", "left");
+        emitData("player start", "left");
     } else if (e.keyCode === 39) {
-        socket.emit("player start", "right");
+        emitData("player start", "right");
     }
 
 }, false);
 
 function movementUpdate() {
-    socket.emit('movementUpdate', {
+    emitData('movementUpdate', {
         // send position as it is now for reference
         x: player.x,
         y: player.y
@@ -357,9 +415,9 @@ document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
 
     if (e.keyCode === 37) {
-        socket.emit("player stop", "left");
+        emitData("player stop", "left");
     } else if (e.keyCode === 39) {
-        socket.emit("player stop", "right");
+        emitData("player stop", "right");
     }
 }, false);
 /*
@@ -382,8 +440,6 @@ document.addEventListener('keyup', function (e) {
                 camera.y -= e.movementY;
             }
         }, false);*/
-
-
 
 // disable right click menu
 document.addEventListener('contextmenu', function (e) {
@@ -449,9 +505,6 @@ function outlinedImage(img, s, color, x, y, width, height) {
     ctx2 = null;
 }
 
-socket.on("update state", ({ boxes, walls, carBox, online }) => {
-    entities = [...boxes, ...walls, carBox]; // o7
-});
 
 function draw() {
     canvas.width = window.innerWidth;
@@ -466,32 +519,12 @@ function draw() {
     var width = end.x - origin.x;
     var height = end.y - origin.y;
     ctx.fillRect(origin.x, origin.y, width, height);
-    /*
-        var map = getImage('/sprites/map.png');
-        ctx.drawImage(map, 0, 0, map.width * 4, map.height * 4);
-        */
 
     // draw map
     //ctx.drawImage(canvasMap, 0, 0);
 
 
     var mousePos = transformPoint(lastX, lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
-    /*
-    // draw a dot on mouse (for debugging)
-    ctx.fillStyle = 'black';
-    
-    // round to 4 as thats the scale
-    ctx.fillText("(" + (Math.round(mousePos.x / 4) * 4) + ", " + (Math.round(mousePos.y / 4) * 4) + ")", mousePos.x + 10, mousePos.y + 10);
-    // if pos not in drawnPixels, draw it
-    if (drawnPixels.indexOf({ x: (Math.round(mousePos.x / 4) * 4), y: (Math.round(mousePos.y / 4) * 4) }) == -1) {
-        drawnPixels.push({ x: (Math.round(mousePos.x / 4) * 4), y: (Math.round(mousePos.y / 4) * 4) });
-        console.log(drawnPixels);
-    }
- 
-    for (var i = 0; i < drawnPixels.length; i++) {
-        var pos = drawnPixels[i];
-        ctx.fillRect((Math.round(pos.x / 4) * 4), (Math.round(pos.y / 4) * 4), 4, 4);
-    }*/
 
     var cursor = getImage('/cursor.png');
 
@@ -499,10 +532,20 @@ function draw() {
     ctx.fillStyle = '#9ac4f1';
     // no border
     ctx.strokeStyle = 'transparent';
-    /* the entities are verts */
+    // the entities are verts
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
-        drawVerts(entity);
+        if (entity.type === 'polygon') {
+            console.log('drawing polygon');
+            drawVertsAt(entity.x, entity.y, entity.vertices);
+        }
+        else if (entity.type === 'circle') {
+            console.log('drawing circle');
+            drawCircleAt(entity.x, entity.y, entity.radius);
+        }
+        else {
+            console.log('what is ' + entity.type);
+        }
     }
 
     for (var id in players) {
@@ -541,9 +584,6 @@ function inverseTransformPoint(x, y) {
 
 
 
-window.onbeforeunload = function (e) {
-    socket.disconnect();
-};
 
 
 function loop() {
