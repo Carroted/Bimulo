@@ -234,6 +234,28 @@ setTimeout(() => {
           angle: b.GetAngle()
         });
       }
+      else if (shapeType == box2D.b2Shape.e_edge) {
+        const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
+        var vertices = [
+          {
+            x: edgeShape.get_m_vertex1().get_x(),
+            y: edgeShape.get_m_vertex1().get_y()
+          },
+          {
+            x: edgeShape.get_m_vertex2().get_x(),
+            y: edgeShape.get_m_vertex2().get_y()
+          }
+        ];
+        console.log("edge: ");
+        console.log(vertices);
+        shapes.push({
+          x: position.x,
+          y: position.y,
+          type: 'edge',
+          vertices: vertices,
+          angle: b.GetAngle()
+        });
+      }
       else {
         console.log("unknown shape type");
       }

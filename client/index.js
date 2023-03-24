@@ -94,20 +94,45 @@ function drawVertsAt(x, y, verts) {
     ctx.stroke();
 }*/
 
+function rotateVerts(vertices, angle) {
+    // rotate the vertices at the origin (0,0)
+    var rotatedVertices = [];
+    for (var i = 0; i < vertices.length; i++) {
+        // use math to rotate the vertices
+        var rotatedX = vertices[i].x * Math.cos(angle) - vertices[i].y * Math.sin(angle);
+        var rotatedY = vertices[i].x * Math.sin(angle) + vertices[i].y * Math.cos(angle);
+        // add the rotated vertices to the array
+        rotatedVertices.push({ x: rotatedX, y: rotatedY });
+    }
+    return rotatedVertices;
+}
+
+
 function drawVertsAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
+    verts = rotateVerts(verts, rotation);
     verts.forEach(e => {
-        const rotatedX = (e.x - x) * Math.cos(rotation) - (e.y - y) * Math.sin(rotation);
-        const rotatedY = (e.x - x) * Math.sin(rotation) + (e.y - y) * Math.cos(rotation);
-        ctx.lineTo(rotatedX * worldScale, -rotatedY * worldScale);
+        ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale);
     });
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 }
+function drawVertsNoFillAt(x, y, verts, rotation = 0) {
+    ctx.beginPath();
+    verts = rotateVerts(verts, rotation);
+    verts.forEach(e => {
+        ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale);
+    });
+    ctx.closePath();
+    // set stroke color
+    ctx.strokeStyle = 'black';
+    // set line width
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
 
-
-function drawCircleAt(x, y, radius) {
+function drawCircleAt(x, y, radius, rotation = 0) {
     ctx.beginPath();
     ctx.arc(x * worldScale, y * worldScale, radius * worldScale, 0, 2 * Math.PI);
     ctx.fill();
@@ -550,11 +575,15 @@ function draw() {
         var entity = entities[i];
         if (entity.type === 'polygon') {
             console.log('drawing polygon');
-            drawVertsAt(entity.x, entity.y, entity.vertices);
+            drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
         }
         else if (entity.type === 'circle') {
             console.log('drawing circle');
-            drawCircleAt(entity.x, entity.y, entity.radius);
+            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle);
+        }
+        else if (entity.type === 'edge') {
+            console.log('drawing edge');
+            drawVertsNoFillAt(entity.x, entity.y, entity.vertices, entity.angle);
         }
         else {
             console.log('what is ' + entity.type);
