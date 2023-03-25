@@ -1,66 +1,117 @@
-const ws = new WebSocket('ws://localhost:3000');
+/*// get domain
+// check if http
+var secure = false;
+if (window.location.protocol == 'https:') {
+    secure = true;
+}
+var ws;
+if (secure) {
+    console.log(`connectin to wss://${window.location.host}`);
+    ws = new WebSocket(`wss://${window.location.host}`);
+} else {
+    console.log(`connectin to ws://${window.location.host}`);
+    ws = new WebSocket(`ws://${window.location.host}`);
+}*/
 
 var activeDc = null;
 var entities = [];
+var players = {};
 
-ws.onopen = () => {
+const ws = io();
+/*
+ws.onopen = () => {*/
+ws.on('connect', () => {
     console.log('WebSocket connection established');
+    ws.send('i exist, notice me');
+});
 
-    ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+var localCandidates = [];
+/*
+    ws.onmessage = (event) => {*/
+ws.on('message', (event) => {
+    console.log('Received message from server:', event);
+    const msg = JSON.parse(event);
+    // rtcpeerconnection to the same domain
+    const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        // set remote description
 
-        if (msg.sdp) {
-            pc.setRemoteDescription(new RTCSessionDescription(msg))
-                .then(() => {
-                    if (msg.type === 'offer') {
-                        pc.createAnswer().then((answer) => {
-                            pc.setLocalDescription(answer)
-                                .then(() => {
-                                    ws.send(JSON.stringify(answer));
-                                });
-                        });
-                    }
-                });
-        } else if (msg.candidate) {
-            pc.addIceCandidate(new RTCIceCandidate({ sdpMid: msg.mid, candidate: msg.candidate }));
+    });
+
+    if (msg.sdp) {
+        console.log('using sdp');
+        pc.setRemoteDescription(new RTCSessionDescription(msg))
+            .then(() => {
+                if (msg.type === 'offer') {
+                    pc.createAnswer().then((answer) => {
+                        pc.setLocalDescription(answer)
+                            .then(() => {
+                                ws.send(JSON.stringify(answer));
+                            });
+                    });
+                }
+            });
+    } else if (msg.candidate) {
+        console.log('using candidate');
+        try {
+            pc.addIceCandidate(new RTCIceCandidate({
+                sdpMid: msg.mid, candidate: msg.candidate,
+                // description
+            })).catch((e) => {
+                console.log(e);
+                console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
+            });
+            console.log('added ice candidate');
         }
+        catch (e) {
+            console.log(e);
+            console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
+        }
+    }
 
-        pc.ondatachannel = (event) => {
-            const dc = event.channel;
+    pc.ondatachannel = (event) => {
+        const dc = event.channel;
+        console.log('data channel established!!! omg! yay!\n\n\n------\n\ntell asour the data channel is established\n\n------\n\n\n');
 
-            // Handle incoming data from server
-            dc.onmessage = (event) => {
-                //console.log(`Received data from server: ${event.data}`);
-                try {
-                    var formatted = JSON.parse(event.data);
-                    if (formatted.type !== null && formatted.type !== undefined && formatted.data !== null && formatted.data !== undefined) {
-                        if (formatted.type == 'world update') {
-                            entities = formatted.data.shapes;
-                            console.log(entities);
-                        }
+        // Handle incoming data from server
+        dc.onmessage = (event) => {
+            //console.log(`Received data from server: ${event.data}`);
+            try {
+                var formatted = JSON.parse(event.data);
+                if (formatted.type !== null && formatted.type !== undefined && formatted.data !== null && formatted.data !== undefined) {
+                    if (formatted.type == 'world update') {
+                        entities = formatted.data.shapes;
+                        //console.log(entities);
+                    }
+                    if (formatted.type == 'player mouse') {
+                        // its a mouse pos update. set players[formatted.data.id] to formatted.data.x and formatted.data.y
+                        players[formatted.data.id] = {
+                            x: formatted.data.x,
+                            y: formatted.data.y
+                        };
                     }
                 }
-                catch (e) {
-                    console.log(e);
-                }
-            };
-
-            // Send data to server
-            dc.onopen = () => {
-                dc.send('Hello, server!');
-                activeDc = dc;
-            };
-        };
-
-        // Handle ICE candidates
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
+            }
+            catch (e) {
+                console.log(e);
             }
         };
+
+        // Send data to server
+        dc.onopen = () => {
+            dc.send('Hello, server!');
+            activeDc = dc;
+        };
     };
-};
+
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
+            localCandidates.push(event.candidate);
+        }
+    };
+});
 
 // load all svg data-src images
 var svgs = document.querySelectorAll('svg[data-src]');
@@ -76,11 +127,9 @@ svgs.forEach(function (svg) {
     xhr.send();
 });
 
-const worldScale = 20;
-
 function drawVerts(verts) {
     ctx.beginPath();
-    verts.forEach(e => ctx.lineTo(e.x * worldScale, e.y * worldScale));
+    verts.forEach(e => ctx.lineTo(e.x, e.y));
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -112,7 +161,7 @@ function drawVertsAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
     verts = rotateVerts(verts, rotation);
     verts.forEach(e => {
-        ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale);
+        ctx.lineTo((e.x + x), (e.y + y));
     });
     ctx.closePath();
     ctx.fill();
@@ -122,19 +171,21 @@ function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
     verts = rotateVerts(verts, rotation);
     verts.forEach(e => {
-        ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale);
+        ctx.lineTo((e.x + x), (e.y + y));
     });
     ctx.closePath();
     // set stroke color
-    ctx.strokeStyle = 'black';
+    ctx.strokeStyle = '#9ac4f1';
     // set line width
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.1;
     ctx.stroke();
+    // reset to transparent
+    ctx.strokeStyle = 'transparent';
 }
 
 function drawCircleAt(x, y, radius, rotation = 0) {
     ctx.beginPath();
-    ctx.arc(x * worldScale, y * worldScale, radius * worldScale, 0, 2 * Math.PI);
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
 }
@@ -143,8 +194,10 @@ function drawCircleAt(x, y, radius, rotation = 0) {
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d'); // main layer
 
-let cameraOffset = { x: -(window.innerWidth / 2), y: (window.innerHeight / 2) };
-let cameraZoom = 1;
+var what = transformPoint(window.innerWidth, window.innerWidth);
+
+let cameraOffset = { x: what.x / 2, y: 0 };
+let cameraZoom = 42;
 let MAX_ZOOM = 5;
 let MIN_ZOOM = 0.1;
 let SCROLL_SENSITIVITY = 0.0005;
@@ -179,7 +232,7 @@ let isDragging = false;
 let dragStart = { x: 0, y: 0 };
 let dragStart2 = { x: 0, y: 0 };
 
-var players = {};
+
 
 // movement system where we can move in multiple directions at once
 var keysDown = {};
@@ -574,34 +627,41 @@ function draw() {
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
         if (entity.type === 'polygon') {
-            console.log('drawing polygon');
+            //console.log('drawing polygon');
             drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
         }
         else if (entity.type === 'circle') {
-            console.log('drawing circle');
+            // console.log('drawing circle');
             drawCircleAt(entity.x, entity.y, entity.radius, entity.angle);
         }
         else if (entity.type === 'edge') {
-            console.log('drawing edge');
+            //console.log('drawing edge');
             drawVertsNoFillAt(entity.x, entity.y, entity.vertices, entity.angle);
         }
         else {
-            console.log('what is ' + entity.type);
+            //console.log('what is ' + entity.type);
         }
     }
 
     for (var id in players) {
-        console.log('ID: ' + id);
+        //console.log('ID: ' + id);
         var player = players[id];
         ctx.fillStyle = 'blue';
         //drawRect(player.x, player.y, 4, 4);
         // draw image getImage('/cursor.png')
-        ctx.drawImage(cursor, player.x, player.y, 10, cursor.height * (10 / cursor.width));
+        ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
     }
 
     ctx.fillStyle = 'red';
 
-    ctx.drawImage(cursor, mousePos.x, mousePos.y, 10, cursor.height * (10 / cursor.width));
+    ctx.drawImage(cursor, mousePos.x, mousePos.y, 0.7, cursor.height * (0.7 / cursor.width));
+    // draw text that says mouse pos in world space
+    ctx.fillStyle = 'white';
+    ctx.font = '0.2px Arial';
+    // round to 1 decimal place
+    var mousePosXRound = Math.round(mousePos.x * 10) / 10;
+    var mousePosYRound = Math.round(mousePos.y * 10) / 10;
+    ctx.fillText('(' + mousePosXRound + ', ' + mousePosYRound + ')', mousePos.x + 0.2, mousePos.y);
 }
 
 function transformPoint(x, y) {
