@@ -175,7 +175,7 @@ function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     });
     ctx.closePath();
     // set stroke color
-    ctx.strokeStyle = '#9ac4f1';
+    ctx.strokeStyle = '#a1acfa';
     // set line width
     ctx.lineWidth = 0.1;
     ctx.stroke();
@@ -604,12 +604,36 @@ function draw() {
     // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
     ctx.setTransform(cameraZoom, 0, 0, cameraZoom, cameraOffset.x, cameraOffset.y);
 
-    ctx.fillStyle = '#151832';
+    //ctx.fillStyle = '#151832';
+    // create vertical gradient from 0f1130 to 553f90
+    /*var topPoint = transformPoint(0, 0);
+    var bottomPoint = transformPoint(0, window.innerHeight);
+    var grd = ctx.createLinearGradient(topPoint.x, topPoint.y, bottomPoint.x, bottomPoint.y);
+    grd.addColorStop(0, '#0f1130');
+    grd.addColorStop(1, '#553f90');
+    ctx.fillStyle = grd;*/
+    // whatever, lets just clear canvas and use CSS to set background color
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     var origin = transformPoint(0, 0);
     var end = transformPoint(window.innerWidth, window.innerHeight);
     var width = end.x - origin.x;
     var height = end.y - origin.y;
-    ctx.fillRect(origin.x, origin.y, width, height);
+
+    // draw logo in middle
+    var logo = getImage('/logo.svg');
+    var logoWidth = 12;
+    // height is auto
+    var logoHeight = logoWidth * (logo.height / logo.width);
+    var logoX = -logoWidth / 2;
+    var logoY = -logoHeight / 2;
+    ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
+    // urbanist text underneath
+    ctx.font = '1px Urbanist';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.fillText('urbanist', logoX + logoWidth / 2, logoY + logoHeight + 1);
+
+    //ctx.fillRect(origin.x, origin.y, width, height);
 
     // draw map
     //ctx.drawImage(canvasMap, 0, 0);
@@ -620,7 +644,7 @@ function draw() {
     var cursor = getImage('/cursor.png');
 
     // fill
-    ctx.fillStyle = '#9ac4f1';
+    ctx.fillStyle = '#a1acfa';
     // no border
     ctx.strokeStyle = 'transparent';
     // the entities are verts

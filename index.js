@@ -69,6 +69,17 @@ for (let i = 0; i < boxCount; i++) {
   initPosition(body, i);
 }
 
+// huge floor under ground of 500 units high, and 10000 units wide
+const bd_floor = new box2D.b2BodyDef();
+bd_floor.set_type(box2D.b2_staticBody);
+bd_floor.set_position(new box2D.b2Vec2(0, 25030));
+const floor = world.CreateBody(bd_floor);
+const floorShape = new box2D.b2PolygonShape();
+floorShape.SetAsBox(50000, 25000);
+floor.CreateFixture(floorShape, 0);
+
+
+
 var ei = 0;
 /*
 wss.on('connection', (ws) => {
