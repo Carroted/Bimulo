@@ -1,10 +1,32 @@
 import express from "express";
 import { WebSocketServer } from 'ws';
 import nodeDataChannel from 'node-datachannel';
+nodeDataChannel.initLogger('Fatal');
+
+import chalk from 'chalk'; // Colored console output
 
 import * as url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+
+import fs from 'fs';
+
+import terminalLink from 'terminal-link';
+
+// import package.json so we can get the version number
+const pkg = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
+
+console.log(chalk.bold.hex('#99e077')(`Simulo Server v${pkg.version}`));
+
+console.log("Node.js server for Simulo with " + terminalLink('Express', 'https://npmjs.com/package/express', {
+  fallback: false
+}) + ", WebSocket and WebRTC");
+
+// Get log from log.js
+import logjs from './log.js';
+const log = logjs();
+
+log.info("Starting WebRTC, WebSocket and Express servers...") // Servers take a few seconds to start up, so we'll log this to the console
 
 import Box2DFactory from "box2d-wasm";
 const box2D = await Box2DFactory();
@@ -251,7 +273,6 @@ const velocityIterations = 3;
 const positionIterations = 2;
 
 app.use(express.static("client"));
-console.log('staticked the client folderation');
 
 // static serve node_modules/@tabler/icons/icons
 app.use("/icons", express.static(__dirname + "/node_modules/@tabler/icons/icons"));
@@ -259,9 +280,22 @@ app.use("/icons", express.static(__dirname + "/node_modules/@tabler/icons/icons"
 // put app on http server
 
 
-server.listen(4613, () =>
-  console.log("server listening on " + 4613)
-);
+var port = 4613;
+server.listen(port, () => {
+  console.log(chalk.bold.greenBright(`\nHTTP server started on port ${port}!`) + '\nSee it on ' + terminalLink('http://localhost:' + port, 'http://localhost:' + port, {
+    fallback: false
+  }) + ' directly');
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    log.error(`Port ${port} for the public server is already in use`, null, `Close other apps using port ${port} or override the port with "export PORT=1234"`);
+    log.exit(1);
+  }
+  else {
+    log.error(e.message);
+  }
+});
 
 var timeScale = 1 / 500;
 
