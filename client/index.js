@@ -492,6 +492,11 @@ document.addEventListener('keydown', function (e) {
         emitData("player start", "right");
     }
 
+    // if key is f
+    if (e.keyCode === 70) {
+        emitData("player start", "f");
+    }
+
 }, false);
 
 function movementUpdate() {
@@ -619,6 +624,7 @@ function draw() {
     var width = end.x - origin.x;
     var height = end.y - origin.y;
 
+    /*
     // draw logo in middle
     var logo = getImage('/logo.svg');
     var logoWidth = 12;
@@ -632,6 +638,7 @@ function draw() {
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText('urbanist', logoX + logoWidth / 2, logoY + logoHeight + 1);
+    */
 
     //ctx.fillRect(origin.x, origin.y, width, height);
 
@@ -661,6 +668,9 @@ function draw() {
         else if (entity.type === 'edge') {
             //console.log('drawing edge');
             drawVertsNoFillAt(entity.x, entity.y, entity.vertices, entity.angle);
+        }
+        else if (entity.type === 'particle') {
+            drawCircleAt(entity.x, entity.y, 0.1, 0);
         }
         else {
             //console.log('what is ' + entity.type);

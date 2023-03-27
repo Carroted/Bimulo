@@ -84,6 +84,8 @@ var ei = 0;
 /*
 wss.on('connection', (ws) => {
   */
+
+var particleSystems = [];
 io.on('connection', (ws) => {
   let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'] });
   let dc1 = null;
@@ -163,6 +165,24 @@ io.on('connection', (ws) => {
           const body = world.CreateBody(bd);
           body.CreateFixture(square, 1);
           // we did it, yay, we're so cool 👍
+        }
+        else if (formatted.type == 'player start') {
+          // if data is 'f', spawn water at the mouse position (we are on liquidfun branch of box2d-wasm)
+          if (formatted.data == 'f') {
+            var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
+            var psd = new box2D.b2ParticleSystemDef();
+            psd.radius = 0.025;
+            psd.dampingStrength = 0.2;
+            var particle = world.CreateParticleSystem(psd);
+            var shapeLol = new box2D.b2PolygonShape();
+            shapeLol.SetAsBox(5, 2);
+            const particleGroupDef = new box2D.b2ParticleGroupDef();
+            particleGroupDef.shape = shapeLol;
+            var group = particle.CreateParticleGroup(particleGroupDef);
+            console.log('created some water, yeah');
+            particleSystems.push(particle);
+            console.log(particle.GetPositionBuffer().Length() + ' particles');
+          }
         }
       }
     } catch (e) {
@@ -255,7 +275,29 @@ function loop(delta) {
   // get body
   var node = world.GetBodyList();
 
+
   var shapes = [];
+
+  particleSystems.forEach((particle) => {
+    //console.log('one is real, the other is not');
+    var list = particle.GetParticleGroupList();
+    while (box2D.getPointer(list)) {
+      var p = list;
+      list = list.GetNext();
+      var system = p.GetParticleSystem();
+      while (box2D.getPointer(system)) {
+        var systemPos = system.GetPositionBuffer();
+
+
+        shapes.push({
+          x: systemPos.x,
+          y: systemPos.y,
+          type: 'particle'
+        });
+        system = system.GetNext();
+      }
+    }
+  });
 
   while (box2D.getPointer(node)) {
     var b = node;
@@ -274,6 +316,8 @@ function loop(delta) {
 
     var fl = b.GetFixtureList();
     if (!fl) {
+      // maybe its particular (maybe a particlesytem)
+      console.log('                   HEY EVERY! WE HAVE A PARTICLE? OMG!')
       continue;
     }
     var shape = fl.GetShape();
@@ -332,6 +376,7 @@ function loop(delta) {
       });
     }
     else {
+      console.log('what is a ' + shapeType);
       //console.log("unknown shape type");
     }
   }
