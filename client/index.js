@@ -99,7 +99,6 @@ ws.on('message', (event) => {
 
         // Send data to server
         dc.onopen = () => {
-            dc.send('Hello, server!');
             activeDc = dc;
         };
     };
@@ -167,6 +166,7 @@ function drawVertsAt(x, y, verts, rotation = 0) {
     ctx.fill();
     ctx.stroke();
 }
+
 function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
     verts = rotateVerts(verts, rotation);
@@ -251,7 +251,7 @@ function emitData(type, data) {
 function onPointerDown(e) {
     var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
 
-    if (e.button == 2 || e.button && 3) {
+    if (e.button == 2 || e.button && 3) { // 2 is right click, 3 is middle click
         isDragging = true;
         dragStart.x = getEventLocation(e).x - cameraOffset.x;
         dragStart.y = getEventLocation(e).y - cameraOffset.y;
@@ -396,6 +396,13 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
 
 canvas.addEventListener('mousedown', onPointerDown);
+// on document, make mousedown for middle click not scroll
+document.body.addEventListener('mousedown', (e) => {
+    if (e.button == 1) {
+        e.preventDefault();
+        return false;
+    }
+});
 canvas.addEventListener('touchstart', (e) => handleTouch(e, onPointerDown));
 
 document.addEventListener('touchstart', (e) => {

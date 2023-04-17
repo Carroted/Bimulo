@@ -108,8 +108,9 @@ wss.on('connection', (ws) => {
   */
 
 var particleSystems = [];
+var playerSprings = {};
 io.on('connection', (ws) => {
-  let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'] });
+  let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'], portRangeBegin: 4614, portRangeEnd: 4800 }); // all on the same port, might break everything but we have to try
   let dc1 = null;
 
   console.log('------\nweb socket connected through socket.io!\n------');
@@ -155,38 +156,86 @@ io.on('connection', (ws) => {
 
   dc1 = peer1.createDataChannel('main');
   dc1.onMessage((msg) => {
-    console.log('Peer1 Received Msg dc1:', msg);
+    //console.log('Peer1 Received Msg dc1:', msg);
     try {
       var formatted = JSON.parse(msg);
       // it should have a type and data. if not, it's not a valid message
       if (formatted.type !== undefined && formatted.data !== undefined && formatted.type !== null && formatted.data !== null) {
         // handle it
-        console.log('    Type: "' + formatted.type + '"');
+        //console.log('    Type: "' + formatted.type + '"');
         if (formatted.type == 'player mouse') {
           // tell the other people the cool news
           for (var i = 0; i < dataChannels.length; i++) {
             if (dataChannels[i] !== dc1) {
-              dataChannels[i].sendMessage(JSON.stringify({
-                type: 'player mouse',
-                data: {
-                  id: uuid,
-                  x: formatted.data.x,
-                  y: formatted.data.y
-                }
-              }));
+              // make sure open
+              if (dataChannels[i].isOpen()) {
+                console.log('sending message to data channel');
+                dataChannels[i].sendMessage(JSON.stringify({
+                  type: 'player mouse',
+                  data: {
+                    id: uuid,
+                    x: formatted.data.x,
+                    y: formatted.data.y
+                  }
+                }));
+              }
+              // if closed remove it
+              else {
+                console.log('removing closed data channel');
+                dataChannels.splice(i, 1);
+              }
             }
+          }
+
+          if (playerSprings[uuid] !== undefined) {
+            var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
+            // cast to b2MouseJoint
+            box2D.castObject(playerSprings[uuid], box2D.b2MouseJoint).SetTarget(pos);
+            console.log('set target to ' + formatted.data.x + ', ' + formatted.data.y);
           }
           // 👍 we did it, yay, we're so cool
         }
         else if (formatted.type == 'player mouse down') {
           // create a box at the mouse position (formatted.data.x, formatted.data.y)
-          const bd = new box2D.b2BodyDef();
+          /*const bd = new box2D.b2BodyDef();
           bd.set_type(box2D.b2_dynamicBody);
           var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
           bd.set_position(pos);
           const body = world.CreateBody(bd);
-          body.CreateFixture(square, 1);
+          body.CreateFixture(square, 1);*/
+
+          // create a spring at the mouse position (formatted.data.x, formatted.data.y)
+          //var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
+          var sd = new box2D.b2MouseJointDef();
+          // since its local anchors, we have to convert the world position to local position
+          // lets find what body is under the mouse
+          var aabb = new box2D.b2AABB();
+          aabb.set_lowerBound(new box2D.b2Vec2(formatted.data.x - 0.001, formatted.data.y - 0.001));
+          aabb.set_upperBound(new box2D.b2Vec2(formatted.data.x + 0.001, formatted.data.y + 0.001));
+          world.QueryAABB(function (fixture) {
+            // we found a body under the mouse
+            // lets make a spring to it
+            var body = fixture.GetBody();
+            sd.set_bodyA(body);
+            sd.set_bodyB(body);
+            sd.set_target(new box2D.b2Vec2(formatted.data.x, formatted.data.y));
+            sd.set_maxForce(1000 * body.GetMass());
+            playerSprings[uuid] = world.CreateJoint(sd);
+            console.log('created spring');
+            return false;
+          }, aabb);
+
+
+
           // we did it, yay, we're so cool 👍
+        }
+        else if (formatted.type == 'player mouse up') {
+          // destroy the spring
+          if (playerSprings[uuid]) {
+            world.DestroyJoint(playerSprings[uuid]);
+            delete playerSprings[uuid];
+            console.log('destroyed spring');
+          }
         }
         else if (formatted.type == 'player start') {
           // if data is 'f', spawn water at the mouse position (we are on liquidfun branch of box2d-wasm)
