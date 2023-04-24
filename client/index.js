@@ -78,19 +78,7 @@ ws.on('message', (event) => {
             //console.log(`Received data from server: ${event.data}`);
             try {
                 var formatted = JSON.parse(event.data);
-                if (formatted.type !== null && formatted.type !== undefined && formatted.data !== null && formatted.data !== undefined) {
-                    if (formatted.type == 'world update') {
-                        entities = formatted.data.shapes;
-                        //console.log(entities);
-                    }
-                    if (formatted.type == 'player mouse') {
-                        // its a mouse pos update. set players[formatted.data.id] to formatted.data.x and formatted.data.y
-                        players[formatted.data.id] = {
-                            x: formatted.data.x,
-                            y: formatted.data.y
-                        };
-                    }
-                }
+                handleData(formatted);
             }
             catch (e) {
                 console.log(e);
@@ -112,6 +100,22 @@ ws.on('message', (event) => {
         }
     };
 });
+
+function handleData(body) {
+    if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
+        if (body.type == 'world update') {
+            entities = body.data.shapes;
+            //console.log(entities);
+        }
+        if (body.type == 'player mouse') {
+            // its a mouse pos update. set players[formatted.data.id] to formatted.data.x and formatted.data.y
+            players[body.data.id] = {
+                x: body.data.x,
+                y: body.data.y
+            };
+        }
+    }
+}
 
 // load all svg data-src images
 var svgs = document.querySelectorAll('svg[data-src]');

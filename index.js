@@ -1,7 +1,11 @@
-import express from "express";
-import { WebSocketServer } from 'ws';
-import nodeDataChannel from 'node-datachannel';
+// Simulo Server
+// Node.js backend for Simulo with server-side physics, WebRTC signaling, etc.
 
+import express from "express";
+import { WebSocketServer } from 'ws'; // TODO: move back to ws from socket.io
+import nodeDataChannel from 'node-datachannel'; // for WebRTC data channels
+
+// This is ESM, let's get back __dirname and __filename
 import * as url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
@@ -17,12 +21,12 @@ server.on('request', app);
 
 //const wss = new WebSocketServer({ server });
 // socket.io on the http
-import { Server } from 'socket.io';
+import { Server } from 'socket.io'; // we use socket.io since websocket without SSL doesnt usually work. this could be replaced with ws and add SSL cert creation (Let's Encrypt?)
 const io = new Server(server);
 
 var dataChannels = [];
 
-const gravity = new box2D.b2Vec2(0, 10);
+const gravity = new box2D.b2Vec2(0, 9.81);
 const world = new box2D.b2World(gravity);
 
 const bd_ground = new box2D.b2BodyDef();
@@ -74,14 +78,14 @@ var ei = 0;
 wss.on('connection', (ws) => {
   */
 io.on('connection', (ws) => {
-  let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'] });
+  let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'] }); // TODO: self-host ICE
   let dc1 = null;
 
   console.log('------\nweb socket connected through socket.io!\n------');
   // tell them they're connected
   ws.send(JSON.stringify({
     type: 'connected', data: {
-      message: 'connected to server, good job'
+      message: 'connected to server, good job. now all thats left is ICE stuff just like you practiced, client'
     }
   }));
 
