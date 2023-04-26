@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/Urbanist-SemiBold.woff2') format('woff2');
+}
+
 * {
   box-sizing: border-box;
 }
@@ -17,6 +24,31 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+:root {
+  /* 0f1130 to 553f90, top to bottom */
+  background: linear-gradient(180deg, #0f1130 0%, #553f90 180%);
+  animation: bg 30s ease-in-out infinite;
+  background-size: 100% 100%;
+}
+
+@keyframes bg {
+
+  /* stretch the background to the bottom */
+  0% {
+    background-size: 100% 100%;
+  }
+
+  /* stretch the background to the top */
+  50% {
+    background-size: 100% 200%;
+  }
+
+  /* stretch the background to the bottom */
+  100% {
+    background-size: 100% 100%;
+  }
 }
 
 .toolbar {

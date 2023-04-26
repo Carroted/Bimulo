@@ -32,12 +32,14 @@ const world = new box2D.b2World(gravity);
 const bd_ground = new box2D.b2BodyDef();
 const ground = world.CreateBody(bd_ground);
 
+/*
 // ramp which boxes fall onto initially
 {
   const shape = new box2D.b2EdgeShape();
   shape.SetTwoSided(new box2D.b2Vec2(3, 4), new box2D.b2Vec2(6, 7));
   ground.CreateFixture(shape, 0);
 }
+*/
 // floor which boxes rest on
 {
   const shape = new box2D.b2EdgeShape();
@@ -53,6 +55,27 @@ circle.set_m_radius(sideLengthMetres / 2);
 
 const ZERO = new box2D.b2Vec2(0, 0);
 const temp = new box2D.b2Vec2(0, 0);
+
+//var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'white', 'black'];
+
+// input: h in [0,360] and s,v in [0,1] - output: r,g,b in [0,1]
+function hsv2rgb(h, s, v) {
+  let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
+  return [f(5), f(3), f(1)];
+}
+
+function randomRange(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function getRandomColor(hueMin, hueMax, satMin, satMax, valMin, valMax, alpMin, alpMax) {
+  var hue = randomRange(hueMin, hueMax);
+  var sat = randomRange(satMin, satMax);
+  var val = randomRange(valMin, valMax);
+  var alp = randomRange(alpMin, alpMax);
+  var rgb = hsv2rgb(hue, sat / 100, val / 100);
+  return 'rgba(' + (rgb[0] * 255) + ', ' + (rgb[1] * 255) + ', ' + (rgb[2] * 255) + ', ' + (alp) + ')';
+}
 
 const initPosition = (body, index) => {
   temp.Set(4 + sideLengthMetres * (Math.random() - 0.5), -sideLengthMetres * index);
@@ -70,10 +93,14 @@ for (let i = 0; i < boxCount; i++) {
   bd.set_position(ZERO);
   const body = world.CreateBody(bd);
   body.CreateFixture(i % 2 ? square : circle, 1);
+  var userData = body.GetUserData();
+  userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
   initPosition(body, i);
 }
 
 var ei = 0;
+
+var creatingObjects = {};
 /*
 wss.on('connection', (ws) => {
   */
@@ -115,10 +142,7 @@ io.on('connection', (ws) => {
   });
 
   // make a uuid with a bunch of math.randoms
-  var uuid = '';
-  for (var i = 0; i < 10; i++) {
-    uuid += Math.floor(Math.random() * 10);
-  }
+  var uuid = ws.id;
 
   // gonna use proper uuids later, im just too lazy to npm i it yk
 
@@ -134,7 +158,7 @@ io.on('connection', (ws) => {
         if (formatted.type == 'player mouse') {
           // tell the other people the cool news
           for (var i = 0; i < dataChannels.length; i++) {
-            if (dataChannels[i] !== dc1) {
+            if (dataChannels[i] != dc1) {
               dataChannels[i].sendMessage(JSON.stringify({
                 type: 'player mouse',
                 data: {
@@ -149,13 +173,86 @@ io.on('connection', (ws) => {
         }
         else if (formatted.type == 'player mouse down') {
           // create a box at the mouse position (formatted.data.x, formatted.data.y)
-          const bd = new box2D.b2BodyDef();
+          /*const bd = new box2D.b2BodyDef();
           bd.set_type(box2D.b2_dynamicBody);
           var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
           bd.set_position(pos);
           const body = world.CreateBody(bd);
           body.CreateFixture(square, 1);
+          body.GetUserData().color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);*/
+          var shapes = ['square', 'rectangle', 'circle'];
+          creatingObjects[uuid] = {
+            x: formatted.data.x,
+            y: formatted.data.y,
+            color: getRandomColor(0, 360, 0, 100, 80, 100, 1, 1),
+            shape: shapes[Math.floor(Math.random() * shapes.length)]
+          };
           // we did it, yay, we're so cool 👍
+        }
+        else if (formatted.type == 'player mouse up') {
+          // Check if there's a creatingObject for this uuid
+          if (creatingObjects[uuid]) {
+            if (creatingObjects[uuid].shape == 'rectangle') {
+              // Calculate the size of the new rectangle
+              const width = Math.abs(formatted.data.x - creatingObjects[uuid].x);
+              const height = Math.abs(formatted.data.y - creatingObjects[uuid].y);
+
+              // Create the rectangle
+              const bd = new box2D.b2BodyDef();
+              bd.set_type(box2D.b2_dynamicBody);
+              var pos = new box2D.b2Vec2((formatted.data.x + creatingObjects[uuid].x) / 2, (formatted.data.y + creatingObjects[uuid].y) / 2);
+              bd.set_position(pos);
+              const body = world.CreateBody(bd);
+
+              const shape = new box2D.b2PolygonShape();
+              shape.SetAsBox(width / 2, height / 2);
+              body.CreateFixture(shape, 1);
+              body.GetUserData().color = creatingObjects[uuid].color;
+
+              // Remove the creatingObject for this uuid
+              delete creatingObjects[uuid];
+            }
+            else if (creatingObjects[uuid].shape == 'square') {
+              // Calculate the size of the new square
+              const size = Math.max(Math.abs(formatted.data.x - creatingObjects[uuid].x), Math.abs(formatted.data.y - creatingObjects[uuid].y));
+
+              // Create the square
+              const bd = new box2D.b2BodyDef();
+              bd.set_type(box2D.b2_dynamicBody);
+              var pos = new box2D.b2Vec2((formatted.data.x + creatingObjects[uuid].x) / 2, (formatted.data.y + creatingObjects[uuid].y) / 2);
+              bd.set_position(pos);
+              const body = world.CreateBody(bd);
+
+              const shape = new box2D.b2PolygonShape();
+              shape.SetAsBox(size / 2, size / 2);
+              body.CreateFixture(shape, 1);
+              body.GetUserData().color = creatingObjects[uuid].color;
+
+              // Remove the creatingObject for this uuid
+              delete creatingObjects[uuid];
+            }
+            else if (creatingObjects[uuid].shape == 'circle') {
+              // Calculate the radius of the new circle
+              const dx = formatted.data.x - creatingObjects[uuid].x;
+              const dy = formatted.data.y - creatingObjects[uuid].y;
+              const radius = Math.sqrt(dx * dx + dy * dy);
+
+              // Create the circle
+              const bd = new box2D.b2BodyDef();
+              bd.set_type(box2D.b2_dynamicBody);
+              var pos = new box2D.b2Vec2(creatingObjects[uuid].x, creatingObjects[uuid].y);
+              bd.set_position(pos);
+              const body = world.CreateBody(bd);
+
+              const shape = new box2D.b2CircleShape();
+              shape.set_m_radius(radius);
+              body.CreateFixture(shape, 1);
+              body.GetUserData().color = creatingObjects[uuid].color;
+
+              // Remove the creatingObject for this uuid
+              delete creatingObjects[uuid];
+            }
+          }
         }
       }
     } catch (e) {
@@ -253,6 +350,8 @@ function loop(delta) {
   while (box2D.getPointer(node)) {
     var b = node;
     node = node.GetNext();
+    var color = b.GetUserData().color;
+
     var position = b.GetPosition();
     //console.log("position: " + position.x + ", " + position.y);
     b.GetType()
@@ -279,7 +378,8 @@ function loop(delta) {
         y: position.y,
         type: 'circle',
         radius: circleShape.get_m_radius(),
-        angle: b.GetAngle()
+        angle: b.GetAngle(),
+        color: color
       });
     } else if (shapeType == box2D.b2Shape.e_polygon) {
       const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
@@ -299,7 +399,8 @@ function loop(delta) {
         y: position.y,
         type: 'polygon',
         vertices: verts,
-        angle: b.GetAngle()
+        angle: b.GetAngle(),
+        color: color
       });
     }
     else if (shapeType == box2D.b2Shape.e_edge) {
@@ -321,7 +422,8 @@ function loop(delta) {
         y: position.y,
         type: 'edge',
         vertices: vertices,
-        angle: b.GetAngle()
+        angle: b.GetAngle(),
+        color: color
       });
     }
     else {
@@ -338,7 +440,8 @@ function loop(delta) {
       dc.sendMessage(JSON.stringify({
         type: 'world update',
         data: {
-          shapes: shapes
+          shapes: shapes,
+          creatingObjects: creatingObjects
         }
       }));
     }

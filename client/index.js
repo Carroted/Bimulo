@@ -1,114 +1,49 @@
-/*// get domain
-// check if http
-var secure = false;
-if (window.location.protocol == 'https:') {
-    secure = true;
-}
-var ws;
-if (secure) {
-    console.log(`connectin to wss://${window.location.host}`);
-    ws = new WebSocket(`wss://${window.location.host}`);
-} else {
-    console.log(`connectin to ws://${window.location.host}`);
-    ws = new WebSocket(`ws://${window.location.host}`);
-}*/
-
-var activeDc = null;
-var entities = [];
-var players = {};
-
-const ws = io();
-/*
-ws.onopen = () => {*/
-ws.on('connect', () => {
-    console.log('WebSocket connection established');
-    ws.send('i exist, notice me');
-});
-
-var localCandidates = [];
-/*
-    ws.onmessage = (event) => {*/
-ws.on('message', (event) => {
-    console.log('Received message from server:', event);
-    const msg = JSON.parse(event);
-    // rtcpeerconnection to the same domain
-    const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-        // set remote description
-
+var host = false;
+// get query string for host (?host=true, ?host=false or none for false)
+var queryString = window.location.search;
+if (queryString) {
+    queryString = queryString.substring(1);
+    var queryArray = queryString.split('&');
+    queryArray.forEach(function (query) {
+        var queryPair = query.split('=');
+        if (queryPair[0] == 'host') {
+            if (queryPair[1] == 'true') {
+                host = true;
+            } else if (queryPair[1] == 'false') {
+                host = false;
+            }
+        }
     });
+}
 
-    if (msg.sdp) {
-        console.log('using sdp');
-        pc.setRemoteDescription(new RTCSessionDescription(msg))
-            .then(() => {
-                if (msg.type === 'offer') {
-                    pc.createAnswer().then((answer) => {
-                        pc.setLocalDescription(answer)
-                            .then(() => {
-                                ws.send(JSON.stringify(answer));
-                            });
-                    });
-                }
-            });
-    } else if (msg.candidate) {
-        console.log('using candidate');
-        try {
-            pc.addIceCandidate(new RTCIceCandidate({
-                sdpMid: msg.mid, candidate: msg.candidate,
-                // description
-            })).catch((e) => {
-                console.log(e);
-                console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
-            });
-            console.log('added ice candidate');
-        }
-        catch (e) {
-            console.log(e);
-            console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
-        }
-    }
+var clientConnection = new SimuloClientConnection(host); // If true, our client is a host that loops data back to itself.
+// Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-    pc.ondatachannel = (event) => {
-        const dc = event.channel;
-        console.log('data channel established!!! omg! yay!\n\n\n------\n\ntell asour the data channel is established\n\n------\n\n\n');
-
-        // Handle incoming data from server
-        dc.onmessage = (event) => {
-            //console.log(`Received data from server: ${event.data}`);
-            try {
-                var formatted = JSON.parse(event.data);
-                handleData(formatted);
-            }
-            catch (e) {
-                console.log(e);
-            }
-        };
-
-        // Send data to server
-        dc.onopen = () => {
-            dc.send('Hello, server!');
-            activeDc = dc;
-        };
-    };
-
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-        if (event.candidate) {
-            ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
-            localCandidates.push(event.candidate);
-        }
-    };
+clientConnection.on('connect', () => { // Connect fires when the WebSocket connects
+    console.log('WebSocket connection established');
 });
 
-function handleData(body) {
+clientConnection.on('ready', () => { // Ready fires when the WebRTC connection is established
+    console.log('WebRTC connection established');
+});
+
+clientConnection.on('data', (data) => { // Data fires when data is received from the server
+    handleData(data); // Parses and displays the data in the world
+});
+
+clientConnection.connect(); // Connects to the server
+
+var entities = []; // We update this every time we receive a world update from the server
+var creatingEntities = {};
+var players = {}; // We update this every time we receive a player mouse update from the server
+
+function handleData(body) { // World data from the host, sent to all clients and to the host itself (loopback)
     if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
         if (body.type == 'world update') {
             entities = body.data.shapes;
-            //console.log(entities);
+            creatingEntities = body.data.creatingObjects;
         }
         if (body.type == 'player mouse') {
-            // its a mouse pos update. set players[formatted.data.id] to formatted.data.x and formatted.data.y
             players[body.data.id] = {
                 x: body.data.x,
                 y: body.data.y
@@ -138,14 +73,6 @@ function drawVerts(verts) {
     ctx.fill();
     ctx.stroke();
 }
-/*
-function drawVertsAt(x, y, verts) {
-    ctx.beginPath();
-    verts.forEach(e => ctx.lineTo((e.x + x) * worldScale, (e.y + y) * worldScale));
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-}*/
 
 function rotateVerts(vertices, angle) {
     // rotate the vertices at the origin (0,0)
@@ -198,9 +125,9 @@ function drawCircleAt(x, y, radius, rotation = 0) {
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d'); // main layer
 
-var what = transformPoint(window.innerWidth, window.innerWidth);
+var windowEnd = transformPoint(window.innerWidth, window.innerWidth);
 
-let cameraOffset = { x: what.x / 2, y: 0 };
+let cameraOffset = { x: windowEnd.x / 2, y: windowEnd.y / 2 };
 let cameraZoom = 42;
 let MAX_ZOOM = 5;
 let MIN_ZOOM = 0.1;
@@ -243,14 +170,7 @@ var keysDown = {};
 
 var pointerDown = false;
 
-function emitData(type, data) {
-    if (activeDc) {
-        activeDc.send(JSON.stringify({
-            type: type,
-            data: data
-        }));
-    }
-}
+
 
 function onPointerDown(e) {
     var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
@@ -271,9 +191,7 @@ function onPointerDown(e) {
             y: mousePos.y,
             down: true
         };
-        if (activeDc) {
-            emitData("player mouse down", player);
-        }
+        clientConnection.emitData("player mouse down", player);
         pointerDown = true;
     }
 }
@@ -287,7 +205,7 @@ function onPointerUp(e) {
             y: mousePos.y,
             down: false
         };
-        emitData("player mouse up", player);
+        clientConnection.emitData("player mouse up", player);
     }
     isDragging = false;
     initialPinchDistance = null;
@@ -315,7 +233,7 @@ function onPointerMove(e) {
         y: mousePos.y,
         down: pointerDown
     };
-    emitData("player mouse", player);
+    clientConnection.emitData("player mouse", player);
 }
 
 var touchStartElement = null;
@@ -394,7 +312,7 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
         // mouse moved, lets send
         var mousePos = transformPoint(lastX, lastY);
-        emitData("player mouse", { x: mousePos.x, y: mousePos.y });
+        clientConnection.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
     }
 }
 
@@ -453,7 +371,7 @@ window.addEventListener('resize', function () {
 
 function setName(name) {
     player.name = name;
-    emitData('update player', player);
+    clientConnection.emitData('update player', player);
 }
 
 
@@ -491,15 +409,15 @@ document.addEventListener('keydown', function (e) {
     keysDown[e.keyCode] = true;
     movementUpdate();
     if (e.keyCode === 37) {
-        emitData("player start", "left");
+        clientConnection.emitData("player start", "left");
     } else if (e.keyCode === 39) {
-        emitData("player start", "right");
+        clientConnection.emitData("player start", "right");
     }
 
 }, false);
 
 function movementUpdate() {
-    emitData('movementUpdate', {
+    clientConnection.emitData('movementUpdate', {
         // send position as it is now for reference
         x: player.x,
         y: player.y
@@ -510,9 +428,9 @@ document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
 
     if (e.keyCode === 37) {
-        emitData("player stop", "left");
+        clientConnection.emitData("player stop", "left");
     } else if (e.keyCode === 39) {
-        emitData("player stop", "right");
+        clientConnection.emitData("player stop", "right");
     }
 }, false);
 /*
@@ -608,12 +526,12 @@ function draw() {
     // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
     ctx.setTransform(cameraZoom, 0, 0, cameraZoom, cameraOffset.x, cameraOffset.y);
 
-    ctx.fillStyle = '#151832';
+    //ctx.fillStyle = '#151832';
     var origin = transformPoint(0, 0);
     var end = transformPoint(window.innerWidth, window.innerHeight);
     var width = end.x - origin.x;
     var height = end.y - origin.y;
-    ctx.fillRect(origin.x, origin.y, width, height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // draw map
     //ctx.drawImage(canvasMap, 0, 0);
@@ -624,12 +542,13 @@ function draw() {
     var cursor = getImage('/cursor.png');
 
     // fill
-    ctx.fillStyle = '#9ac4f1';
+    ctx.fillStyle = '#a1acfa';
     // no border
     ctx.strokeStyle = 'transparent';
     // the entities are verts
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
+        ctx.fillStyle = entity.color;
         if (entity.type === 'polygon') {
             //console.log('drawing polygon');
             drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
@@ -654,11 +573,49 @@ function draw() {
         //drawRect(player.x, player.y, 4, 4);
         // draw image getImage('/cursor.png')
         ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
+
+        if (creatingEntities[id]) {
+            // Calculate the difference between creatingEntities[id] x and y and the current player x and y
+            const width = Math.abs(player.x - creatingEntities[id].x);
+            const height = Math.abs(player.y - creatingEntities[id].y);
+
+            // Determine the top-left corner of the rectangle
+            const topLeftX = Math.min(player.x, creatingEntities[id].x);
+            const topLeftY = Math.min(player.y, creatingEntities[id].y);
+
+            // Set the fill style to transparent white
+            ctx.fillStyle = creatingEntities[id].color;
+
+            // Draw the rectangle
+            ctx.fillRect(topLeftX, topLeftY, width, height);
+        }
+        else {
+            console.log('no color');
+        }
     }
 
     ctx.fillStyle = 'red';
 
     ctx.drawImage(cursor, mousePos.x, mousePos.y, 0.7, cursor.height * (0.7 / cursor.width));
+    if (clientConnection.id) {
+        if (creatingEntities[clientConnection.id]) {
+            // Calculate the difference between creatingEntities[id] x and y and the current player x and y
+            const width = Math.abs(mousePos.x - creatingEntities[clientConnection.id].x);
+            const height = Math.abs(mousePos.y - creatingEntities[clientConnection.id].y);
+
+            // Determine the top-left corner of the rectangle
+            const topLeftX = Math.min(mousePos.x, creatingEntities[clientConnection.id].x);
+            const topLeftY = Math.min(mousePos.y, creatingEntities[clientConnection.id].y);
+
+            // Set the fill style to transparent white
+            ctx.fillStyle = creatingEntities[clientConnection.id].color;
+
+            // Draw the rectangle
+            ctx.fillRect(topLeftX, topLeftY, width, height);
+        }
+    }
+
+
     // draw text that says mouse pos in world space
     ctx.fillStyle = 'white';
     ctx.font = '0.2px Arial';
