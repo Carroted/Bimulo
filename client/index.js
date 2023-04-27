@@ -1,21 +1,3 @@
-var host = false;
-// get query string for host (?host=true, ?host=false or none for false)
-var queryString = window.location.search;
-if (queryString) {
-    queryString = queryString.substring(1);
-    var queryArray = queryString.split('&');
-    queryArray.forEach(function (query) {
-        var queryPair = query.split('=');
-        if (queryPair[0] == 'host') {
-            if (queryPair[1] == 'true') {
-                host = true;
-            } else if (queryPair[1] == 'false') {
-                host = false;
-            }
-        }
-    });
-}
-
 var clientConnection = new SimuloClientConnection(host); // If true, our client is a host that loops data back to itself.
 // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
@@ -95,8 +77,18 @@ function drawVertsAt(x, y, verts, rotation = 0) {
         ctx.lineTo((e.x + x), (e.y + y));
     });
     ctx.closePath();
+    ctx.strokeStyle = '#000000a0';
+    ctx.lineWidth = 0.02;
+    ctx.save();
+    ctx.clip();
+    ctx.lineWidth *= 2;
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
+    /*
+        ctx.fill();
+        ctx.stroke();
+        */
 }
 function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
@@ -108,7 +100,7 @@ function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     // set stroke color
     ctx.strokeStyle = '#9ac4f1';
     // set line width
-    ctx.lineWidth = 0.1;
+    ctx.lineWidth = 0.01;
     ctx.stroke();
     // reset to transparent
     ctx.strokeStyle = 'transparent';

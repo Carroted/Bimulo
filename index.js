@@ -101,6 +101,7 @@ for (let i = 0; i < boxCount; i++) {
 var ei = 0;
 
 var creatingObjects = {};
+var springs = [];
 /*
 wss.on('connection', (ws) => {
   */
@@ -169,17 +170,14 @@ io.on('connection', (ws) => {
               }));
             }
           }
+
+          springs.forEach(spring => {
+            spring.set_target(new box2D.b2Vec2(formatted.data.x, formatted.data.y));
+          });
           // 👍 we did it, yay, we're so cool
         }
         else if (formatted.type == 'player mouse down') {
-          // create a box at the mouse position (formatted.data.x, formatted.data.y)
-          /*const bd = new box2D.b2BodyDef();
-          bd.set_type(box2D.b2_dynamicBody);
-          var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
-          bd.set_position(pos);
-          const body = world.CreateBody(bd);
-          body.CreateFixture(square, 1);
-          body.GetUserData().color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);*/
+
           var shapes = ['rectangle'];
           creatingObjects[uuid] = {
             x: formatted.data.x,
@@ -187,6 +185,32 @@ io.on('connection', (ws) => {
             color: getRandomColor(0, 360, 0, 100, 80, 100, 1, 1),
             shape: shapes[Math.floor(Math.random() * shapes.length)]
           };
+
+          // instead, start a spring
+          /*var bd = new box2D.b2BodyDef();
+          bd.set_type(box2D.b2_dynamicBody);
+          var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
+          bd.set_position(pos);
+          const body = world.CreateBody(bd);
+          body.CreateFixture(square, 1);
+          var userData = body.GetUserData();
+          userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
+
+          // create a spring
+          var md = new box2D.b2MouseJointDef();
+          md.set_bodyA(mouseJointGroundBody);
+          md.set_bodyB(body);
+          md.set_target(pos);
+          md.set_maxForce(1000 * body.GetMass());
+          md.set_collideConnected(true);
+
+          mouseJoint = box2D.castObject(world.CreateJoint(md), box2D.b2MouseJoint);
+          body.SetAwake(true);
+
+          springs.push(mouseJoint);*/
+
+          // 👍 we did it, yay, we're so cool
+
           // we did it, yay, we're so cool 👍
         }
         else if (formatted.type == 'player mouse up') {

@@ -1,3 +1,21 @@
+var host = false;
+// get query string for host (?host=true, ?host=false or none for false)
+var queryString = window.location.search;
+if (queryString) {
+    queryString = queryString.substring(1);
+    var queryArray = queryString.split('&');
+    queryArray.forEach(function (query) {
+        var queryPair = query.split('=');
+        if (queryPair[0] == 'host') {
+            if (queryPair[1] == 'true') {
+                host = true;
+            } else if (queryPair[1] == 'false') {
+                host = false;
+            }
+        }
+    });
+}
+
 // SimuloClientConnection class only has empty connect method and constructor, but the JSDoc is there for reference
 class SimuloClientConnection {
     constructor() {
