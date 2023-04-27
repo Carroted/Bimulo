@@ -148,13 +148,13 @@ io.on('connection', (ws) => {
 
   dc1 = peer1.createDataChannel('main');
   dc1.onMessage((msg) => {
-    console.log('Peer1 Received Msg dc1:', msg);
+    //console.log('Peer1 Received Msg dc1:', msg);
     try {
       var formatted = JSON.parse(msg);
       // it should have a type and data. if not, it's not a valid message
       if (formatted.type !== undefined && formatted.data !== undefined && formatted.type !== null && formatted.data !== null) {
         // handle it
-        console.log('    Type: "' + formatted.type + '"');
+        //console.log('    Type: "' + formatted.type + '"');
         if (formatted.type == 'player mouse') {
           // tell the other people the cool news
           for (var i = 0; i < dataChannels.length; i++) {
@@ -180,7 +180,7 @@ io.on('connection', (ws) => {
           const body = world.CreateBody(bd);
           body.CreateFixture(square, 1);
           body.GetUserData().color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);*/
-          var shapes = ['square', 'rectangle', 'circle'];
+          var shapes = ['rectangle'];
           creatingObjects[uuid] = {
             x: formatted.data.x,
             y: formatted.data.y,

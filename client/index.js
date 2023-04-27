@@ -584,7 +584,14 @@ function draw() {
             const topLeftY = Math.min(player.y, creatingEntities[id].y);
 
             // Set the fill style to transparent white
-            ctx.fillStyle = creatingEntities[id].color;
+            //ctx.fillStyle = creatingEntities[id].color;
+            // we have "rgba(R, G, B, A)". lets change A to be half of what it is
+            var splitColor = creatingEntities[id].color.split(',');
+            var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+            alpha = alpha / 2;
+            splitColor[3] = alpha + ')';
+            var newColor = splitColor.join(',');
+            ctx.fillStyle = newColor;
 
             // Draw the rectangle
             ctx.fillRect(topLeftX, topLeftY, width, height);
@@ -608,9 +615,19 @@ function draw() {
             const topLeftY = Math.min(mousePos.y, creatingEntities[clientConnection.id].y);
 
             // Set the fill style to transparent white
-            ctx.fillStyle = creatingEntities[clientConnection.id].color;
+            //ctx.fillStyle = creatingEntities[clientConnection.id].color;
+            // empty fill
+            var splitColor = creatingEntities[clientConnection.id].color.split(',');
+            console.log('splitColor: ' + splitColor);
+            var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+            alpha = alpha / 2;
+            splitColor[3] = alpha + ')';
+            var newColor = splitColor.join(',');
+            console.log('newColor: ' + newColor);
+            ctx.fillStyle = newColor;
 
             // Draw the rectangle
+            //ctx.fillRect(topLeftX, topLeftY, width, height);
             ctx.fillRect(topLeftX, topLeftY, width, height);
         }
     }
