@@ -5,6 +5,9 @@ import express from "express";
 import { WebSocketServer } from 'ws'; // TODO: move back to ws from socket.io
 import nodeDataChannel from 'node-datachannel'; // for WebRTC data channels
 
+// from ./shared/utils.js
+import { getRandomColor, randomRange, hsvToRgb } from "./shared/utils.js";
+
 // This is ESM, let's get back __dirname and __filename
 import * as url from 'url';
 const __filename = url.fileURLToPath(import.meta.url);
@@ -12,6 +15,57 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 import Box2DFactory from "box2d-wasm";
 const box2D = await Box2DFactory();
+
+var themes = {
+  "default": {
+    "background": "linear-gradient(180deg, #0f1130 0%, #553f90 180%)",
+    "ground": {
+      "color": "#a1acfa",
+      "border": null,
+      "border_width": null
+    },
+    "new_objects": {
+      "color": {
+        "hue_min": 0,
+        "hue_max": 360,
+        "sat_min": 0,
+        "sat_max": 100,
+        "val_min": 80,
+        "val_max": 100,
+        "alp_min": 1,
+        "alp_max": 1
+      },
+      "border": null,
+      "border_width": null,
+      "circle_cake": true
+    }
+  },
+  "nostalgia": {
+    "background": "#738cff",
+    "ground": {
+      "color": "#57b00d",
+      "border": "#1111110a",
+      "border_width": 0.2
+    },
+    "new_objects": {
+      "color": {
+        "hue_min": 0,
+        "hue_max": 360,
+        "sat_min": 0,
+        "sat_max": 100,
+        "val_min": 0,
+        "val_max": 100,
+        "alp_min": 1,
+        "alp_max": 1
+      },
+      "border": "#1111110a",
+      "border_width": 0.2,
+      "circle_cake": false
+    }
+  }
+};
+
+var theme = 'default';
 
 const app = express();
 // make http server (esm import)
@@ -33,50 +87,37 @@ const bd_ground = new box2D.b2BodyDef();
 const ground = world.CreateBody(bd_ground);
 
 /*
-// ramp which boxes fall onto initially
-{
-  const shape = new box2D.b2EdgeShape();
-  shape.SetTwoSided(new box2D.b2Vec2(3, 4), new box2D.b2Vec2(6, 7));
-  ground.CreateFixture(shape, 0);
-}
-*/
 // floor which boxes rest on
 {
   const shape = new box2D.b2EdgeShape();
   shape.SetTwoSided(new box2D.b2Vec2(3, 18), new box2D.b2Vec2(22, 18));
   ground.CreateFixture(shape, 0);
 }
-
+*/
 const sideLengthMetres = 1;
 const square = new box2D.b2PolygonShape();
 square.SetAsBox(sideLengthMetres / 2, sideLengthMetres / 2);
 const circle = new box2D.b2CircleShape();
 circle.set_m_radius(sideLengthMetres / 2);
 
+// huge floor under ground of 500 units high, and 10000 units wide
+const bd_floor = new box2D.b2BodyDef();
+bd_floor.set_type(box2D.b2_staticBody);
+bd_floor.set_position(new box2D.b2Vec2(0, 25030));
+const floor = world.CreateBody(bd_floor);
+const floorShape = new box2D.b2PolygonShape();
+floorShape.SetAsBox(50000, 25000);
+floor.CreateFixture(floorShape, 0);
+floor.GetUserData().color = themes[theme].ground.color;
+floor.GetUserData().border = themes[theme].ground.border;
+floor.GetUserData().border_width = themes[theme].ground.border_width;
+
+
 const ZERO = new box2D.b2Vec2(0, 0);
 const temp = new box2D.b2Vec2(0, 0);
 
-//var colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'white', 'black'];
 
-// input: h in [0,360] and s,v in [0,1] - output: r,g,b in [0,1]
-function hsv2rgb(h, s, v) {
-  let f = (n, k = (n + h / 60) % 6) => v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
-  return [f(5), f(3), f(1)];
-}
-
-function randomRange(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function getRandomColor(hueMin, hueMax, satMin, satMax, valMin, valMax, alpMin, alpMax) {
-  var hue = randomRange(hueMin, hueMax);
-  var sat = randomRange(satMin, satMax);
-  var val = randomRange(valMin, valMax);
-  var alp = randomRange(alpMin, alpMax);
-  var rgb = hsv2rgb(hue, sat / 100, val / 100);
-  return 'rgba(' + (rgb[0] * 255) + ', ' + (rgb[1] * 255) + ', ' + (rgb[2] * 255) + ', ' + (alp) + ')';
-}
-
+/*
 const initPosition = (body, index) => {
   temp.Set(4 + sideLengthMetres * (Math.random() - 0.5), -sideLengthMetres * index);
   body.SetTransform(temp, 0);
@@ -84,7 +125,7 @@ const initPosition = (body, index) => {
   body.SetAwake(1);
   body.SetEnabled(1);
 }
-
+ 
 // make falling boxes
 const boxCount = 10;
 for (let i = 0; i < boxCount; i++) {
@@ -94,9 +135,10 @@ for (let i = 0; i < boxCount; i++) {
   const body = world.CreateBody(bd);
   body.CreateFixture(i % 2 ? square : circle, 1);
   var userData = body.GetUserData();
-  userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
+  userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1, true);
   initPosition(body, i);
 }
+*/
 
 var ei = 0;
 
@@ -182,7 +224,7 @@ io.on('connection', (ws) => {
           creatingObjects[uuid] = {
             x: formatted.data.x,
             y: formatted.data.y,
-            color: getRandomColor(0, 360, 0, 100, 80, 100, 1, 1),
+            color: getRandomColor(themes[theme].new_objects.color.hue_min, themes[theme].new_objects.color.hue_max, themes[theme].new_objects.color.sat_min, themes[theme].new_objects.color.sat_max, themes[theme].new_objects.color.light_min, themes[theme].new_objects.color.light_max, themes[theme].new_objects.color.alpha_min, themes[theme].new_objects.color.alpha_max, true),
             shape: shapes[Math.floor(Math.random() * shapes.length)]
           };
 
@@ -195,7 +237,7 @@ io.on('connection', (ws) => {
           body.CreateFixture(square, 1);
           var userData = body.GetUserData();
           userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
-
+ 
           // create a spring
           var md = new box2D.b2MouseJointDef();
           md.set_bodyA(mouseJointGroundBody);
@@ -203,10 +245,10 @@ io.on('connection', (ws) => {
           md.set_target(pos);
           md.set_maxForce(1000 * body.GetMass());
           md.set_collideConnected(true);
-
+ 
           mouseJoint = box2D.castObject(world.CreateJoint(md), box2D.b2MouseJoint);
           body.SetAwake(true);
-
+ 
           springs.push(mouseJoint);*/
 
           // 👍 we did it, yay, we're so cool
@@ -232,6 +274,8 @@ io.on('connection', (ws) => {
               shape.SetAsBox(width / 2, height / 2);
               body.CreateFixture(shape, 1);
               body.GetUserData().color = creatingObjects[uuid].color;
+              body.GetUserData().border = themes[theme].new_objects.border;
+              body.GetUserData().border_width = themes[theme].new_objects.border_width;
 
               // Remove the creatingObject for this uuid
               delete creatingObjects[uuid];
@@ -307,7 +351,7 @@ io.on('connection', (ws) => {
     var b = node;
     node = node.GetNext();
     var position = b.GetPosition();
-
+ 
     // Draw the dynamic objects
     if (b.GetType() == b2_dynamicBody) {
       // Canvas Y coordinates start at opposite location, so we flip

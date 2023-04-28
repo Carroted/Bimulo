@@ -78,7 +78,7 @@ function drawVertsAt(x, y, verts, rotation = 0) {
     });
     ctx.closePath();
     ctx.strokeStyle = '#000000a0';
-    ctx.lineWidth = 0.02;
+    ctx.lineWidth = 2 / cameraZoom;
     ctx.save();
     ctx.clip();
     ctx.lineWidth *= 2;
