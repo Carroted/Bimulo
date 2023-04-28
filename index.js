@@ -22,7 +22,8 @@ var themes = {
     "ground": {
       "color": "#a1acfa",
       "border": null,
-      "border_width": null
+      "border_width": null,
+      "border_scale_with_zoom": false
     },
     "new_objects": {
       "color": {
@@ -37,6 +38,7 @@ var themes = {
       },
       "border": null,
       "border_width": null,
+      "border_scale_with_zoom": false,
       "circle_cake": true
     }
   },
@@ -44,8 +46,9 @@ var themes = {
     "background": "#738cff",
     "ground": {
       "color": "#57b00d",
-      "border": "#1111110a",
-      "border_width": 0.2
+      "border": "#111111a0",
+      "border_width": 1,
+      "border_scale_with_zoom": true
     },
     "new_objects": {
       "color": {
@@ -58,14 +61,15 @@ var themes = {
         "alp_min": 1,
         "alp_max": 1
       },
-      "border": "#1111110a",
-      "border_width": 0.2,
+      "border": "#111111a0",
+      "border_width": 1,
+      "border_scale_with_zoom": true,
       "circle_cake": false
     }
   }
 };
 
-var theme = 'default';
+var theme = themes['default'];
 
 const app = express();
 // make http server (esm import)
@@ -108,9 +112,10 @@ const floor = world.CreateBody(bd_floor);
 const floorShape = new box2D.b2PolygonShape();
 floorShape.SetAsBox(50000, 25000);
 floor.CreateFixture(floorShape, 0);
-floor.GetUserData().color = themes[theme].ground.color;
-floor.GetUserData().border = themes[theme].ground.border;
-floor.GetUserData().border_width = themes[theme].ground.border_width;
+floor.GetUserData().color = theme.ground.color;
+floor.GetUserData().border = theme.ground.border;
+floor.GetUserData().border_width = theme.ground.border_width;
+floor.GetUserData().border_scale_with_zoom = theme.ground.border_scale_with_zoom;
 
 
 const ZERO = new box2D.b2Vec2(0, 0);
@@ -144,10 +149,12 @@ var ei = 0;
 
 var creatingObjects = {};
 var springs = [];
+var tools = {};
 /*
 wss.on('connection', (ws) => {
   */
 io.on('connection', (ws) => {
+
   let peer1 = new nodeDataChannel.PeerConnection('Peer' + ei, { iceServers: ['stun:stun.l.google.com:19302'] }); // TODO: self-host ICE
   let dc1 = null;
 
@@ -186,6 +193,7 @@ io.on('connection', (ws) => {
 
   // make a uuid with a bunch of math.randoms
   var uuid = ws.id;
+  tools[uuid] = 'add_rectangle';
 
   // gonna use proper uuids later, im just too lazy to npm i it yk
 
@@ -219,14 +227,19 @@ io.on('connection', (ws) => {
           // 👍 we did it, yay, we're so cool
         }
         else if (formatted.type == 'player mouse down') {
+          if (tools[uuid] == 'add_rectangle') {
 
-          var shapes = ['rectangle'];
-          creatingObjects[uuid] = {
-            x: formatted.data.x,
-            y: formatted.data.y,
-            color: getRandomColor(themes[theme].new_objects.color.hue_min, themes[theme].new_objects.color.hue_max, themes[theme].new_objects.color.sat_min, themes[theme].new_objects.color.sat_max, themes[theme].new_objects.color.light_min, themes[theme].new_objects.color.light_max, themes[theme].new_objects.color.alpha_min, themes[theme].new_objects.color.alpha_max, true),
-            shape: shapes[Math.floor(Math.random() * shapes.length)]
-          };
+            var shapes = ['rectangle'];
+            creatingObjects[uuid] = {
+              x: formatted.data.x,
+              y: formatted.data.y,
+              color: getRandomColor(theme.new_objects.color.hue_min, theme.new_objects.color.hue_max, theme.new_objects.color.sat_min, theme.new_objects.color.sat_max, theme.new_objects.color.val_min, theme.new_objects.color.val_max, theme.new_objects.color.alp_min, theme.new_objects.color.alp_max, true),
+              shape: shapes[Math.floor(Math.random() * shapes.length)],
+              border: theme.new_objects.border,
+              border_width: theme.new_objects.border_width,
+              border_scale_with_zoom: theme.new_objects.border_scale_with_zoom,
+            };
+          }
 
           // instead, start a spring
           /*var bd = new box2D.b2BodyDef();
@@ -274,8 +287,9 @@ io.on('connection', (ws) => {
               shape.SetAsBox(width / 2, height / 2);
               body.CreateFixture(shape, 1);
               body.GetUserData().color = creatingObjects[uuid].color;
-              body.GetUserData().border = themes[theme].new_objects.border;
-              body.GetUserData().border_width = themes[theme].new_objects.border_width;
+              body.GetUserData().border = theme.new_objects.border;
+              body.GetUserData().border_width = theme.new_objects.border_width;
+              body.GetUserData().border_scale_with_zoom = theme.new_objects.border_scale_with_zoom;
 
               // Remove the creatingObject for this uuid
               delete creatingObjects[uuid];
@@ -295,6 +309,10 @@ io.on('connection', (ws) => {
               shape.SetAsBox(size / 2, size / 2);
               body.CreateFixture(shape, 1);
               body.GetUserData().color = creatingObjects[uuid].color;
+              body.GetUserData().border = theme.new_objects.border;
+              body.GetUserData().border_width = theme.new_objects.border_width;
+              body.GetUserData().border_scale_with_zoom = theme.new_objects.border_scale_with_zoom;
+
 
               // Remove the creatingObject for this uuid
               delete creatingObjects[uuid];
@@ -316,11 +334,17 @@ io.on('connection', (ws) => {
               shape.set_m_radius(radius);
               body.CreateFixture(shape, 1);
               body.GetUserData().color = creatingObjects[uuid].color;
+              body.GetUserData().border = theme.new_objects.border;
+              body.GetUserData().border_width = theme.new_objects.border_width;
+              body.GetUserData().border_scale_with_zoom = theme.new_objects.border_scale_with_zoom;
 
               // Remove the creatingObject for this uuid
               delete creatingObjects[uuid];
             }
           }
+        }
+        else if (formatted.type == 'set_theme') {
+          theme = themes[formatted.data];
         }
       }
     } catch (e) {
@@ -389,10 +413,12 @@ const velocityIterations = 3;
 const positionIterations = 2;
 
 app.use(express.static("client"));
-console.log('staticked the client folderation');
 
 // static serve node_modules/@tabler/icons/icons
 app.use("/icons", express.static(__dirname + "/node_modules/@tabler/icons/icons"));
+
+// static serve media
+app.use("/media", express.static(__dirname + "/media"));
 
 // put app on http server
 
@@ -447,7 +473,10 @@ function loop(delta) {
         type: 'circle',
         radius: circleShape.get_m_radius(),
         angle: b.GetAngle(),
-        color: color
+        color: color,
+        border: b.GetUserData().border,
+        border_width: b.GetUserData().border_width,
+        border_scale_with_zoom: b.GetUserData().border_scale_with_zoom
       });
     } else if (shapeType == box2D.b2Shape.e_polygon) {
       const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
@@ -468,7 +497,10 @@ function loop(delta) {
         type: 'polygon',
         vertices: verts,
         angle: b.GetAngle(),
-        color: color
+        color: color,
+        border: b.GetUserData().border,
+        border_width: b.GetUserData().border_width,
+        border_scale_with_zoom: b.GetUserData().border_scale_with_zoom
       });
     }
     else if (shapeType == box2D.b2Shape.e_edge) {
@@ -491,7 +523,10 @@ function loop(delta) {
         type: 'edge',
         vertices: vertices,
         angle: b.GetAngle(),
-        color: color
+        color: color,
+        border: b.GetUserData().border,
+        border_width: b.GetUserData().border_width,
+        border_scale_with_zoom: b.GetUserData().border_scale_with_zoom
       });
     }
     else {
@@ -509,7 +544,8 @@ function loop(delta) {
         type: 'world update',
         data: {
           shapes: shapes,
-          creatingObjects: creatingObjects
+          creatingObjects: creatingObjects,
+          background: theme.background
         }
       }));
     }

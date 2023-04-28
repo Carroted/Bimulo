@@ -2,14 +2,14 @@
 <html lang="en">
 
 <head>
-  <title>Simulo Web Prototype</title>
-  <meta name="description" content="Multi-engine multiplayer 2D physics app">
+  <title>Simulo Alpha</title>
+  <meta name="description" content="Multiplayer 2D physics app">
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/index.css">
-  <!-- favicon is icon.png -->
-  <link rel="icon" type="image/png" href="/icon.png">
+  <!-- favicon is /media/icon.svg -->
+  <link rel="icon" href="/media/icon.svg">
   <script src="/network.js"></script>
 </head>
 
@@ -59,7 +59,19 @@
   </div>
 
   <div class="chat">
-    <div class="messages"></div>
+    <div class="messages">
+      <div class="message">
+        <div class="message-time">
+          3 AM
+        </div>
+        <div class="message-avatar">
+          <img src="https://cdn.discordapp.com/avatars/427114333000957952/44c7f045dca316f27bd9e6e91fe35ef5.webp">
+        </div>
+        <div class="message-content">
+          Hello? World? Where are you?
+        </div>
+      </div>
+    </div>
     <form class="message-bar">
       <input type="text" class="message-input" placeholder="Message">
       <button type="submit" class="message-submit">Send</button>

@@ -24,6 +24,8 @@ function handleData(body) { // World data from the host, sent to all clients and
         if (body.type == 'world update') {
             entities = body.data.shapes;
             creatingEntities = body.data.creatingObjects;
+            // change :root background to body.data.background
+            document.documentElement.style.background = body.data.background;
         }
         if (body.type == 'player mouse') {
             players[body.data.id] = {
@@ -77,8 +79,8 @@ function drawVertsAt(x, y, verts, rotation = 0) {
         ctx.lineTo((e.x + x), (e.y + y));
     });
     ctx.closePath();
-    ctx.strokeStyle = '#000000a0';
-    ctx.lineWidth = 2 / cameraZoom;
+    //ctx.strokeStyle = '#000000a0';
+
     ctx.save();
     ctx.clip();
     ctx.lineWidth *= 2;
@@ -416,6 +418,10 @@ function movementUpdate() {
     });
 }
 
+function setTheme(name) {
+    clientConnection.emitData('set_theme', name);
+}
+
 document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
 
@@ -515,6 +521,8 @@ function draw() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+
+
     // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
     ctx.setTransform(cameraZoom, 0, 0, cameraZoom, cameraOffset.x, cameraOffset.y);
 
@@ -541,6 +549,13 @@ function draw() {
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
         ctx.fillStyle = entity.color;
+        if (entity.border) {
+            ctx.strokeStyle = entity.border;
+            ctx.lineWidth = entity.border_width / (entity.border_scale_with_zoom ? cameraZoom : 1);
+        }
+        else {
+            ctx.strokeStyle = 'transparent';
+        }
         if (entity.type === 'polygon') {
             //console.log('drawing polygon');
             drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);

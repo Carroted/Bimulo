@@ -7,32 +7,61 @@
 
 .chat {
   position: fixed;
-  bottom: 5px;
-  left: 5px;
-  width: 500px;
-  height: 300px;
-  outline: 0.2rem solid #ffffff20;
-  border-radius: 1rem;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 400px;
+  height: 250px;
+  outline: 0.2rem solid #03081d50;
+  border-radius: 2rem;
   pointer-events: none;
   overflow: hidden;
+  font-family: 'Urbanist', sans-serif;
 }
 
 .chat .message-bar {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  width: calc(100% - 1rem);
   height: 3rem;
-  background: #ffffff20;
+  background: #03081d50;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  border-radius: 10000rem;
   align-items: center;
   padding: 0 1rem;
+  backdrop-filter: blur(15px);
 }
 
 .chat * {
   pointer-events: auto;
+}
+
+.chat .message {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: white;
+  padding: 0 1rem;
+  height: 3rem;
+  backdrop-filter: blur(15px);
+  border-radius: 10000rem;
+  margin: 0.5rem 0.5rem;
+  background-color: #03081d50;
+}
+
+.chat .message .message-avatar {
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  margin: 0 0.5rem;
+}
+
+.chat .message .message-avatar img {
+  width: 100%;
+  height: 100%;
 }
 
 * {
@@ -83,15 +112,15 @@ body {
 
 .toolbar {
   position: fixed;
-  bottom: 0.2rem;
-  left: 0.2rem;
+  bottom: 0.5rem;
+  left: 0.5rem;
   background: #03081dc0;
   color: #ffffff50;
   font-family: sans-serif;
   font-size: 1.2em;
   padding: 0 0.7em;
   z-index: 100;
-  border-radius: 0.5rem;
+  border-radius: 10000rem;
   width: 20rem;
   height: 3.5rem;
   -webkit-backface-visibility: hidden;
