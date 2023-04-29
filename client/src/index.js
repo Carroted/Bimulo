@@ -1,19 +1,49 @@
-var clientConnection = new SimuloClientConnection(host); // If true, our client is a host that loops data back to itself.
+// on click tool, set active tool
+const tools = document.querySelectorAll('.tool');
+tools.forEach(tool => {
+    tool.addEventListener('click', () => {
+        // remove active class from all tools in that toolbar, without removing it from other toolbars
+        tool.parentElement.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+        tool.classList.add('active');
+    });
+});
+
+import SimuloNetworkClient from '/src/SimuloNetworkClient/index.js';
+
+var host = false;
+// get query string for host (?host=true, ?host=false or none for false)
+var queryString = window.location.search;
+if (queryString) {
+    queryString = queryString.substring(1);
+    var queryArray = queryString.split('&');
+    queryArray.forEach(function (query) {
+        var queryPair = query.split('=');
+        if (queryPair[0] == 'host') {
+            if (queryPair[1] == 'true') {
+                host = true;
+            } else if (queryPair[1] == 'false') {
+                host = false;
+            }
+        }
+    });
+}
+
+var networkClient = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
 // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-clientConnection.on('connect', () => { // Connect fires when the WebSocket connects
+networkClient.on('connect', () => { // Connect fires when the WebSocket connects
     console.log('WebSocket connection established');
 });
 
-clientConnection.on('ready', () => { // Ready fires when the WebRTC connection is established
+networkClient.on('ready', () => { // Ready fires when the WebRTC connection is established
     console.log('WebRTC connection established');
 });
 
-clientConnection.on('data', (data) => { // Data fires when data is received from the server
+networkClient.on('data', (data) => { // Data fires when data is received from the server
     handleData(data); // Parses and displays the data in the world
 });
 
-clientConnection.connect(); // Connects to the server
+networkClient.connect(); // Connects to the server
 
 var entities = []; // We update this every time we receive a world update from the server
 var creatingEntities = {};
@@ -185,7 +215,7 @@ function onPointerDown(e) {
             y: mousePos.y,
             down: true
         };
-        clientConnection.emitData("player mouse down", player);
+        networkClient.emitData("player mouse down", player);
         pointerDown = true;
     }
 }
@@ -199,7 +229,7 @@ function onPointerUp(e) {
             y: mousePos.y,
             down: false
         };
-        clientConnection.emitData("player mouse up", player);
+        networkClient.emitData("player mouse up", player);
     }
     isDragging = false;
     initialPinchDistance = null;
@@ -227,7 +257,7 @@ function onPointerMove(e) {
         y: mousePos.y,
         down: pointerDown
     };
-    clientConnection.emitData("player mouse", player);
+    networkClient.emitData("player mouse", player);
 }
 
 var touchStartElement = null;
@@ -306,7 +336,7 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
         // mouse moved, lets send
         var mousePos = transformPoint(lastX, lastY);
-        clientConnection.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
+        networkClient.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
     }
 }
 
@@ -365,7 +395,7 @@ window.addEventListener('resize', function () {
 
 function setName(name) {
     player.name = name;
-    clientConnection.emitData('update player', player);
+    networkClient.emitData('update player', player);
 }
 
 
@@ -403,15 +433,15 @@ document.addEventListener('keydown', function (e) {
     keysDown[e.keyCode] = true;
     movementUpdate();
     if (e.keyCode === 37) {
-        clientConnection.emitData("player start", "left");
+        networkClient.emitData("player start", "left");
     } else if (e.keyCode === 39) {
-        clientConnection.emitData("player start", "right");
+        networkClient.emitData("player start", "right");
     }
 
 }, false);
 
 function movementUpdate() {
-    clientConnection.emitData('movementUpdate', {
+    networkClient.emitData('movementUpdate', {
         // send position as it is now for reference
         x: player.x,
         y: player.y
@@ -419,16 +449,16 @@ function movementUpdate() {
 }
 
 function setTheme(name) {
-    clientConnection.emitData('set_theme', name);
+    networkClient.emitData('set_theme', name);
 }
 
 document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
 
     if (e.keyCode === 37) {
-        clientConnection.emitData("player stop", "left");
+        networkClient.emitData("player stop", "left");
     } else if (e.keyCode === 39) {
-        clientConnection.emitData("player stop", "right");
+        networkClient.emitData("player stop", "right");
     }
 }, false);
 /*
@@ -611,20 +641,20 @@ function draw() {
     ctx.fillStyle = 'red';
 
     ctx.drawImage(cursor, mousePos.x, mousePos.y, 0.7, cursor.height * (0.7 / cursor.width));
-    if (clientConnection.id) {
-        if (creatingEntities[clientConnection.id]) {
+    if (networkClient.id) {
+        if (creatingEntities[networkClient.id]) {
             // Calculate the difference between creatingEntities[id] x and y and the current player x and y
-            const width = Math.abs(mousePos.x - creatingEntities[clientConnection.id].x);
-            const height = Math.abs(mousePos.y - creatingEntities[clientConnection.id].y);
+            const width = Math.abs(mousePos.x - creatingEntities[networkClient.id].x);
+            const height = Math.abs(mousePos.y - creatingEntities[networkClient.id].y);
 
             // Determine the top-left corner of the rectangle
-            const topLeftX = Math.min(mousePos.x, creatingEntities[clientConnection.id].x);
-            const topLeftY = Math.min(mousePos.y, creatingEntities[clientConnection.id].y);
+            const topLeftX = Math.min(mousePos.x, creatingEntities[networkClient.id].x);
+            const topLeftY = Math.min(mousePos.y, creatingEntities[networkClient.id].y);
 
             // Set the fill style to transparent white
-            //ctx.fillStyle = creatingEntities[clientConnection.id].color;
+            //ctx.fillStyle = creatingEntities[networkClient.id].color;
             // empty fill
-            var splitColor = creatingEntities[clientConnection.id].color.split(',');
+            var splitColor = creatingEntities[networkClient.id].color.split(',');
             console.log('splitColor: ' + splitColor);
             var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
             alpha = alpha / 2;

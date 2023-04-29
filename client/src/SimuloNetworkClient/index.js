@@ -1,23 +1,4 @@
-var host = false;
-// get query string for host (?host=true, ?host=false or none for false)
-var queryString = window.location.search;
-if (queryString) {
-    queryString = queryString.substring(1);
-    var queryArray = queryString.split('&');
-    queryArray.forEach(function (query) {
-        var queryPair = query.split('=');
-        if (queryPair[0] == 'host') {
-            if (queryPair[1] == 'true') {
-                host = true;
-            } else if (queryPair[1] == 'false') {
-                host = false;
-            }
-        }
-    });
-}
-
-// SimuloClientConnection class only has empty connect method and constructor, but the JSDoc is there for reference
-class SimuloClientConnection {
+class SimuloNetworkClient {
     constructor() {
         let localCandidates = [];
         this._activeDc = null;
@@ -31,7 +12,7 @@ class SimuloClientConnection {
         * @param {string} type
         * @param {object} data
         * @example
-        * clientConnection.emitData('playerMove', { x: 0, y: 0 });
+        * networkClient.emitData('playerMove', { x: 0, y: 0 });
         */
     emitData(type, data) {
         if (this._activeDc) {
@@ -51,7 +32,7 @@ class SimuloClientConnection {
      * @param {string} type
      * @param {object} data
      * @example
-     * clientConnection.emitReliableData('chatMessage', { message: 'Hello, world!' });
+     * networkClient.emitReliableData('chatMessage', { message: 'Hello, world!' });
     */
     emitReliableData(type, data) {
         if (this._ws) {
@@ -178,7 +159,7 @@ class SimuloClientConnection {
      * @param {function} listener
      * @returns {void}
      * @example
-     * clientConnection.on('connect', () => {
+     * networkClient.on('connect', () => {
      *    console.log('Connected to WebSocket!');
      * });
     */
@@ -204,3 +185,6 @@ class SimuloClientConnection {
         }
     }
 }
+
+// export the class of SimuloNetworkClient as default
+export default SimuloNetworkClient;
