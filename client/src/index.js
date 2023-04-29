@@ -569,7 +569,7 @@ function draw() {
 
     var mousePos = transformPoint(lastX, lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
 
-    var cursor = getImage('/cursor.png');
+    var cursor = getImage('/assets/textures/cursor.png');
 
     // fill
     ctx.fillStyle = '#a1acfa';

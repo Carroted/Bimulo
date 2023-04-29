@@ -2,7 +2,7 @@
   font-family: 'Urbanist';
   font-style: normal;
   font-weight: 400;
-  src: url('/fonts/Urbanist-SemiBold.woff2') format('woff2');
+  src: url('/assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
 }
 
 .chat {
