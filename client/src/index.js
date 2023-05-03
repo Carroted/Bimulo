@@ -37,6 +37,7 @@ networkClient.on('connect', () => { // Connect fires when the WebSocket connects
 
 networkClient.on('ready', () => { // Ready fires when the WebRTC connection is established
     console.log('WebRTC connection established');
+    setTool('drag')
 });
 
 networkClient.on('data', (data) => { // Data fires when data is received from the server
@@ -44,6 +45,12 @@ networkClient.on('data', (data) => { // Data fires when data is received from th
 });
 
 networkClient.connect(); // Connects to the server
+function setTheme(name) {
+    networkClient.emitData('set_theme', name);
+}
+function setTool(name) {
+    networkClient.emitData('set_tool', name);
+}
 
 var entities = []; // We update this every time we receive a world update from the server
 var creatingEntities = {};
@@ -138,11 +145,24 @@ function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     ctx.strokeStyle = 'transparent';
 }
 
-function drawCircleAt(x, y, radius, rotation = 0) {
+function drawCircleAt(x, y, radius, rotation = 0, circleCake = false) {
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
+    // if circleCake, draw a partial circle (20 degrees)
+    if (circleCake) {
+        // fill color darker
+        ctx.fillStyle = '#00000080';
+        ctx.strokeStyle = 'transparent';
+        ctx.beginPath();
+        //ctx.arc(x, y, radius, 0, 20 * Math.PI / 180);
+        // offset based on rotation
+        ctx.arc(x, y, radius, rotation, rotation + 23 * Math.PI / 180);
+        ctx.lineTo(x, y);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 
@@ -448,9 +468,8 @@ function movementUpdate() {
     });
 }
 
-function setTheme(name) {
-    networkClient.emitData('set_theme', name);
-}
+
+
 
 document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
@@ -592,7 +611,7 @@ function draw() {
         }
         else if (entity.type === 'circle') {
             // console.log('drawing circle');
-            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle);
+            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle, true);
         }
         else if (entity.type === 'edge') {
             //console.log('drawing edge');
@@ -662,10 +681,19 @@ function draw() {
             var newColor = splitColor.join(',');
             console.log('newColor: ' + newColor);
             ctx.fillStyle = newColor;
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3.5 / cameraZoom;
 
             // Draw the rectangle
             //ctx.fillRect(topLeftX, topLeftY, width, height);
             ctx.fillRect(topLeftX, topLeftY, width, height);
+            ctx.strokeRect(topLeftX, topLeftY, width, height);
+            // text of width and height
+            ctx.fillStyle = 'white';
+            ctx.font = (20 / cameraZoom) + 'px Arial';
+
+            ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
+            ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
         }
     }
 

@@ -69,7 +69,7 @@ var themes = {
   }
 };
 
-var theme = themes['default'];
+var theme = themes['nostalgia'];
 
 const app = express();
 // make http server (esm import)
@@ -116,6 +116,56 @@ floor.GetUserData().color = theme.ground.color;
 floor.GetUserData().border = theme.ground.border;
 floor.GetUserData().border_width = theme.ground.border_width;
 floor.GetUserData().border_scale_with_zoom = theme.ground.border_scale_with_zoom;
+
+var polygonPoints = [[0.000, 0.640],
+[0.712, 0.499],
+[1.190, 0.172],
+[1.504, -0.270],
+[1.670, -0.779],
+[1.678, -3.272],
+[1.643, -3.469],
+[1.451, -3.597],
+[-1.416, -3.589],
+[-1.582, -3.510],
+[-1.654, -3.350],
+[-1.670, -0.779],
+[-1.497, -0.305],
+[-1.231, 0.126],
+[-0.650, 0.517],
+[-0.328, 0.614]];
+// map to box2d.b2Vec2
+polygonPoints = polygonPoints.map((point) => {
+  console.log(point);
+  return new box2D.b2Vec2(point[0], point[1]);
+});
+
+polygonPoints.reverse();
+
+const bd_polygon = new box2D.b2BodyDef();
+bd_polygon.set_type(box2D.b2_dynamicBody);
+bd_polygon.set_position(new box2D.b2Vec2(0, 0));
+const polygon = world.CreateBody(bd_polygon);
+const polygonShape = new box2D.b2PolygonShape();
+polygonShape.Set(polygonPoints, polygonPoints.length);
+polygon.CreateFixture(polygonShape, 1);
+polygon.GetUserData().color = '#ff0000';
+polygon.GetUserData().border = '#000000';
+polygon.GetUserData().border_width = 1;
+polygon.GetUserData().border_scale_with_zoom = true;
+
+
+// circle next to it
+const bd_circle = new box2D.b2BodyDef();
+bd_circle.set_type(box2D.b2_dynamicBody);
+bd_circle.set_position(new box2D.b2Vec2(5, 0));
+const circleBody = world.CreateBody(bd_circle);
+const circleShape = new box2D.b2CircleShape();
+circleShape.set_m_radius(1);
+circleBody.CreateFixture(circleShape, 1);
+circleBody.GetUserData().color = getRandomColor(theme.new_objects.color.hue_min, theme.new_objects.color.hue_max, theme.new_objects.color.sat_min, theme.new_objects.color.sat_max, theme.new_objects.color.val_min, theme.new_objects.color.val_max, theme.new_objects.color.alp_min, theme.new_objects.color.alp_max, true);
+circleBody.GetUserData().border = theme.new_objects.border;
+circleBody.GetUserData().border_width = theme.new_objects.border_width;
+circleBody.GetUserData().border_scale_with_zoom = theme.new_objects.border_scale_with_zoom;
 
 
 const ZERO = new box2D.b2Vec2(0, 0);
@@ -345,6 +395,9 @@ io.on('connection', (ws) => {
         }
         else if (formatted.type == 'set_theme') {
           theme = themes[formatted.data];
+        }
+        else if (formatted.type = 'set_tool') {
+          // bruh
         }
       }
     } catch (e) {
