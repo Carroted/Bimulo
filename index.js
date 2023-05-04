@@ -86,6 +86,7 @@ var dataChannels = [];
 
 const gravity = new box2D.b2Vec2(0, 9.81);
 const world = new box2D.b2World(gravity);
+world.SetContinuousPhysics(true);
 
 const bd_ground = new box2D.b2BodyDef();
 const ground = world.CreateBody(bd_ground);
@@ -98,7 +99,7 @@ const ground = world.CreateBody(bd_ground);
   ground.CreateFixture(shape, 0);
 }
 */
-const sideLengthMetres = 1;
+const sideLengthMetres = 0.1;
 const square = new box2D.b2PolygonShape();
 square.SetAsBox(sideLengthMetres / 2, sideLengthMetres / 2);
 const circle = new box2D.b2CircleShape();
@@ -153,6 +154,9 @@ polygon.GetUserData().border = '#000000';
 polygon.GetUserData().border_width = 1;
 polygon.GetUserData().border_scale_with_zoom = true;
 
+// get the scale offset. box2d makes shapes slightly smaller, but we need to render bigger. we get it from shape class
+var scaleOffset = polygonShape.m_radius;
+console.log('offset: ' + scaleOffset);
 
 // circle next to it
 const bd_circle = new box2D.b2BodyDef();
@@ -160,7 +164,7 @@ bd_circle.set_type(box2D.b2_dynamicBody);
 bd_circle.set_position(new box2D.b2Vec2(5, 0));
 const circleBody = world.CreateBody(bd_circle);
 const circleShape = new box2D.b2CircleShape();
-circleShape.set_m_radius(1);
+circleShape.set_m_radius(0.1);
 circleBody.CreateFixture(circleShape, 1);
 circleBody.GetUserData().color = getRandomColor(theme.new_objects.color.hue_min, theme.new_objects.color.hue_max, theme.new_objects.color.sat_min, theme.new_objects.color.sat_max, theme.new_objects.color.val_min, theme.new_objects.color.val_max, theme.new_objects.color.alp_min, theme.new_objects.color.alp_max, true);
 circleBody.GetUserData().border = theme.new_objects.border;
@@ -243,7 +247,7 @@ io.on('connection', (ws) => {
 
   // make a uuid with a bunch of math.randoms
   var uuid = ws.id;
-  tools[uuid] = 'add_rectangle';
+  tools[uuid] = 'drag';
 
   // gonna use proper uuids later, im just too lazy to npm i it yk
 
@@ -257,23 +261,22 @@ io.on('connection', (ws) => {
         // handle it
         //console.log('    Type: "' + formatted.type + '"');
         if (formatted.type == 'player mouse') {
-          // tell the other people the cool news
-          for (var i = 0; i < dataChannels.length; i++) {
-            if (dataChannels[i] != dc1) {
-              dataChannels[i].sendMessage(JSON.stringify({
-                type: 'player mouse',
-                data: {
-                  id: uuid,
-                  x: formatted.data.x,
-                  y: formatted.data.y
-                }
-              }));
-            }
-          }
-
+          var springsFormatted = [];
           springs.forEach(spring => {
-            spring.set_target(new box2D.b2Vec2(formatted.data.x, formatted.data.y));
+            spring.SetTarget(new box2D.b2Vec2(formatted.data.x, formatted.data.y));
+            springsFormatted.push({
+              p1: [formatted.data.x, formatted.data.y],
+              p2: [spring.GetAnchorB().get_x(), spring.GetAnchorB().get_y()]
+            });
           });
+
+          sendAll('player mouse', {
+            id: uuid,
+            x: formatted.data.x,
+            y: formatted.data.y,
+            springs: springsFormatted
+          });
+
           // 👍 we did it, yay, we're so cool
         }
         else if (formatted.type == 'player mouse down') {
@@ -290,29 +293,33 @@ io.on('connection', (ws) => {
               border_scale_with_zoom: theme.new_objects.border_scale_with_zoom,
             };
           }
+          else if (tools[uuid] == 'drag') {
+            // instead, start a spring
+            var bd = new box2D.b2BodyDef();
+            bd.linearDamping = 0;
+            bd.set_type(box2D.b2_dynamicBody);
+            var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
+            bd.set_position(pos);
+            const body = world.CreateBody(bd);
+            body.CreateFixture(square, 1);
+            var userData = body.GetUserData();
+            userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
 
-          // instead, start a spring
-          /*var bd = new box2D.b2BodyDef();
-          bd.set_type(box2D.b2_dynamicBody);
-          var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
-          bd.set_position(pos);
-          const body = world.CreateBody(bd);
-          body.CreateFixture(square, 1);
-          var userData = body.GetUserData();
-          userData.color = getRandomColor(0, 360, 0, 100, 80, 100, 1, 1);
- 
-          // create a spring
-          var md = new box2D.b2MouseJointDef();
-          md.set_bodyA(mouseJointGroundBody);
-          md.set_bodyB(body);
-          md.set_target(pos);
-          md.set_maxForce(1000 * body.GetMass());
-          md.set_collideConnected(true);
- 
-          mouseJoint = box2D.castObject(world.CreateJoint(md), box2D.b2MouseJoint);
-          body.SetAwake(true);
- 
-          springs.push(mouseJoint);*/
+            // create a spring
+            var md = new box2D.b2MouseJointDef();
+            md.set_bodyA(ground);
+            md.set_bodyB(body);
+            md.set_target(pos);
+            md.set_maxForce(1000000 * body.GetMass());
+            md.set_collideConnected(true);
+            md.set_stiffness(20);
+            md.set_damping(0);
+
+            var mouseJoint = box2D.castObject(world.CreateJoint(md), box2D.b2MouseJoint);
+
+            body.SetAwake(true);
+            springs.push(mouseJoint);
+          }
 
           // 👍 we did it, yay, we're so cool
 
@@ -587,6 +594,25 @@ function loop(delta) {
     }
   }
 
+  var springsFormatted = [];
+  springs.forEach(spring => {
+    springsFormatted.push({
+      p1: [spring.GetTarget().get_x(), spring.GetTarget().get_y()],
+      p2: [spring.GetAnchorB().get_x(), spring.GetAnchorB().get_y()]
+    });
+  });
+
+  sendAll('world update', {
+    shapes: shapes,
+    creatingObjects: creatingObjects,
+    background: theme.background,
+    springs: springsFormatted
+  });
+
+  //console.log("vomit");
+};
+
+function sendAll(type, data) {
   dataChannels.forEach((dc) => {
     // check if open first
     if (!dc.isOpen()) {
@@ -594,12 +620,8 @@ function loop(delta) {
     }
     try {
       dc.sendMessage(JSON.stringify({
-        type: 'world update',
-        data: {
-          shapes: shapes,
-          creatingObjects: creatingObjects,
-          background: theme.background
-        }
+        type: type,
+        data: data
       }));
     }
     catch (e) {
@@ -607,7 +629,4 @@ function loop(delta) {
       console.log(e);
     }
   });
-
-  //console.log("vomit");
-};
-
+}

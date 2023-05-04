@@ -55,6 +55,7 @@ function setTool(name) {
 var entities = []; // We update this every time we receive a world update from the server
 var creatingEntities = {};
 var players = {}; // We update this every time we receive a player mouse update from the server
+var springs = [];
 
 function handleData(body) { // World data from the host, sent to all clients and to the host itself (loopback)
     if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
@@ -63,12 +64,14 @@ function handleData(body) { // World data from the host, sent to all clients and
             creatingEntities = body.data.creatingObjects;
             // change :root background to body.data.background
             document.documentElement.style.background = body.data.background;
+            springs = body.data.springs;
         }
         if (body.type == 'player mouse') {
             players[body.data.id] = {
                 x: body.data.x,
                 y: body.data.y
             };
+            springs = body.data.springs;
         }
     }
 }
@@ -108,6 +111,7 @@ function rotateVerts(vertices, angle) {
     return rotatedVertices;
 }
 
+const scaleOffset = 0.009999999776482582;
 
 function drawVertsAt(x, y, verts, rotation = 0) {
     ctx.beginPath();
@@ -597,6 +601,8 @@ function draw() {
     // the entities are verts
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
+
+
         ctx.fillStyle = entity.color;
         if (entity.border) {
             ctx.strokeStyle = entity.border;
@@ -620,6 +626,17 @@ function draw() {
         else {
             //console.log('what is ' + entity.type);
         }
+    }
+
+    // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3 / cameraZoom;
+    for (var i = 0; i < springs.length; i++) {
+        var spring = springs[i];
+        ctx.beginPath();
+        ctx.moveTo(spring.p1[0], spring.p1[1]);
+        ctx.lineTo(spring.p2[0], spring.p2[1]);
+        ctx.stroke();
     }
 
     for (var id in players) {
