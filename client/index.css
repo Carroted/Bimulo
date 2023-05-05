@@ -68,13 +68,11 @@
   box-sizing: border-box;
 }
 
-body {
-  padding: 1em;
-}
-
 #game {
   overflow: hidden;
   cursor: none;
+  margin: 0;
+  padding: 0;
 }
 
 html,
@@ -121,7 +119,6 @@ body {
   padding: 0 0.7em;
   z-index: 100;
   border-radius: 10000rem;
-  width: 20rem;
   height: 3.5rem;
   -webkit-backface-visibility: hidden;
   -webkit-perspective: 1000;
@@ -139,7 +136,8 @@ body {
 }
 
 .toolbar.secondary {
-  bottom: 4.5rem;
+  bottom: 4.3rem;
+  height: 3rem;
 }
 
 .toolbar .tool {
@@ -149,19 +147,35 @@ body {
   margin: 0;
 }
 
+.toolbar.secondary .tool {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  margin: 0;
+}
+
 .toolbar svg {
   width: 100%;
   height: 100%;
+  fill: #e0ddff40;
 }
 
-.toolbar .tool:hover {
+.toolbar .tool:hover svg {
   color: #ffffffd0;
+  fill: #ffffffd0;
 }
 
-.toolbar .tool:active {
+.toolbar .tool:active svg {
   color: #ffffff20;
+  fill: #ffffff20;
 }
 
-.toolbar .tool.active {
+.toolbar .tool.active svg {
   color: #ffffff;
+  fill: #ffffff;
+}
+
+.toolbar .tool.fake svg {
+  color: #e0ddff0a;
+  fill: #e0ddff0a;
 }

@@ -16,48 +16,49 @@
   <canvas width="300" height="200" id="game"></canvas>
 
   <div class="toolbar">
-    <div class="tool active">
-      <svg data-src="/icons/pointer.svg"></svg>
+    <div class="tool active" data-menu="tools" id="menu-1-button">
+      <svg data-src="/icons/wrench.svg"></svg>
     </div>
-    <div class="tool">
-      <svg data-src="/icons/tool.svg"></svg>
+    <div class="tool" data-menu="objects" id="menu-2-button">
+      <svg data-src="/icons/cube.svg"></svg>
     </div>
-    <div class="tool">
-      <svg data-src="/icons/box.svg"></svg>
-    </div>
-    <div class="tool">
+    <div class="tool" data-menu="time-control" id="menu-3-button">
       <svg data-src="/icons/clock.svg"></svg>
     </div>
-    <div class="tool">
-      <svg data-src="/icons/shield.svg"></svg>
+    <div class="tool fake" id="menu-4-button">
+      <svg data-src="/icons/security.svg"></svg>
     </div>
-    <div class="tool">
-      <svg data-src="/icons/planet.svg"></svg>
+    <div class="tool" id="menu-5-button">
+      <svg data-src="/icons/earth.svg"></svg>
     </div>
-    <div class="tool">
-      <svg data-src="/icons/users.svg"></svg>
-    </div>
-  </div>
-
-  <div class="toolbar secondary">
-    <div class="tool active">
-      <svg data-src="/icons/square.svg"></svg>
-    </div>
-    <div class="tool">
-      <svg data-src="/icons/triangle.svg"></svg>
-    </div>
-    <div class="tool">
-      <svg data-src="/icons/circle.svg"></svg>
-    </div>
-    <div class="tool">
-      <svg data-src="/icons/star.svg"></svg>
-    </div>
-    <div class="tool">
-      <svg data-src="/icons/polygon.svg"></svg>
+    <div class="tool fake" id="menu-6-button">
+      <svg data-src="/icons/account-multiple.svg"></svg>
     </div>
   </div>
 
-  <div class="chat">
+  <div class="toolbar secondary" id="tools">
+    <div class="tool active" data-tool="drag">
+      <svg data-src="/icons/cursor-default.svg"></svg>
+    </div>
+    <div class="tool" data-tool="add_rectangle" data-img="/assets/textures/add_rectangle.png">
+      <svg data-src="/icons/add-box.svg"></svg>
+    </div>
+    <div class="tool" data-tool="add_circle" data-img="/assets/textures/add_circle.png">
+      <svg data-src="/icons/add-circle.svg"></svg>
+    </div>
+    <div class="tool fake">
+      <svg data-src="/icons/vector-polygon.svg"></svg>
+    </div>
+  </div>
+  <div class="toolbar secondary" id="time-control" style="display: none;">
+    <!-- not whole numbers, float -->
+    <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
+    <input id="time-scale-input" type="number" min="0" max="3" value="1">
+    <input id="paused-toggle" type="checkbox">
+  </div>
+  <div class="toolbar secondary" id="objects" style="display: none;">coming soon</div>
+
+  <div class="chat" style="display: none;">
     <div class="messages">
       <div class="message">
         <div class="message-time">

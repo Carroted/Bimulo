@@ -132,7 +132,7 @@ class SimuloNetworkClient {
 
                 // Send data to server
                 dc.onopen = () => {
-                    dc.send('Hello, server!');
+                    //dc.send('Hello, server!');
                     this._activeDc = dc;
                     if (this._listeners['ready']) {
                         this._listeners['ready'].forEach((listener) => {

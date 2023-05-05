@@ -1,10 +1,55 @@
 // on click tool, set active tool
 const tools = document.querySelectorAll('.tool');
+var toolIcon = null;
 tools.forEach(tool => {
+    setUpClickSound(tool);
     tool.addEventListener('click', () => {
+        // return if has fake class
+        if (tool.classList.contains('fake')) {
+            return;
+        }
         // remove active class from all tools in that toolbar, without removing it from other toolbars
         tool.parentElement.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
         tool.classList.add('active');
+
+        // if it has data-tool, setTool with that value
+        if (tool.dataset.tool) {
+            console.log('setting tool to', tool.dataset.tool);
+            setTool(tool.dataset.tool);
+            // if theres data-img, set the icon to that
+            if (tool.dataset.img) {
+                toolIcon = tool.dataset.img;
+            }
+            else {
+                toolIcon = null;
+            }
+        }
+        // if data-action, handle
+        if (tool.dataset.action) {
+            if (tool.dataset.action == 'play') {
+                setPaused(false);
+            }
+            if (tool.dataset.action == 'pause') {
+                setPaused(true);
+            }
+            if (tool.dataset.action == '2x') {
+                setTimeScale(5);
+            }
+            if (tool.dataset.action == '1x') {
+                setTimeScale(1);
+            }
+        }
+        // if data-menu, show that .toolbar.secondary and hide all others
+        if (tool.dataset.menu) {
+            document.querySelectorAll('.toolbar.secondary').forEach(toolbar => {
+                if (toolbar.id == tool.dataset.menu) {
+                    toolbar.style.display = 'flex';
+                }
+                else {
+                    toolbar.style.display = 'none';
+                }
+            });
+        }
     });
 });
 
@@ -28,6 +73,9 @@ if (queryString) {
     });
 }
 
+var timeScale = null;
+var paused = null;
+
 var networkClient = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
 // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
@@ -37,7 +85,6 @@ networkClient.on('connect', () => { // Connect fires when the WebSocket connects
 
 networkClient.on('ready', () => { // Ready fires when the WebRTC connection is established
     console.log('WebRTC connection established');
-    setTool('drag')
 });
 
 networkClient.on('data', (data) => { // Data fires when data is received from the server
@@ -52,8 +99,15 @@ function setTool(name) {
     networkClient.emitData('set_tool', name);
 }
 
+function setPaused(paused) {
+    networkClient.emitData('set_paused', paused);
+}
+function setTimeScale(timeScale) {
+    networkClient.emitData('set_time_scale', timeScale);
+}
+
 var entities = []; // We update this every time we receive a world update from the server
-var creatingEntities = {};
+var creatingObjects = {};
 var players = {}; // We update this every time we receive a player mouse update from the server
 var springs = [];
 
@@ -61,10 +115,19 @@ function handleData(body) { // World data from the host, sent to all clients and
     if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
         if (body.type == 'world update') {
             entities = body.data.shapes;
-            creatingEntities = body.data.creatingObjects;
+            creatingObjects = body.data.creating_objects;
             // change :root background to body.data.background
             document.documentElement.style.background = body.data.background;
             springs = body.data.springs;
+            if (timeScale == null) {
+                timeScale = body.data.time_scale;
+                document.getElementById('time-scale-slider').value = timeScale;
+                document.getElementById('time-scale-input').value = timeScale;
+            }
+            if (paused == null) {
+                paused = body.data.paused;
+                document.getElementById('paused-toggle').checked = paused;
+            }
         }
         if (body.type == 'player mouse') {
             players[body.data.id] = {
@@ -73,8 +136,46 @@ function handleData(body) { // World data from the host, sent to all clients and
             };
             springs = body.data.springs;
         }
+        if (body.type == 'collision') {
+            // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
+            var audio = new Audio('/assets/sounds/' + body.data.sound);
+            audio.volume = body.data.volume;
+            // pitch from 0.5 to 1.5
+            audio.playbackRate = body.data.pitch;
+            audio.play();
+        }
+        if (body.type == 'set_time_scale') {
+            timeScale = body.data;
+            // set #time-scale-slider and #time-scale-input
+            document.getElementById('time-scale-slider').value = timeScale;
+            document.getElementById('time-scale-input').value = timeScale;
+        }
+        if (body.type == 'set_paused') {
+            paused = body.data;
+            // set #paused-toggle
+            document.getElementById('paused-toggle').checked = paused;
+        }
     }
 }
+
+// on change slider (not just on release, every step)
+document.getElementById('time-scale-slider').addEventListener('input', function (e) {
+    setTimeScale(e.target.value);
+    // change input
+    document.getElementById('time-scale-input').value = e.target.value;
+});
+
+// on change input
+document.getElementById('time-scale-input').addEventListener('change', function (e) {
+    setTimeScale(e.target.value);
+    // change slider
+    document.getElementById('time-scale-slider').value = e.target.value;
+});
+
+// on change toggle
+document.getElementById('paused-toggle').addEventListener('change', function (e) {
+    setPaused(e.target.checked);
+});
 
 // load all svg data-src images
 var svgs = document.querySelectorAll('svg[data-src]');
@@ -168,7 +269,7 @@ function drawCircleAt(x, y, radius, rotation = 0, circleCake = false) {
         ctx.fill();
     }
 }
-
+var tintedImages = {};
 
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d'); // main layer
@@ -365,13 +466,56 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 }
 
 
-canvas.addEventListener('mousedown', onPointerDown);
-canvas.addEventListener('touchstart', (e) => handleTouch(e, onPointerDown));
+canvas.addEventListener('mousedown', (e) => {
+    onPointerDown(e);
+    // stop propagation to prevent text selection
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+});
+canvas.addEventListener('mouseup', (e) => {
+    onPointerUp(e);
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    handleTouch(e, onPointerDown);
+    e.stopPropagation();
+    e.preventDefault();
+    return false;
+});
 
 document.addEventListener('touchstart', (e) => {
     touchStartElement = e.target;
 });
-document.addEventListener('mouseup', onPointerUp);
+function setUpClickSound(element) {
+    element.addEventListener('mousedown', (e) => {
+        // if element has active class, ignore
+        if (element.classList.contains('active')) {
+            return;
+        }
+        var audio = new Audio(element.classList.contains('fake') ? '/assets/sounds/deny.wav' : '/assets/sounds/button_down.wav');
+        audio.volume = element.classList.contains('fake') ? 0.3 : 0.02;
+        audio.playbackRate = element.classList.contains('fake') ? 1 : 5;
+        audio.play();
+    });
+    element.addEventListener('mouseup', (e) => {
+        if (element.classList.contains('active')) {
+            return;
+        }
+        // return if fake
+        if (element.classList.contains('fake')) {
+            return;
+        }
+        var audio = new Audio('/assets/sounds/button_up.wav');
+        audio.volume = 0.02;
+        // pitch up
+        audio.playbackRate = element.classList.contains('fake') ? 1 : 5;
+        audio.play();
+    });
+}
 document.addEventListener('touchend', (e) => handleTouch(e, onPointerUp));
 document.addEventListener('mousemove', onPointerMove);
 document.addEventListener('touchmove', (e) => handleTouch(e, onPointerMove));
@@ -460,6 +604,15 @@ document.addEventListener('keydown', function (e) {
         networkClient.emitData("player start", "left");
     } else if (e.keyCode === 39) {
         networkClient.emitData("player start", "right");
+    }
+
+    // if its a number from 1-9, look for #menu-X-button and click it
+    if (e.keyCode >= 49 && e.keyCode <= 57) {
+        var num = e.keyCode - 48;
+        var element = document.getElementById('menu-' + num + '-button');
+        if (element) {
+            element.click();
+        }
     }
 
 }, false);
@@ -601,7 +754,7 @@ function draw() {
     // the entities are verts
     for (var i = 0; i < entities.length; i++) {
         var entity = entities[i];
-
+        var shapeSize = 1; // width of shape
 
         ctx.fillStyle = entity.color;
         if (entity.border) {
@@ -613,11 +766,24 @@ function draw() {
         }
         if (entity.type === 'polygon') {
             //console.log('drawing polygon');
-            drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
+            if (!entity.points) {
+                drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
+                entity.vertices.forEach(function (vert) {
+                    if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
+                    if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
+                });
+            }
+            else {
+                drawVertsAt(entity.x, entity.y, entity.points, entity.angle);
+                entity.points.forEach(function (vert) {
+                    if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
+                    if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
+                });
+            }
         }
         else if (entity.type === 'circle') {
             // console.log('drawing circle');
-            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle, true);
+            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle, entity.circle_cake);
         }
         else if (entity.type === 'edge') {
             //console.log('drawing edge');
@@ -625,6 +791,22 @@ function draw() {
         }
         else {
             //console.log('what is ' + entity.type);
+        }
+
+        shapeSize = Math.abs(shapeSize / 2.1);
+
+        if (entity.image) {
+            var image = getImage(entity.image);
+            if (image) {
+                ctx.save();
+                ctx.translate(entity.x, entity.y);
+                ctx.rotate(entity.angle);
+                // rotate 180deg
+                ctx.rotate(Math.PI);
+                // width is determined based on shape size. height is determined based on image aspect ratio
+                ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                ctx.restore();
+            }
         }
     }
 
@@ -642,32 +824,57 @@ function draw() {
     for (var id in players) {
         //console.log('ID: ' + id);
         var player = players[id];
+        if (id === networkClient.id) {
+            // shit
+            continue;
+        }
         ctx.fillStyle = 'blue';
         //drawRect(player.x, player.y, 4, 4);
         // draw image getImage('/cursor.png')
         ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
 
-        if (creatingEntities[id]) {
-            // Calculate the difference between creatingEntities[id] x and y and the current player x and y
-            const width = Math.abs(player.x - creatingEntities[id].x);
-            const height = Math.abs(player.y - creatingEntities[id].y);
+        if (creatingObjects[id]) {
+            if (creatingObjects[id].shape === 'rectangle') {
+                // Calculate the difference between creatingObjects[id] x and y and the current player x and y
+                const width = Math.abs(player.x - creatingObjects[id].x);
+                const height = Math.abs(player.y - creatingObjects[id].y);
 
-            // Determine the top-left corner of the rectangle
-            const topLeftX = Math.min(player.x, creatingEntities[id].x);
-            const topLeftY = Math.min(player.y, creatingEntities[id].y);
+                // Determine the top-left corner of the rectangle
+                const topLeftX = Math.min(player.x, creatingObjects[id].x);
+                const topLeftY = Math.min(player.y, creatingObjects[id].y);
 
-            // Set the fill style to transparent white
-            //ctx.fillStyle = creatingEntities[id].color;
-            // we have "rgba(R, G, B, A)". lets change A to be half of what it is
-            var splitColor = creatingEntities[id].color.split(',');
-            var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-            alpha = alpha / 2;
-            splitColor[3] = alpha + ')';
-            var newColor = splitColor.join(',');
-            ctx.fillStyle = newColor;
+                // Set the fill style to transparent white
+                //ctx.fillStyle = creatingObjects[id].color;
+                // we have "rgba(R, G, B, A)". lets change A to be half of what it is
+                var splitColor = creatingObjects[id].color.split(',');
+                var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+                alpha = alpha / 2;
+                splitColor[3] = alpha + ')';
+                var newColor = splitColor.join(',');
+                ctx.fillStyle = newColor;
 
-            // Draw the rectangle
-            ctx.fillRect(topLeftX, topLeftY, width, height);
+                // Draw the rectangle
+                ctx.fillRect(topLeftX, topLeftY, width, height);
+            }
+            else if (creatingObjects[id].shape === 'circle') {
+                // radius is math.max of differences in x and y
+                var dx = (player.x - creatingObjects[id].x);
+                var dy = (player.y - creatingObjects[id].y);
+                var radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
+
+                // Set the fill style to transparent white
+                //ctx.fillStyle = creatingObjects[id].color;
+                // we have "rgba(R, G, B, A)". lets change A to be half of what it is
+                var splitColor = creatingObjects[id].color.split(',');
+                var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+                alpha = alpha / 2;
+                splitColor[3] = alpha + ')';
+                var newColor = splitColor.join(',');
+                ctx.fillStyle = newColor;
+
+                // Draw the circle
+                drawCircleAt(creatingObjects[id].x + radius, creatingObjects[id].y + radius, radius, 0, true);
+            }
         }
         else {
             console.log('no color');
@@ -677,40 +884,73 @@ function draw() {
     ctx.fillStyle = 'red';
 
     ctx.drawImage(cursor, mousePos.x, mousePos.y, 0.7, cursor.height * (0.7 / cursor.width));
+    if (toolIcon) {
+        console.log('drawing tool icon');
+        ctx.drawImage(getImage(toolIcon), mousePos.x + 0.55, mousePos.y + 0.75, 0.5, 0.5);
+    }
     if (networkClient.id) {
-        if (creatingEntities[networkClient.id]) {
-            // Calculate the difference between creatingEntities[id] x and y and the current player x and y
-            const width = Math.abs(mousePos.x - creatingEntities[networkClient.id].x);
-            const height = Math.abs(mousePos.y - creatingEntities[networkClient.id].y);
+        if (creatingObjects[networkClient.id]) {
+            if (creatingObjects[networkClient.id].shape === 'rectangle') {
+                // Calculate the difference between creatingObjects[id] x and y and the current player x and y
+                const width = Math.abs(mousePos.x - creatingObjects[networkClient.id].x);
+                const height = Math.abs(mousePos.y - creatingObjects[networkClient.id].y);
 
-            // Determine the top-left corner of the rectangle
-            const topLeftX = Math.min(mousePos.x, creatingEntities[networkClient.id].x);
-            const topLeftY = Math.min(mousePos.y, creatingEntities[networkClient.id].y);
+                // Determine the top-left corner of the rectangle
+                const topLeftX = Math.min(mousePos.x, creatingObjects[networkClient.id].x);
+                const topLeftY = Math.min(mousePos.y, creatingObjects[networkClient.id].y);
 
-            // Set the fill style to transparent white
-            //ctx.fillStyle = creatingEntities[networkClient.id].color;
-            // empty fill
-            var splitColor = creatingEntities[networkClient.id].color.split(',');
-            console.log('splitColor: ' + splitColor);
-            var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-            alpha = alpha / 2;
-            splitColor[3] = alpha + ')';
-            var newColor = splitColor.join(',');
-            console.log('newColor: ' + newColor);
-            ctx.fillStyle = newColor;
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 3.5 / cameraZoom;
+                // Set the fill style to transparent white
+                //ctx.fillStyle = creatingObjects[networkClient.id].color;
+                // empty fill
+                var splitColor = creatingObjects[networkClient.id].color.split(',');
+                console.log('splitColor: ' + splitColor);
+                var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+                alpha = alpha / 2;
+                splitColor[3] = alpha + ')';
+                var newColor = splitColor.join(',');
+                console.log('newColor: ' + newColor);
+                ctx.fillStyle = newColor;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3.5 / cameraZoom;
 
-            // Draw the rectangle
-            //ctx.fillRect(topLeftX, topLeftY, width, height);
-            ctx.fillRect(topLeftX, topLeftY, width, height);
-            ctx.strokeRect(topLeftX, topLeftY, width, height);
-            // text of width and height
-            ctx.fillStyle = 'white';
-            ctx.font = (20 / cameraZoom) + 'px Arial';
+                // Draw the rectangle
+                //ctx.fillRect(topLeftX, topLeftY, width, height);
+                ctx.fillRect(topLeftX, topLeftY, width, height);
+                ctx.strokeRect(topLeftX, topLeftY, width, height);
+                // text of width and height
+                ctx.fillStyle = 'white';
+                ctx.font = (20 / cameraZoom) + 'px Arial';
 
-            ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
-            ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
+                ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
+                ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
+            }
+            else if (creatingObjects[networkClient.id].shape === 'circle') {
+                var dx = (mousePos.x - creatingObjects[networkClient.id].x);
+                var dy = (mousePos.y - creatingObjects[networkClient.id].y);
+                var radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
+
+                var splitColor = creatingObjects[networkClient.id].color.split(',');
+                var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+                alpha = alpha / 2;
+                splitColor[3] = alpha + ')';
+                var newColor = splitColor.join(',');
+                ctx.fillStyle = newColor;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3.5 / cameraZoom;
+
+                // if dx is negative
+                var posX = creatingObjects[networkClient.id].x + radius;
+                var posY = creatingObjects[networkClient.id].y + radius;
+                if (dx < 0) {
+                    posX = creatingObjects[networkClient.id].x - radius;
+                }
+                if (dy < 0) {
+                    posY = creatingObjects[networkClient.id].y - radius;
+                }
+
+                // Draw the circle
+                drawCircleAt(posX, posY, radius, 0, creatingObjects[networkClient.id].circle_cake);
+            }
         }
     }
 
@@ -721,7 +961,35 @@ function draw() {
     // round to 1 decimal place
     var mousePosXRound = Math.round(mousePos.x * 10) / 10;
     var mousePosYRound = Math.round(mousePos.y * 10) / 10;
-    ctx.fillText('(' + mousePosXRound + ', ' + mousePosYRound + ')', mousePos.x + 0.2, mousePos.y);
+    //ctx.fillText('(' + mousePosXRound + ', ' + mousePosYRound + ')', mousePos.x + 0.2, mousePos.y);
+}
+
+
+function tintImage(image, color) {
+    if (!tintedImages[image.src + ' -> ' + color]) {
+        const buffer = document.createElement('canvas');
+        const btx = buffer.getContext('2d');
+        buffer.width = image.width;
+        buffer.height = image.height;
+        btx.drawImage(image, 0, 0);
+        btx.globalCompositeOperation = 'multiply';
+        btx.fillStyle = color;
+        btx.fillRect(0, 0, buffer.width, buffer.height);
+        btx.globalAlpha = 0.5;
+        btx.globalCompositeOperation = 'destination-in';
+        btx.drawImage(image, 0, 0);
+        // now we need to return an image to render on the canvas with drawImage
+        tintedImages[image.src + ' -> ' + color] = buffer;
+        console.log('tinted image')
+        return buffer;
+    }
+    else {
+        console.log('already tinted image')
+        return tintedImages[image.src + ' -> ' + color];
+    }
+
+
+
 }
 
 function transformPoint(x, y) {
