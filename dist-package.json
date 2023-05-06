@@ -1,9 +1,9 @@
 {
     "name": "simulo",
     "version": "0.1.0",
-    "main": "src/index.js",
+    "main": "server/src/index.js",
     "scripts": {
-        "start": "node src/index.js",
+        "start": "node server/src/index.js",
         "build": "echo \"This is a build, run this on the source\" && exit 1"
     },
     "dependencies": {
