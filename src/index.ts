@@ -1,22 +1,22 @@
 // Simulo Server
 // Node.js backend for Simulo with server-side physics, WebRTC signaling, etc.
 
-import express from "express";
-import { WebSocketServer } from "ws"; // TODO: move back to ws from socket.io
-import nodeDataChannel from "node-datachannel"; // for WebRTC data channels
+import * as express from "express";
+//import { WebSocketServer } from "ws"; // TODO: move back to ws from socket.io
+import * as nodeDataChannel from "node-datachannel"; // for WebRTC data channels
 
 // from ./shared/utils.js
-import { getRandomColor, randomRange, hsvToRgb } from "./shared/utils.js";
+import { getRandomColor, randomRange, hsvToRgb } from "../shared/src/utils.js";
 
 // This is ESM, let's get back __dirname and __filename
 import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import Box2DFactory from "box2d-wasm";
+import * as Box2DFactory from "box2d-wasm";
 const box2D = await Box2DFactory();
 
-var themes = {
+var themes: { [key: string]: SimuloTheme } = {
 	default: {
 		background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
 		ground: {
@@ -69,14 +69,40 @@ var themes = {
 	},
 };
 
+interface SimuloTheme {
+	background: string;
+	ground: {
+		color: string;
+		border: string | null;
+		border_width: number | null;
+		border_scale_with_zoom: boolean;
+	};
+	new_objects: {
+		color: {
+			hue_min: number;
+			hue_max: number;
+			sat_min: number;
+			sat_max: number;
+			val_min: number;
+			val_max: number;
+			alp_min: number;
+			alp_max: number;
+		};
+		border: string | null;
+		border_width: number | null;
+		border_scale_with_zoom: boolean;
+		circle_cake: boolean;
+	};
+};
+
 var theme = themes["nostalgia"];
 
 var timeScaleMultiplier = 1;
 var paused = false;
 
-const app = express();
+const app: any = express(); // TODO: type this
 // make http server (esm import)
-import http from "http";
+import * as http from "http";
 const server = http.createServer();
 server.on("request", app);
 
@@ -85,7 +111,7 @@ server.on("request", app);
 import { Server } from "socket.io"; // we use socket.io since websocket without SSL doesnt usually work. this could be replaced with ws and add SSL cert creation (Let's Encrypt?)
 const io = new Server(server);
 
-var dataChannels = [];
+var dataChannels: nodeDataChannel.DataChannel[] = [];
 
 const gravity = new box2D.b2Vec2(0, 9.81);
 const world = new box2D.b2World(gravity);
@@ -96,12 +122,29 @@ const ground = world.CreateBody(bd_ground);
 
 var defaultImpact = "impact.wav";
 
+interface SimuloObjectData extends Box2D.b2BodyUserData {
+	id: number | null; // TODO: make this not nullable once its all setup
+	/**
+	 * Path to a sound file for collisions. Relative to /assets/sounds/
+	*/
+	sound: string | null;
+	color: string;
+	border: string | null;
+	border_width: number | null;
+	border_scale_with_zoom: boolean;
+	circle_cake?: boolean;
+	image: string | null;
+}
+
 var contactListener = new box2D.JSContactListener();
-contactListener.BeginContact = function (contactPtr) {
+contactListener.BeginContact = function (contactPtr: number) {
 	let contact = box2D.wrapPointer(contactPtr, box2D.b2Contact);
 	// get object mass if non-zero
 	var mass1 = contact.GetFixtureA().GetBody().GetMass();
 	var mass2 = contact.GetFixtureB().GetBody().GetMass();
+	// get userdata as SimuloObjectData
+	var data1 = contact.GetFixtureA().GetBody().GetUserData() as SimuloObjectData;
+	var data2 = contact.GetFixtureB().GetBody().GetUserData() as SimuloObjectData;
 	// if static and mass 0, set to 10
 	if (
 		mass1 == 0 &&
@@ -116,9 +159,9 @@ contactListener.BeginContact = function (contactPtr) {
 		mass2 = 10;
 	}
 	var sound1 =
-		contact.GetFixtureA().GetBody().GetUserData().sound || defaultImpact;
+		data1.sound || defaultImpact;
 	var sound2 =
-		contact.GetFixtureB().GetBody().GetUserData().sound || defaultImpact;
+		data2.sound || defaultImpact;
 
 	// we want to play a collision noise
 	// first, calculate volume based on how hard they hit
@@ -138,15 +181,15 @@ contactListener.BeginContact = function (contactPtr) {
 		pitch: randomRange(0.5, 1.5),
 	});
 };
-contactListener.EndContact = function (contactPtr) {
+contactListener.EndContact = function (contactPtr: number) {
 	let contact = box2D.wrapPointer(contactPtr, box2D.b2Contact);
 	// nothing for now, soon it will call JS scripts that listen for collisions
 };
-contactListener.PreSolve = function (contactPtr, oldManifoldPtr) {
+contactListener.PreSolve = function (contactPtr: number, oldManifoldPtr: number) {
 	let contact = box2D.wrapPointer(contactPtr, box2D.b2Contact);
 	// nothing for now, soon it will call JS scripts that listen for collisions
 };
-contactListener.PostSolve = function (contactPtr, impulsePtr) {
+contactListener.PostSolve = function (contactPtr: number, impulsePtr: number) {
 	let contact = box2D.wrapPointer(contactPtr, box2D.b2Contact);
 	// nothing for now, soon it will call JS scripts that listen for collisions
 };
@@ -175,14 +218,15 @@ const floor = world.CreateBody(bd_floor);
 const floorShape = new box2D.b2PolygonShape();
 floorShape.SetAsBox(50000, 25000);
 floor.CreateFixture(floorShape, 0);
-floor.GetUserData().color = theme.ground.color;
-floor.GetUserData().border = theme.ground.border;
-floor.GetUserData().border_width = theme.ground.border_width;
-floor.GetUserData().border_scale_with_zoom =
+var floorData = floor.GetUserData() as SimuloObjectData;
+floorData.color = theme.ground.color;
+floorData.border = theme.ground.border;
+floorData.border_width = theme.ground.border_width;
+floorData.border_scale_with_zoom =
 	theme.ground.border_scale_with_zoom;
-floor.GetUserData().sound = "ground.wav";
+floorData.sound = "ground.wav";
 
-var polygonPoints = [
+var polygonPoints: number[][] = [
 	[0.0, 0.64],
 	[0.712, 0.499],
 	[1.19, 0.172],
@@ -208,7 +252,7 @@ polygonPoints = polygonPoints.map(function (point) {
 // map to box2d.b2Vec2
 
 // for each 8 points, create a new polygon
-var pointsSplit = [];
+var pointsSplit: number[][][] = [];
 for (var i = 0; i < polygonPoints.length; i += 6) {
 	pointsSplit.push(polygonPoints.slice(i, i + 6));
 	// if theres a next point, add it to the end of the array
@@ -236,17 +280,18 @@ const polygon = world.CreateBody(bd_polygon);
 });*/
 
 pointsSplit.forEach(function (points) {
-	var polygonShape = createPolygonShape(points);
+	var polygonShape = createPolygonShape(points as [x: number, y: number][]);
 	polygon.CreateFixture(polygonShape, 1);
 });
 
-polygon.GetUserData().color = "#00000000";
-polygon.GetUserData().border = null;
-polygon.GetUserData().border_width = null;
-polygon.GetUserData().border_scale_with_zoom = false;
+var polygonData = polygon.GetUserData() as SimuloObjectData;
+polygonData.color = "#00000000";
+polygonData.border = null;
+polygonData.border_width = null;
+polygonData.border_scale_with_zoom = false;
 // image
-polygon.GetUserData().image = "/assets/textures/body.png";
-polygon.GetUserData().sound = "ground.wav";
+polygonData.image = "/assets/textures/body.png";
+polygonData.sound = "ground.wav";
 
 // add a circle as the head at [0, 1.880], radius 1.710
 const bd_circle_head = new box2D.b2BodyDef();
@@ -255,13 +300,14 @@ bd_circle_head.set_position(new box2D.b2Vec2(0, 1.88 * personScale));
 const circle_head = world.CreateBody(bd_circle_head);
 circle.set_m_radius(1.71 * personScale);
 circle_head.CreateFixture(circle, 1);
-circle_head.GetUserData().color = "#99e077";
-circle_head.GetUserData().border = theme.new_objects.border;
-circle_head.GetUserData().border_width = theme.new_objects.border_width;
-circle_head.GetUserData().border_scale_with_zoom =
+var circle_head_data = circle_head.GetUserData() as SimuloObjectData;
+circle_head_data.color = "#99e077";
+circle_head_data.border = theme.new_objects.border;
+circle_head_data.border_width = theme.new_objects.border_width;
+circle_head_data.border_scale_with_zoom =
 	theme.new_objects.border_scale_with_zoom;
-circle_head.GetUserData().circle_cake = theme.new_objects.circle_cake;
-circle_head.GetUserData().sound = "ground.wav";
+circle_head_data.circle_cake = theme.new_objects.circle_cake;
+circle_head_data.sound = "ground.wav";
 
 // joint it
 const jd = new box2D.b2RevoluteJointDef();
@@ -288,7 +334,7 @@ jd2ify.set_damping(0);
 jd2ify.set_collideConnected(false);
 world.CreateJoint(jd2ify);
 
-function createPolygonShape(tuples) {
+function createPolygonShape(tuples: [x: number, y: number][]) {
 	var shape = new box2D.b2PolygonShape();
 	var [vecArrFirstElem, destroyVecArr] = box2D.tuplesToVec2Array(tuples);
 	shape.Set(vecArrFirstElem, tuples.length);
@@ -308,7 +354,8 @@ const circleBody = world.CreateBody(bd_circle);
 const circleShape = new box2D.b2CircleShape();
 circleShape.set_m_radius(0.1);
 circleBody.CreateFixture(circleShape, 1);
-circleBody.GetUserData().color = getRandomColor(
+var circleData = circleBody.GetUserData() as SimuloObjectData;
+circleData.color = getRandomColor(
 	theme.new_objects.color.hue_min,
 	theme.new_objects.color.hue_max,
 	theme.new_objects.color.sat_min,
@@ -318,12 +365,12 @@ circleBody.GetUserData().color = getRandomColor(
 	theme.new_objects.color.alp_min,
 	theme.new_objects.color.alp_max,
 	true
-);
-circleBody.GetUserData().border = theme.new_objects.border;
-circleBody.GetUserData().border_width = theme.new_objects.border_width;
-circleBody.GetUserData().border_scale_with_zoom =
+) as string;
+circleData.border = theme.new_objects.border;
+circleData.border_width = theme.new_objects.border_width;
+circleData.border_scale_with_zoom =
 	theme.new_objects.border_scale_with_zoom;
-circleBody.GetUserData().circle_cake = theme.new_objects.circle_cake;
+circleData.circle_cake = theme.new_objects.circle_cake;
 
 const ZERO = new box2D.b2Vec2(0, 0);
 const temp = new box2D.b2Vec2(0, 0);
@@ -336,10 +383,11 @@ const car = world.CreateBody(bd_car);
 const carShape = new box2D.b2PolygonShape();
 carShape.SetAsBox(1.1, 0.1);
 car.CreateFixture(carShape, 1);
-car.GetUserData().color = "#00a0ff";
-car.GetUserData().border = theme.new_objects.border;
-car.GetUserData().border_width = theme.new_objects.border_width;
-car.GetUserData().border_scale_with_zoom =
+var carData = car.GetUserData() as SimuloObjectData;
+carData.color = "#00a0ff";
+carData.border = theme.new_objects.border;
+carData.border_width = theme.new_objects.border_width;
+carData.border_scale_with_zoom =
 	theme.new_objects.border_scale_with_zoom;
 
 const bd_wheel1 = new box2D.b2BodyDef();
@@ -349,12 +397,13 @@ const wheel1 = world.CreateBody(bd_wheel1);
 const wheelShape1 = new box2D.b2CircleShape();
 wheelShape1.set_m_radius(0.5);
 wheel1.CreateFixture(wheelShape1, 1);
-wheel1.GetUserData().color = "#404040";
-wheel1.GetUserData().border = theme.new_objects.border;
-wheel1.GetUserData().border_width = theme.new_objects.border_width;
-wheel1.GetUserData().border_scale_with_zoom =
+var wheel1Data = wheel1.GetUserData() as SimuloObjectData;
+wheel1Data.color = "#404040";
+wheel1Data.border = theme.new_objects.border;
+wheel1Data.border_width = theme.new_objects.border_width;
+wheel1Data.border_scale_with_zoom =
 	theme.new_objects.border_scale_with_zoom;
-wheel1.GetUserData().circle_cake = theme.new_objects.circle_cake;
+wheel1Data.circle_cake = theme.new_objects.circle_cake;
 
 const bd_wheel2 = new box2D.b2BodyDef();
 bd_wheel2.set_type(box2D.b2_dynamicBody);
@@ -363,12 +412,13 @@ const wheel2 = world.CreateBody(bd_wheel2);
 const wheelShape2 = new box2D.b2CircleShape();
 wheelShape2.set_m_radius(0.5);
 wheel2.CreateFixture(wheelShape2, 1);
-wheel2.GetUserData().color = "#404040";
-wheel2.GetUserData().border = theme.new_objects.border;
-wheel2.GetUserData().border_width = theme.new_objects.border_width;
-wheel2.GetUserData().border_scale_with_zoom =
+var wheel2Data = wheel2.GetUserData() as SimuloObjectData;
+wheel2Data.color = "#404040";
+wheel2Data.border = theme.new_objects.border;
+wheel2Data.border_width = theme.new_objects.border_width;
+wheel2Data.border_scale_with_zoom =
 	theme.new_objects.border_scale_with_zoom;
-wheel2.GetUserData().circle_cake = theme.new_objects.circle_cake;
+wheel2Data.circle_cake = theme.new_objects.circle_cake;
 
 const jd1 = new box2D.b2RevoluteJointDef();
 jd1.set_bodyA(car);
@@ -413,12 +463,51 @@ for (let i = 0; i < boxCount; i++) {
 
 var ei = 0;
 
-var creatingObjects = {};
-var springs = []; // this will be an object soon for multiplayer support
-var tools = {};
-var draggingObjects = {};
+
+/*							x: formatted.data.x,
+							y: formatted.data.y,
+							color: getRandomColor(
+								theme.new_objects.color.hue_min,
+								theme.new_objects.color.hue_max,
+								theme.new_objects.color.sat_min,
+								theme.new_objects.color.sat_max,
+								theme.new_objects.color.val_min,
+								theme.new_objects.color.val_max,
+								theme.new_objects.color.alp_min,
+								theme.new_objects.color.alp_max,
+								true
+							),
+							shape: "circle",
+							border: theme.new_objects.border,
+							border_width: theme.new_objects.border_width,
+							border_scale_with_zoom: theme.new_objects.border_scale_with_zoom,
+							circle_cake: theme.new_objects.circle_cake,
+							*/
+interface SimuloCreatingObject {
+	x: number;
+	y: number;
+	color: string;
+	shape: "circle" | "rectangle" | "polygon" | "edge" | "square";
+	border: string | null;
+	border_width: number | null;
+	border_scale_with_zoom: boolean;
+	circle_cake?: boolean;
+}
+
+var creatingObjects: { [key: string]: SimuloCreatingObject } = {};
+
+
+var springs: Box2D.b2MouseJoint[] = []; // this will be an object soon for multiplayer support
+var tools: { [key: string]: string } = {};
+//var draggingObjects = {};
 var deleteSprings = false;
-var movingObjects = {};
+//var movingObjects = {};
+
+interface SpringData {
+	p1: [number, number];
+	p2: [number, number];
+}
+
 /*
 wss.on('connection', (ws) => {
   */
@@ -426,7 +515,7 @@ io.on("connection", (ws) => {
 	let peer1 = new nodeDataChannel.PeerConnection("Peer" + ei, {
 		iceServers: ["stun:stun.l.google.com:19302"],
 	}); // TODO: self-host ICE
-	let dc1 = null;
+	let dc1: nodeDataChannel.DataChannel | null = null;
 
 	console.log("------\nweb socket connected through socket.io!\n------");
 	// tell them they're connected
@@ -440,12 +529,12 @@ io.on("connection", (ws) => {
 		})
 	);
 
-	peer1.onLocalDescription((sdp, type) => {
+	peer1.onLocalDescription((sdp: string, type: nodeDataChannel.DescriptionType) => {
 		console.log("Peer1 SDP:", sdp, " Type:", type);
 		ws.send(JSON.stringify({ sdp: sdp, type: type }));
 	});
 
-	peer1.onLocalCandidate((candidate, mid) => {
+	peer1.onLocalCandidate((candidate: string, mid: string) => {
 		console.log("Peer1 Candidate:", candidate);
 		ws.send(JSON.stringify({ candidate: candidate, mid: mid }));
 	});
@@ -471,10 +560,10 @@ io.on("connection", (ws) => {
 	// gonna use proper uuids later, im just too lazy to npm i it yk
 
 	dc1 = peer1.createDataChannel("main");
-	dc1.onMessage((msg) => {
+	dc1.onMessage((msg: string | Buffer) => {
 		//console.log('Peer1 Received Msg dc1:', msg);
 		try {
-			var formatted = JSON.parse(msg);
+			var formatted = JSON.parse(msg as string);
 			// it should have a type and data. if not, it's not a valid message
 			if (
 				formatted.type !== undefined &&
@@ -485,8 +574,8 @@ io.on("connection", (ws) => {
 				// handle it
 				//console.log('    Type: "' + formatted.type + '"');
 				if (formatted.type == "player mouse") {
-					var springsFormatted = [];
-					springs.forEach((spring) => {
+					var springsFormatted: SpringData[] = [];
+					springs.forEach((spring: Box2D.b2MouseJoint) => {
 						spring.SetTarget(
 							new box2D.b2Vec2(formatted.data.x, formatted.data.y)
 						);
@@ -519,7 +608,7 @@ io.on("connection", (ws) => {
 								theme.new_objects.color.alp_min,
 								theme.new_objects.color.alp_max,
 								true
-							),
+							) as string,
 							shape: "rectangle",
 							border: theme.new_objects.border,
 							border_width: theme.new_objects.border_width,
@@ -539,7 +628,7 @@ io.on("connection", (ws) => {
 								theme.new_objects.color.alp_min,
 								theme.new_objects.color.alp_max,
 								true
-							),
+							) as string,
 							shape: "circle",
 							border: theme.new_objects.border,
 							border_width: theme.new_objects.border_width,
@@ -550,7 +639,7 @@ io.on("connection", (ws) => {
 						// instead, start a spring
 
 						var pos = new box2D.b2Vec2(formatted.data.x, formatted.data.y);
-						var selectedBody = null;
+						var selectedBody: Box2D.b2Body | null = null;
 						var node = world.GetBodyList();
 						while (box2D.getPointer(node)) {
 							var b = node;
@@ -642,10 +731,11 @@ io.on("connection", (ws) => {
 							const shape = new box2D.b2PolygonShape();
 							shape.SetAsBox(width / 2, height / 2);
 							body.CreateFixture(shape, 1);
-							body.GetUserData().color = creatingObjects[uuid].color;
-							body.GetUserData().border = theme.new_objects.border;
-							body.GetUserData().border_width = theme.new_objects.border_width;
-							body.GetUserData().border_scale_with_zoom =
+							var bodyData = body.GetUserData() as SimuloObjectData;
+							bodyData.color = creatingObjects[uuid].color;
+							bodyData.border = theme.new_objects.border;
+							bodyData.border_width = theme.new_objects.border_width;
+							bodyData.border_scale_with_zoom =
 								theme.new_objects.border_scale_with_zoom;
 
 							// Remove the creatingObject for this uuid
@@ -670,10 +760,11 @@ io.on("connection", (ws) => {
 							const shape = new box2D.b2PolygonShape();
 							shape.SetAsBox(size / 2, size / 2);
 							body.CreateFixture(shape, 1);
-							body.GetUserData().color = creatingObjects[uuid].color;
-							body.GetUserData().border = theme.new_objects.border;
-							body.GetUserData().border_width = theme.new_objects.border_width;
-							body.GetUserData().border_scale_with_zoom =
+							var bodyData = body.GetUserData() as SimuloObjectData;
+							bodyData.color = creatingObjects[uuid].color;
+							bodyData.border = theme.new_objects.border;
+							bodyData.border_width = theme.new_objects.border_width;
+							bodyData.border_scale_with_zoom =
 								theme.new_objects.border_scale_with_zoom;
 
 							// Remove the creatingObject for this uuid
@@ -703,13 +794,14 @@ io.on("connection", (ws) => {
 							const shape = new box2D.b2CircleShape();
 							shape.set_m_radius(radius);
 							body.CreateFixture(shape, 1);
-							body.GetUserData().color = creatingObjects[uuid].color;
-							body.GetUserData().border = creatingObjects[uuid].border;
-							body.GetUserData().border_width =
+							var bodyData = body.GetUserData() as SimuloObjectData;
+							bodyData.color = creatingObjects[uuid].color;
+							bodyData.border = creatingObjects[uuid].border;
+							bodyData.border_width =
 								creatingObjects[uuid].border_width;
-							body.GetUserData().border_scale_with_zoom =
+							bodyData.border_scale_with_zoom =
 								creatingObjects[uuid].border_scale_with_zoom;
-							body.GetUserData().circle_cake =
+							bodyData.circle_cake =
 								creatingObjects[uuid].circle_cake;
 
 							// Remove the creatingObject for this uuid
@@ -734,7 +826,7 @@ io.on("connection", (ws) => {
 		}
 	});
 	dc1.onOpen(() => {
-		dataChannels.push(dc1);
+		dataChannels.push(dc1 as nodeDataChannel.DataChannel);
 	});
 
 	// Send test message to client after some time
@@ -807,9 +899,47 @@ setInterval(() => {
 	loop(frameRate);
 }, frameRate);
 
-var previousStep = null;
+var previousStep: SimuloStep | null = null;
 
-function loop(delta) {
+interface SimuloStep {
+	shapes: SimuloShape[];
+	creating_objects: object;
+	background: string;
+	springs: { p1: number[], p2: number[] }[];
+	time_scale: number;
+	paused: boolean;
+}
+
+interface SimuloShape {
+	x: number;
+	y: number;
+	type: "circle" | "polygon" | "edge";
+	radius?: number;
+	angle: number;
+	color: string;
+	border?: string | null;
+	border_width?: number | null;
+	border_scale_with_zoom?: boolean;
+	image?: string | null;
+}
+
+interface SimuloCircle extends SimuloShape {
+	type: "circle";
+	circle_cake: boolean;
+}
+
+interface SimuloPolygon extends SimuloShape {
+	type: "polygon";
+	points: { x: number; y: number }[]; // points is the points of all polygon fixtures so they can be drawn as one
+	vertices: { x: number, y: number }[]; // vertices is per-fixture
+}
+
+interface SimuloEdge extends SimuloShape {
+	type: "edge";
+	vertices: { x: number; y: number }[];
+}
+
+function loop(delta: number) {
 	// step physics
 	if (paused) {
 		if (previousStep) {
@@ -832,12 +962,13 @@ function loop(delta) {
 	// get body
 	var node = world.GetBodyList();
 
-	var shapes = [];
+	var shapes: SimuloShape[] = [];
 
 	while (box2D.getPointer(node)) {
 		var b = node;
 		node = node.GetNext();
-		var color = b.GetUserData().color;
+		var bodyData = b.GetUserData() as SimuloObjectData;
+		var color = bodyData.color;
 
 		var position = b.GetPosition();
 		//console.log("position: " + position.x + ", " + position.y);
@@ -868,16 +999,16 @@ function loop(delta) {
 					radius: circleShape.get_m_radius(),
 					angle: b.GetAngle(),
 					color: color,
-					border: b.GetUserData().border,
-					border_width: b.GetUserData().border_width,
-					border_scale_with_zoom: b.GetUserData().border_scale_with_zoom,
-					circle_cake: b.GetUserData().circle_cake,
-					image: b.GetUserData().image,
-				});
+					border: bodyData.border,
+					border_width: bodyData.border_width,
+					border_scale_with_zoom: bodyData.border_scale_with_zoom,
+					circle_cake: bodyData.circle_cake,
+					image: bodyData.image,
+				} as SimuloCircle);
 			} else if (shapeType == box2D.b2Shape.e_polygon) {
 				const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
 				var vertexCount = polygonShape.get_m_count();
-				var verts = [];
+				var verts: { x: number, y: number }[] = [];
 				// iterate over vertices
 				for (let i = 0; i < vertexCount; i++) {
 					const vertex = polygonShape.get_m_vertices(i);
@@ -894,12 +1025,12 @@ function loop(delta) {
 					vertices: verts,
 					angle: b.GetAngle(),
 					color: color,
-					border: b.GetUserData().border,
-					border_width: b.GetUserData().border_width,
-					border_scale_with_zoom: b.GetUserData().border_scale_with_zoom,
-					points: b.GetUserData().points,
-					image: b.GetUserData().image,
-				});
+					border: bodyData.border,
+					border_width: bodyData.border_width,
+					border_scale_with_zoom: bodyData.border_scale_with_zoom,
+					//points: bodyData.points,
+					image: bodyData.image,
+				} as SimuloPolygon);
 			} else if (shapeType == box2D.b2Shape.e_edge) {
 				const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
 				var vertices = [
@@ -921,11 +1052,11 @@ function loop(delta) {
 					vertices: vertices,
 					angle: b.GetAngle(),
 					color: color,
-					border: b.GetUserData().border,
-					border_width: b.GetUserData().border_width,
-					border_scale_with_zoom: b.GetUserData().border_scale_with_zoom,
-					image: b.GetUserData().image,
-				});
+					border: bodyData.border,
+					border_width: bodyData.border_width,
+					border_scale_with_zoom: bodyData.border_scale_with_zoom,
+					image: bodyData.image,
+				} as SimuloEdge);
 			} else {
 				//console.log("unknown shape type");
 			}
@@ -933,7 +1064,7 @@ function loop(delta) {
 		}
 	}
 
-	var springsFormatted = [];
+	var springsFormatted: { p1: number[], p2: number[] }[] = [];
 	springs.forEach((spring) => {
 		springsFormatted.push({
 			p1: [spring.GetTarget().get_x(), spring.GetTarget().get_y()],
@@ -941,7 +1072,7 @@ function loop(delta) {
 		});
 	});
 
-	var thisStep = {
+	var thisStep: SimuloStep = {
 		shapes: shapes,
 		creating_objects: creatingObjects,
 		background: theme.background,
@@ -956,7 +1087,9 @@ function loop(delta) {
 	//console.log("vomit");
 }
 
-function sendAll(type, data) {
+
+
+function sendAll(type: string, data: any) {
 	dataChannels.forEach((dc) => {
 		// check if open first
 		if (!dc.isOpen()) {
