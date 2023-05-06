@@ -1,3 +1,6 @@
+// This is a super simple script for `npm run build` that creates a `dist-package.json` file based on the `package.json` file.
+// Since it's not supposed to be in `dist`, it's not a TypeScript file to build and is just a plain JS file.
+
 import fs from 'fs';
 import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
