@@ -6,7 +6,7 @@ import express from "express";
 import nodeDataChannel from "node-datachannel"; // for WebRTC data channels
 
 // from ./shared/utils.js
-import { getRandomColor, randomRange, hsvToRgb } from "../shared/src/utils.js";
+import { getRandomColor, randomRange, hsvToRgb } from "../../shared/src/utils.js";
 
 // This is ESM, let's get back __dirname and __filename
 import * as url from "url";
@@ -884,10 +884,10 @@ const positionIterations = 2;
 app.use(express.static("client"));
 
 // static serve node_modules/@tabler/icons/icons
-app.use("/icons", express.static(__dirname + "/../node_modules/@mdi/svg/svg"));
+app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg"));
 
 // static serve media
-app.use("/media", express.static(__dirname + "/../media"));
+app.use("/media", express.static(__dirname + "/../../media"));
 // note the two ../ because it'll end up in dist. if you ever run the TS directly without transpiling to a different directory, you'll need to remove one of the ../
 
 // put app on http server
