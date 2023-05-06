@@ -1,9 +1,9 @@
 // Simulo Server
 // Node.js backend for Simulo with server-side physics, WebRTC signaling, etc.
 
-import * as express from "express";
+import express from "express";
 //import { WebSocketServer } from "ws"; // TODO: move back to ws from socket.io
-import * as nodeDataChannel from "node-datachannel"; // for WebRTC data channels
+import nodeDataChannel from "node-datachannel"; // for WebRTC data channels
 
 // from ./shared/utils.js
 import { getRandomColor, randomRange, hsvToRgb } from "../shared/src/utils.js";
@@ -13,7 +13,7 @@ import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
-import * as Box2DFactory from "box2d-wasm";
+import Box2DFactory from "box2d-wasm";
 const box2D = await Box2DFactory();
 
 var themes: { [key: string]: SimuloTheme } = {
@@ -884,10 +884,16 @@ const positionIterations = 2;
 app.use(express.static("client"));
 
 // static serve node_modules/@tabler/icons/icons
-app.use("/icons", express.static(__dirname + "/node_modules/@mdi/svg/svg"));
+app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg"));
 
 // static serve media
-app.use("/media", express.static(__dirname + "/media"));
+app.use("/media", express.static(__dirname + "/../../media"));
+console.log(__dirname + "/../../media");
+console.log(__dirname + "/../../media");
+console.log(__dirname + "/../../media");
+console.log(__dirname + "/../../media");
+console.log('this has been media')
+// note the two ../ because it'll end up in dist. if you ever run the TS directly without transpiling to a different directory, you'll need to remove one of the ../
 
 // put app on http server
 
