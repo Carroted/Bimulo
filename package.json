@@ -1,8 +1,10 @@
 {
-  "main": "index.js",
+  "name": "simulo",
+  "version": "0.1.0",
+  "main": "dist/server/src/index.js",
   "scripts": {
-    "start": "node dist/src/index.js",
-    "build": "rm -rf dist && tsc && mkdir -p dist/client/assets && cp -r client/assets dist/client/assets && cp package.json dist/package.json && cp -r node_modules dist/node_modules && cp -r package-lock.json dist/package-lock.json && echo Build complete!"
+    "start": "node dist/server/src/index.js",
+    "build": "rm -rf dist && tsc && mkdir -p dist/client && node distPackage.js && cp dist-package.json dist/package.json && cp -r client/assets dist/client/assets && cp -r client/icons dist/client/icons && cp -r client/index.css dist/client/index.css && cp -r client/index.html dist/client/index.html && cp -r media dist/media && cp -r node_modules dist/node_modules && cp -r client/src dist/client/src && echo Build complete!"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
