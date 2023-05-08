@@ -916,7 +916,7 @@ function draw() {
     var cursorSize = 1;
     var scaleWithZoom = true;
     if (scaleWithZoom) {
-        cursorSize = cursorSize * 50 / cameraZoom;
+        cursorSize = cursorSize * 40 / cameraZoom;
     }
 
     ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
