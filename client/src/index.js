@@ -53,7 +53,8 @@ tools.forEach(tool => {
     });
 });
 
-import SimuloNetworkClient from '/src/SimuloNetworkClient/index.js';
+//import SimuloNetworkClient from '/src/SimuloNetworkClient/index.js';
+//import SimuloLocalClient from '/shared/src/SimuloLocalClient.js';
 
 var host = false;
 // get query string for host (?host=true, ?host=false or none for false)
@@ -73,37 +74,67 @@ if (queryString) {
     });
 }
 
+import Box2DFactory from '../../node_modules/box2d-wasm/dist/es/entry.js';
+
+
 var timeScale = null;
 var paused = null;
 
-var networkClient = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
+//var client = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
+import SimuloServerController from '../../shared/src/SimuloServerController.js';
+var serverController = new SimuloServerController({
+    background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
+    ground: {
+        color: "#a1acfa",
+        border: null,
+        border_width: null,
+        border_scale_with_zoom: false,
+    },
+    new_objects: {
+        color: {
+            hue_min: 0,
+            hue_max: 360,
+            sat_min: 0,
+            sat_max: 100,
+            val_min: 80,
+            val_max: 100,
+            alp_min: 1,
+            alp_max: 1,
+        },
+        border: null,
+        border_width: null,
+        border_scale_with_zoom: false,
+        circle_cake: false,
+    },
+}, null, true);
+var client = serverController.localClients[0];
 // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-networkClient.on('connect', () => { // Connect fires when the WebSocket connects
+client.on('connect', () => { // Connect fires when the WebSocket connects
     console.log('WebSocket connection established');
 });
 
-networkClient.on('ready', () => { // Ready fires when the WebRTC connection is established
+client.on('ready', () => { // Ready fires when the WebRTC connection is established
     console.log('WebRTC connection established');
 });
 
-networkClient.on('data', (data) => { // Data fires when data is received from the server
+client.on('data', (data) => { // Data fires when data is received from the server
     handleData(data); // Parses and displays the data in the world
 });
 
-networkClient.connect(); // Connects to the server
+client.connect(); // Connects to the server
 function setTheme(name) {
-    networkClient.emitData('set_theme', name);
+    client.emitData('set_theme', name);
 }
 function setTool(name) {
-    networkClient.emitData('set_tool', name);
+    client.emitData('set_tool', name);
 }
 
 function setPaused(paused) {
-    networkClient.emitData('set_paused', paused);
+    client.emitData('set_paused', paused);
 }
 function setTimeScale(timeScale) {
-    networkClient.emitData('set_time_scale', timeScale);
+    client.emitData('set_time_scale', timeScale);
 }
 
 var entities = []; // We update this every time we receive a world update from the server
@@ -340,7 +371,7 @@ function onPointerDown(e) {
             y: mousePos.y,
             down: true
         };
-        networkClient.emitData("player mouse down", player);
+        client.emitData("player mouse down", player);
         pointerDown = true;
     }
 }
@@ -354,7 +385,7 @@ function onPointerUp(e) {
             y: mousePos.y,
             down: false
         };
-        networkClient.emitData("player mouse up", player);
+        client.emitData("player mouse up", player);
     }
     isDragging = false;
     initialPinchDistance = null;
@@ -382,7 +413,7 @@ function onPointerMove(e) {
         y: mousePos.y,
         down: pointerDown
     };
-    networkClient.emitData("player mouse", player);
+    client.emitData("player mouse", player);
 }
 
 var touchStartElement = null;
@@ -461,7 +492,7 @@ function adjustZoom(zoomAmount, zoomFactor, center) {
 
         // mouse moved, lets send
         var mousePos = transformPoint(lastX, lastY);
-        networkClient.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
+        client.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
     }
 }
 
@@ -563,7 +594,7 @@ window.addEventListener('resize', function () {
 
 function setName(name) {
     player.name = name;
-    networkClient.emitData('update player', player);
+    client.emitData('update player', player);
 }
 
 
@@ -601,9 +632,9 @@ document.addEventListener('keydown', function (e) {
     keysDown[e.keyCode] = true;
     movementUpdate();
     if (e.keyCode === 37) {
-        networkClient.emitData("player start", "left");
+        client.emitData("player start", "left");
     } else if (e.keyCode === 39) {
-        networkClient.emitData("player start", "right");
+        client.emitData("player start", "right");
     }
 
     // if its a number from 1-9, look for #menu-X-button and click it
@@ -618,7 +649,7 @@ document.addEventListener('keydown', function (e) {
 }, false);
 
 function movementUpdate() {
-    networkClient.emitData('movementUpdate', {
+    client.emitData('movementUpdate', {
         // send position as it is now for reference
         x: player.x,
         y: player.y
@@ -632,9 +663,9 @@ document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
 
     if (e.keyCode === 37) {
-        networkClient.emitData("player stop", "left");
+        client.emitData("player stop", "left");
     } else if (e.keyCode === 39) {
-        networkClient.emitData("player stop", "right");
+        client.emitData("player stop", "right");
     }
 }, false);
 /*
@@ -824,7 +855,7 @@ function draw() {
     for (var id in players) {
         //console.log('ID: ' + id);
         var player = players[id];
-        if (id === networkClient.id) {
+        if (id === client.id) {
             // shit
             continue;
         }
@@ -888,21 +919,21 @@ function draw() {
         console.log('drawing tool icon');
         ctx.drawImage(getImage(toolIcon), mousePos.x + 0.55, mousePos.y + 0.75, 0.5, 0.5);
     }
-    if (networkClient.id) {
-        if (creatingObjects[networkClient.id]) {
-            if (creatingObjects[networkClient.id].shape === 'rectangle') {
+    if (client.id) {
+        if (creatingObjects[client.id]) {
+            if (creatingObjects[client.id].shape === 'rectangle') {
                 // Calculate the difference between creatingObjects[id] x and y and the current player x and y
-                const width = Math.abs(mousePos.x - creatingObjects[networkClient.id].x);
-                const height = Math.abs(mousePos.y - creatingObjects[networkClient.id].y);
+                const width = Math.abs(mousePos.x - creatingObjects[client.id].x);
+                const height = Math.abs(mousePos.y - creatingObjects[client.id].y);
 
                 // Determine the top-left corner of the rectangle
-                const topLeftX = Math.min(mousePos.x, creatingObjects[networkClient.id].x);
-                const topLeftY = Math.min(mousePos.y, creatingObjects[networkClient.id].y);
+                const topLeftX = Math.min(mousePos.x, creatingObjects[client.id].x);
+                const topLeftY = Math.min(mousePos.y, creatingObjects[client.id].y);
 
                 // Set the fill style to transparent white
-                //ctx.fillStyle = creatingObjects[networkClient.id].color;
+                //ctx.fillStyle = creatingObjects[client.id].color;
                 // empty fill
-                var splitColor = creatingObjects[networkClient.id].color.split(',');
+                var splitColor = creatingObjects[client.id].color.split(',');
                 console.log('splitColor: ' + splitColor);
                 var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
                 alpha = alpha / 2;
@@ -924,12 +955,12 @@ function draw() {
                 ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
                 ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
             }
-            else if (creatingObjects[networkClient.id].shape === 'circle') {
-                var dx = (mousePos.x - creatingObjects[networkClient.id].x);
-                var dy = (mousePos.y - creatingObjects[networkClient.id].y);
+            else if (creatingObjects[client.id].shape === 'circle') {
+                var dx = (mousePos.x - creatingObjects[client.id].x);
+                var dy = (mousePos.y - creatingObjects[client.id].y);
                 var radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
 
-                var splitColor = creatingObjects[networkClient.id].color.split(',');
+                var splitColor = creatingObjects[client.id].color.split(',');
                 var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
                 alpha = alpha / 2;
                 splitColor[3] = alpha + ')';
@@ -939,17 +970,17 @@ function draw() {
                 ctx.lineWidth = 3.5 / cameraZoom;
 
                 // if dx is negative
-                var posX = creatingObjects[networkClient.id].x + radius;
-                var posY = creatingObjects[networkClient.id].y + radius;
+                var posX = creatingObjects[client.id].x + radius;
+                var posY = creatingObjects[client.id].y + radius;
                 if (dx < 0) {
-                    posX = creatingObjects[networkClient.id].x - radius;
+                    posX = creatingObjects[client.id].x - radius;
                 }
                 if (dy < 0) {
-                    posY = creatingObjects[networkClient.id].y - radius;
+                    posY = creatingObjects[client.id].y - radius;
                 }
 
                 // Draw the circle
-                drawCircleAt(posX, posY, radius, 0, creatingObjects[networkClient.id].circle_cake);
+                drawCircleAt(posX, posY, radius, 0, creatingObjects[client.id].circle_cake);
             }
         }
     }

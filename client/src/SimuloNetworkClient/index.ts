@@ -1,22 +1,27 @@
+import { io } from "./socket.io.esm.min.js";
+
 class SimuloNetworkClient {
+    activeDc: RTCDataChannel | null = null;
+    listeners: { [key: string]: Function[] } = {};
+    id: string | null = null;
+    ws: any | null = null;
+    localCandidates: RTCIceCandidate[] = [];
+
     constructor() {
-        let localCandidates = [];
-        this._activeDc = null;
-        this._listeners = {};
+        this.localCandidates = [];
+        this.activeDc = null;
+        this.listeners = {};
         this.id = null;
     }
-    // emitData func, we will add jsdoc description
+
     /**
-        * @returns {boolean}
-        * @description Emit data to the server over WebRTC. Returns true if the data was sent, false if not.
-        * @param {string} type
-        * @param {object} data
+        Emit data to the server over WebRTC. Returns true if the data was sent, false if not.
         * @example
         * networkClient.emitData('playerMove', { x: 0, y: 0 });
         */
-    emitData(type, data) {
-        if (this._activeDc) {
-            this._activeDc.send(JSON.stringify({
+    emitData(type: string, data: any) {
+        if (this.activeDc) {
+            this.activeDc.send(JSON.stringify({
                 type: type,
                 data: data
             }));
@@ -25,18 +30,13 @@ class SimuloNetworkClient {
         return false;
     }
 
-    // emitReliableData func, we will add jsdoc description
-    /**
-     * @returns {boolean}
-     * @description Emit data to the server over WebSocket. Returns true if the data was sent, false if not.
-     * @param {string} type
-     * @param {object} data
+    /** Emit data to the server over WebSocket. Returns true if the data was sent, false if not.
      * @example
      * networkClient.emitReliableData('chatMessage', { message: 'Hello, world!' });
     */
-    emitReliableData(type, data) {
-        if (this._ws) {
-            this._ws.send(JSON.stringify({
+    emitReliableData(type: string, data: any) {
+        if (this.ws) {
+            this.ws.send(JSON.stringify({
                 type: type,
                 data: data
             }));
@@ -47,23 +47,22 @@ class SimuloNetworkClient {
 
     // connect func, we will add jsdoc description
     /**
-     * @description Connect to the server in both WebRTC and WebSocket. Fires `connect` event when WebSocket connects, and `ready` event when WebRTC connects.
-     * @returns {void}
+     * Connect to the server in both WebRTC and WebSocket. Fires `connect` event when WebSocket connects, and `ready` event when WebRTC connects.
     */
     connect() {
-        this._ws = io();
-        this._ws.on('connect', () => {
-            this.id = this._ws.id;
+        this.ws = io();
+        this.ws.on('connect', () => {
+            this.id = this.ws.id;
             console.log('WebSocket connection established');
-            this._ws.send('i exist, notice me');
+            this.ws.send('i exist, notice me');
             // Connect event is for WebSocket, ready event is for WebRTC
-            if (this._listeners['connect']) {
-                this._listeners['connect'].forEach((listener) => {
+            if (this.listeners['connect']) {
+                this.listeners['connect'].forEach((listener) => {
                     listener();
                 });
             }
         });
-        this._ws.on('message', (event) => {
+        this.ws.on('message', (event: any) => {
             console.log('Received message from server:', event);
             const msg = JSON.parse(event);
             // rtcpeerconnection to the same domain
@@ -81,7 +80,7 @@ class SimuloNetworkClient {
                             pc.createAnswer().then((answer) => {
                                 pc.setLocalDescription(answer)
                                     .then(() => {
-                                        this._ws.send(JSON.stringify(answer));
+                                        this.ws.send(JSON.stringify(answer));
                                     });
                             });
                         }
@@ -114,13 +113,13 @@ class SimuloNetworkClient {
                     try {
                         var formatted = JSON.parse(event.data);
                         //handleData(formatted);
-                        if (this._listeners[formatted.type]) {
-                            this._listeners[formatted.type].forEach((listener) => {
+                        if (this.listeners[formatted.type]) {
+                            this.listeners[formatted.type].forEach((listener) => {
                                 listener(formatted.data);
                             });
                         }
-                        if (this._listeners['data']) {
-                            this._listeners['data'].forEach((listener) => {
+                        if (this.listeners['data']) {
+                            this.listeners['data'].forEach((listener) => {
                                 listener(formatted);
                             });
                         }
@@ -133,9 +132,9 @@ class SimuloNetworkClient {
                 // Send data to server
                 dc.onopen = () => {
                     //dc.send('Hello, server!');
-                    this._activeDc = dc;
-                    if (this._listeners['ready']) {
-                        this._listeners['ready'].forEach((listener) => {
+                    this.activeDc = dc;
+                    if (this.listeners['ready']) {
+                        this.listeners['ready'].forEach((listener) => {
                             listener();
                         });
                     }
@@ -145,8 +144,8 @@ class SimuloNetworkClient {
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
                 if (event.candidate) {
-                    this._ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
-                    localCandidates.push(event.candidate);
+                    this.ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
+                    this.localCandidates.push(event.candidate);
                 }
             };
         });
@@ -154,32 +153,26 @@ class SimuloNetworkClient {
 
     // on func
     /**
-     * @description Add an event listener for a specific event type
-     * @param {string} type
-     * @param {function} listener
-     * @returns {void}
+     * Add an event listener for a specific event type
      * @example
      * networkClient.on('connect', () => {
      *    console.log('Connected to WebSocket!');
      * });
     */
-    on(type, listener) {
-        if (!this._listeners[type]) {
-            this._listeners[type] = [];
+    on(type: string, listener: Function) {
+        if (!this.listeners[type]) {
+            this.listeners[type] = [];
         }
-        this._listeners[type].push(listener);
+        this.listeners[type].push(listener);
     }
 
     // off func
     /**
-     * @description Remove an event listener for a specific event type
-     * @param {string} type
-     * @param {function} listener
-     * @returns {void}
+     * Remove an event listener for a specific event type
     */
-    off(type, listener) {
-        if (this._listeners[type]) {
-            this._listeners[type] = this._listeners[type].filter((l) => {
+    off(type: string, listener: Function) {
+        if (this.listeners[type]) {
+            this.listeners[type] = this.listeners[type].filter((l) => {
                 return l !== listener;
             });
         }

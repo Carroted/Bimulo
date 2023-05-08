@@ -4,16 +4,18 @@
   "main": "dist/server/src/index.js",
   "scripts": {
     "start": "node dist/server/src/index.js",
-    "build": "rm -rf dist && tsc && mkdir -p dist/client && node distPackage.js && cp dist-package.json dist/package.json && cp -r client/assets dist/client/assets && cp -r client/icons dist/client/icons && cp -r client/index.css dist/client/index.css && cp -r client/index.html dist/client/index.html && cp -r media dist/media && cp -r node_modules dist/node_modules && cp -r client/src dist/client/src && echo Build complete!"
+    "build": "node build.js"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
     "@tabler/icons": "^2.10.0",
     "box2d-wasm": "npm:liquidfun-wasm@^6.0.4-lf.1",
+    "chalk": "^5.2.0",
     "express": "^4.17.2",
     "node-datachannel": "^0.4.1",
     "simple-peer": "^9.11.1",
     "socket.io": "^4.6.1",
+    "terminal-link": "^3.0.0",
     "wrtc": "^0.4.7",
     "ws": "^8.13.0"
   },

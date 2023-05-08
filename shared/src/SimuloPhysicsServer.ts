@@ -1,4 +1,27 @@
-import Box2DFactory from "box2d-wasm";
+
+// import Box2DFactory from "box2d-wasm";
+
+// check if node or browser
+/*
+var isNode = false;
+try {
+    if (process) {
+        isNode = true;
+    }
+} catch (e) {
+    isNode = false;
+}
+
+const Box2DFactoryFactory = import(isNode ? "box2d-wasm" : "/box2d-wasm/entry.js");
+var ok = await Box2DFactoryFactory;
+const Box2DFactory = ok.default;
+const box2D = await Box2DFactory();
+// import Box2D namespace
+*/
+
+
+//import { Box2D } from "../../node_modules/box2d-wasm/dist/es/entry";
+import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
 const box2D = await Box2DFactory();
 
 import SimuloObjectData from "./SimuloObjectData.js";
@@ -20,6 +43,7 @@ function createPolygonShape(tuples: [x: number, y: number][]) { // This isn't in
 }
 
 class SimuloObject {
+    private physicsServer: SimuloPhysicsServer;
     get id(): number | null {
         let objectData = this.body.GetUserData() as SimuloObjectData;
         return objectData.id;
@@ -132,8 +156,9 @@ class SimuloObject {
     // when set any of the above, itll update the box2d body, which we'll define now:
     body: Box2D.b2Body; // this is not meant to be accessed in scripting, only in the physics server. however, we cant really make it private and it shouldnt cause any issues
 
-    constructor(body: Box2D.b2Body) {
+    constructor(physicsServer: SimuloPhysicsServer, body: Box2D.b2Body) {
         this.body = body;
+        this.physicsServer = physicsServer;
     }
     addForce([x, y]: [x: number, y: number]) {
         this.body.ApplyForce(new box2D.b2Vec2(x, y), this.body.GetPosition(), true);
@@ -154,9 +179,11 @@ class SimuloObject {
 }
 
 class SimuloJoint {
+    physicsServer: SimuloPhysicsServer;
     joint: Box2D.b2Joint;
-    constructor(joint: Box2D.b2Joint) {
+    constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         this.joint = joint;
+        this.physicsServer = physicsServer;
     }
     destroy() {
         this.joint.GetBodyA().GetWorld().DestroyJoint(this.joint);
@@ -165,10 +192,11 @@ class SimuloJoint {
 // extension of SimuloJoint (SimuloMouseSpring):
 class SimuloMouseSpring extends SimuloJoint {
     mouseJoint: Box2D.b2MouseJoint;
-    constructor(joint: Box2D.b2Joint) {
+    fakeTarget: [x: number, y: number] | null = null;
+    constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         // cast with box2d
         var mouseJoint = box2D.castObject(joint, box2D.b2MouseJoint);
-        super(joint); // super is used to call functions of the parent class
+        super(physicsServer, joint); // super is used to call functions of the parent class
         this.mouseJoint = mouseJoint;
     }
     get damping(): number {
@@ -184,11 +212,15 @@ class SimuloMouseSpring extends SimuloJoint {
         this.mouseJoint.SetStiffness(stiffness);
     }
     get target(): [x: number, y: number] {
-        let target = this.mouseJoint.GetTarget();
-        return [target.get_x(), target.get_y()];
+        if (!this.fakeTarget) {
+            let target = this.mouseJoint.GetTarget();
+            return [target.get_x(), target.get_y()];
+        }
+        return this.fakeTarget;
     }
     set target([x, y]: [x: number, y: number]) {
-        this.mouseJoint.SetTarget(new box2D.b2Vec2(x, y));
+        //this.mouseJoint.SetTarget(new box2D.b2Vec2(x, y));
+        this.physicsServer.setMouseJointTarget(this, [x, y]);
     }
     get maxForce(): number {
         return this.mouseJoint.GetMaxForce();
@@ -211,8 +243,21 @@ class SimuloPhysicsServer {
     listeners: { [key: string]: Function[] } = {};
     theme: SimuloTheme;
     ground: Box2D.b2Body;
+    mouseJointTargetsToSet: Map<SimuloMouseSpring, [x: number, y: number]> = new Map();
     // object. key is ID, value is SimuloObject
     bodies: { [key: string]: SimuloObject } = {};
+    setMouseJointTarget(mouseJoint: SimuloMouseSpring, target: [x: number, y: number]) {
+        this.mouseJointTargetsToSet.set(mouseJoint, target);
+        // set fake target
+        mouseJoint.fakeTarget = target;
+    }
+    applyMouseJointTargets() {
+        this.mouseJointTargetsToSet.forEach((target, mouseJoint) => {
+            mouseJoint.mouseJoint.SetTarget(new box2D.b2Vec2(target[0], target[1]));
+            mouseJoint.fakeTarget = null;
+        });
+        this.mouseJointTargetsToSet.clear();
+    }
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -294,7 +339,7 @@ class SimuloPhysicsServer {
             }
         }
 
-        var object = new SimuloObject(body);
+        var object = new SimuloObject(this, body);
         if (bodyData.id != null) {
             this.bodies[bodyData.id] = object;
         }
@@ -353,7 +398,7 @@ class SimuloPhysicsServer {
             }
         }
 
-        var object = new SimuloObject(body);
+        var object = new SimuloObject(this, body);
         if (bodyData.id != null) {
             this.bodies[bodyData.id] = object;
         }
@@ -385,7 +430,7 @@ class SimuloPhysicsServer {
         mouseJointDef.set_stiffness(stiffness);
         mouseJointDef.set_damping(damping);
         var mouseJoint = this.world.CreateJoint(mouseJointDef);
-        var joint = new SimuloMouseSpring(mouseJoint);
+        var joint = new SimuloMouseSpring(this, mouseJoint);
         return joint;
     }
 
@@ -516,11 +561,12 @@ class SimuloPhysicsServer {
             }
         }
         return selectedBodies.map((b) => {
-            return new SimuloObject(b);
+            return new SimuloObject(this, b);
         });
     }
 
     step(delta: number, velocityIterations: number, positionIterations: number) {
+        this.applyMouseJointTargets();
         this.world.Step(delta, velocityIterations, positionIterations);
         this.deleteObjects.forEach((obj) => {
             if (obj instanceof box2D.b2Body) {
