@@ -1,4 +1,4 @@
-function getRandomColor(hueMin, hueMax, satMin, satMax, valMin, valMax, alpMin, alpMax, string) {
+function getRandomColor(hueMin: number, hueMax: number, satMin: number, satMax: number, valMin: number, valMax: number, alpMin: number, alpMax: number, string: boolean) {
     var hue = randomRange(hueMin, hueMax);
     var sat = randomRange(satMin, satMax);
     var val = randomRange(valMin, valMax);
@@ -12,12 +12,12 @@ function getRandomColor(hueMin, hueMax, satMin, satMax, valMin, valMax, alpMin, 
     return [rgb[0] * 255, rgb[1] * 255, rgb[2] * 255, alp];
 }
 
-function randomRange(min, max) {
+function randomRange(min: number, max: number) {
     return Math.random() * (max - min) + min;
 }
 
-function hsvToRgb(h, s, v) {
-    const calculateColor = (n, k = (n + h / 60) % 6) => {
+function hsvToRgb(h: number, s: number, v: number) {
+    const calculateColor = (n: number, k = (n + h / 60) % 6) => {
         const minK = Math.min(k, 4 - k, 1);
         const maxK = Math.max(minK, 0);
         return v - v * s * maxK;

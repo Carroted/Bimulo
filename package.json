@@ -1,21 +1,31 @@
 {
-  "main": "index.js",
+  "name": "simulo",
+  "version": "0.1.0",
+  "main": "dist/server/src/index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node dist/server/src/index.js",
+    "build": "node build.js"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
     "@tabler/icons": "^2.10.0",
     "box2d-wasm": "npm:liquidfun-wasm@^6.0.4-lf.1",
+    "chalk": "^5.2.0",
+    "earcut": "^2.2.4",
     "express": "^4.17.2",
     "node-datachannel": "^0.4.1",
     "simple-peer": "^9.11.1",
     "socket.io": "^4.6.1",
+    "terminal-link": "^3.0.0",
     "wrtc": "^0.4.7",
     "ws": "^8.13.0"
   },
   "engines": {
     "node": ">=16.x"
+  },
+  "devDependencies": {
+    "@types/earcut": "^2.1.1",
+    "@types/express": "^4.17.17"
   },
   "type": "module"
 }
