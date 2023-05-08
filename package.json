@@ -11,6 +11,7 @@
     "@tabler/icons": "^2.10.0",
     "box2d-wasm": "npm:liquidfun-wasm@^6.0.4-lf.1",
     "chalk": "^5.2.0",
+    "earcut": "^2.2.4",
     "express": "^4.17.2",
     "node-datachannel": "^0.4.1",
     "simple-peer": "^9.11.1",
@@ -23,6 +24,7 @@
     "node": ">=16.x"
   },
   "devDependencies": {
+    "@types/earcut": "^2.1.1",
     "@types/express": "^4.17.17"
   },
   "type": "module"

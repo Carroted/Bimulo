@@ -913,11 +913,16 @@ function draw() {
     }
 
     ctx.fillStyle = 'red';
+    var cursorSize = 1;
+    var scaleWithZoom = true;
+    if (scaleWithZoom) {
+        cursorSize = cursorSize * 30 / cameraZoom;
+    }
 
-    ctx.drawImage(cursor, mousePos.x, mousePos.y, 0.7, cursor.height * (0.7 / cursor.width));
+    ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
     if (toolIcon) {
         console.log('drawing tool icon');
-        ctx.drawImage(getImage(toolIcon), mousePos.x + 0.55, mousePos.y + 0.75, 0.5, 0.5);
+        ctx.drawImage(getImage(toolIcon), mousePos.x + ((0.55 * cursorSize)), mousePos.y + ((0.75 * cursorSize)), (0.5 * cursorSize), (0.5 * cursorSize));
     }
     if (client.id) {
         if (creatingObjects[client.id]) {

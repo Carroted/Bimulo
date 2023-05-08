@@ -2,7 +2,7 @@
 // import Box2DFactory from "box2d-wasm";
 
 // check if node or browser
-/*
+
 var isNode = false;
 try {
     if (process) {
@@ -11,6 +11,7 @@ try {
 } catch (e) {
     isNode = false;
 }
+/*
 
 const Box2DFactoryFactory = import(isNode ? "box2d-wasm" : "/box2d-wasm/entry.js");
 var ok = await Box2DFactoryFactory;
@@ -22,6 +23,18 @@ const box2D = await Box2DFactory();
 
 //import { Box2D } from "../../node_modules/box2d-wasm/dist/es/entry";
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
+//import earcut from 'earcut';
+/*
+var earcut;
+if (isNode) {
+    let module: any = await import("earcut");
+    earcut = module.default;
+} else {
+    /// @ts-ignore
+    let module: any = await import("../../node_modules/earcut/dist/earcut.min.js");
+    earcut = module.default;
+}*/
+
 const box2D = await Box2DFactory();
 
 import SimuloObjectData from "./SimuloObjectData.js";
@@ -192,7 +205,6 @@ class SimuloJoint {
 // extension of SimuloJoint (SimuloMouseSpring):
 class SimuloMouseSpring extends SimuloJoint {
     mouseJoint: Box2D.b2MouseJoint;
-    fakeTarget: [x: number, y: number] | null = null;
     constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         // cast with box2d
         var mouseJoint = box2D.castObject(joint, box2D.b2MouseJoint);
@@ -212,15 +224,11 @@ class SimuloMouseSpring extends SimuloJoint {
         this.mouseJoint.SetStiffness(stiffness);
     }
     get target(): [x: number, y: number] {
-        if (!this.fakeTarget) {
-            let target = this.mouseJoint.GetTarget();
-            return [target.get_x(), target.get_y()];
-        }
-        return this.fakeTarget;
+        let target = this.mouseJoint.GetTarget();
+        return [target.get_x(), target.get_y()];
     }
     set target([x, y]: [x: number, y: number]) {
-        //this.mouseJoint.SetTarget(new box2D.b2Vec2(x, y));
-        this.physicsServer.setMouseJointTarget(this, [x, y]);
+        this.mouseJoint.SetTarget(new box2D.b2Vec2(x, y));
     }
     get maxForce(): number {
         return this.mouseJoint.GetMaxForce();
@@ -243,21 +251,8 @@ class SimuloPhysicsServer {
     listeners: { [key: string]: Function[] } = {};
     theme: SimuloTheme;
     ground: Box2D.b2Body;
-    mouseJointTargetsToSet: Map<SimuloMouseSpring, [x: number, y: number]> = new Map();
     // object. key is ID, value is SimuloObject
     bodies: { [key: string]: SimuloObject } = {};
-    setMouseJointTarget(mouseJoint: SimuloMouseSpring, target: [x: number, y: number]) {
-        this.mouseJointTargetsToSet.set(mouseJoint, target);
-        // set fake target
-        mouseJoint.fakeTarget = target;
-    }
-    applyMouseJointTargets() {
-        this.mouseJointTargetsToSet.forEach((target, mouseJoint) => {
-            mouseJoint.mouseJoint.SetTarget(new box2D.b2Vec2(target[0], target[1]));
-            mouseJoint.fakeTarget = null;
-        });
-        this.mouseJointTargetsToSet.clear();
-    }
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -344,6 +339,79 @@ class SimuloPhysicsServer {
             this.bodies[bodyData.id] = object;
         }
         return object;
+    }
+    addAxle(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject) {
+        const jd = new box2D.b2RevoluteJointDef();
+        jd.set_bodyA(objectA.body);
+        jd.set_bodyB(objectB.body);
+        jd.set_localAnchorA(new box2D.b2Vec2(anchorA[0], anchorA[1]));
+        jd.set_localAnchorB(new box2D.b2Vec2(anchorB[0], anchorB[1]));
+        // no collide
+        jd.set_collideConnected(false);
+        this.world.CreateJoint(jd);
+    }
+    addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number) {
+        // distance joint
+        const jd = new box2D.b2DistanceJointDef();
+        jd.set_bodyA(objectA.body);
+        jd.set_bodyB(objectB.body);
+        jd.set_localAnchorA(new box2D.b2Vec2(anchorA[0], anchorA[1]));
+        jd.set_localAnchorB(new box2D.b2Vec2(anchorB[0], anchorB[1]));
+        jd.set_collideConnected(true);
+        jd.set_stiffness(stiffness);
+        jd.set_length(length);
+        jd.set_damping(damping);
+        this.world.CreateJoint(jd);
+    }
+    addPerson() {
+        var personBodyPoints: [x: number, y: number][] = [
+            [0.0, 0.64],
+            [0.712, 0.499],
+            [1.19, 0.172],
+            [1.504, -0.27],
+            [1.67, -0.779],
+            [1.678, -3.272],
+            [1.643, -3.469],
+            [1.451, -3.597],
+            [-1.416, -3.589],
+            [-1.582, -3.51],
+            [-1.654, -3.35],
+            [-1.67, -0.779],
+            [-1.497, -0.305],
+            [-1.231, 0.126],
+            [-0.65, 0.517],
+            [-0.328, 0.614],
+        ];
+
+        const personScale = 0.4;
+
+        personBodyPoints = personBodyPoints.map(function (point) {
+            return [point[0] * personScale, point[1] * personScale];
+        });
+
+        var body = this.addPolygon(personBodyPoints as [x: number, y: number][], [0, 0], 0, 1, 0.5, 0, {
+            color: "#000000a0",
+            border: '#ffffff',
+            border_width: 1,
+            border_scale_with_zoom: true,
+            //image: "/assets/textures/body.png",
+            sound: "ground.wav"
+        } as SimuloObjectData, false);
+
+        var head = this.addCircle(1.71 * personScale, [0, 1.88 * personScale], 0, 1, 0.5, 0, {
+            color: "#99e077",
+            border: null,
+            border_width: null,
+            border_scale_with_zoom: false,
+            circle_cake: false,
+            sound: "ground.wav"
+        } as SimuloObjectData, false);
+
+        var axle = this.addAxle([0, 0.32 * personScale], [0, (1.88 - 0.32) * personScale], body, head);
+        // arguments (in order): anchorA, anchorB, bodyA, bodyB
+
+
+        var spring = this.addSpring([0, 3.26 * personScale], [0, (1.88 - 3.26) * personScale], body, head, 20 * personScale, 0.005 * personScale, 0);
     }
     addCircle(
         radius: number,
@@ -523,6 +591,8 @@ class SimuloPhysicsServer {
         floorData.border_scale_with_zoom =
             theme.ground.border_scale_with_zoom;
         floorData.sound = "ground.wav";
+
+        this.addPerson();
     }
 
     getObjectsAtPoint(point: [x: number, y: number]) {
@@ -564,9 +634,7 @@ class SimuloPhysicsServer {
             return new SimuloObject(this, b);
         });
     }
-
     step(delta: number, velocityIterations: number, positionIterations: number) {
-        this.applyMouseJointTargets();
         this.world.Step(delta, velocityIterations, positionIterations);
         this.deleteObjects.forEach((obj) => {
             if (obj instanceof box2D.b2Body) {

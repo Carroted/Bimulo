@@ -111,18 +111,17 @@ class SimuloServerController {
             var springsFormatted: SpringData[] = [];
             this.springs.forEach((spring: SimuloMouseSpring) => {
                 spring.target = [formatted.data.x, formatted.data.y];
-                /*springsFormatted.push({
+                springsFormatted.push({
                     p1: [formatted.data.x, formatted.data.y],
-                    p2: [spring.GetAnchorB().get_x(), spring.GetAnchorB().get_y()],
+                    p2: [spring.anchor[0], spring.anchor[1]]
                 });
-                */
             });
 
             this.sendAll("player mouse", {
                 id: uuid,
                 x: formatted.data.x,
                 y: formatted.data.y,
-                springs: springsFormatted,
+                springs: springsFormatted // TODO: concat previousStep springs, this is just mousesprings
             });
 
             // 👍 we did it, yay, we're so cool
@@ -248,6 +247,15 @@ class SimuloServerController {
                     const dy = formatted.data.y - this.creatingObjects[uuid].y;
                     const radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
 
+                    var posX = this.creatingObjects[uuid].x + radius;
+                    var posY = this.creatingObjects[uuid].y + radius;
+                    if (dx < 0) {
+                        posX = this.creatingObjects[uuid].x - radius;
+                    }
+                    if (dy < 0) {
+                        posY = this.creatingObjects[uuid].y - radius;
+                    }
+
                     var bodyData: object = {
                         color: this.creatingObjects[uuid].color,
                         border: this.theme.new_objects.border,
@@ -260,7 +268,7 @@ class SimuloServerController {
                         circle_cake: this.creatingObjects[uuid].circle_cake
                     };
 
-                    this.physicsServer.addCircle(radius, [formatted.data.x, formatted.data.y], 0, 1, 0.5, 0, bodyData, false);
+                    this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0, bodyData, false);
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
@@ -284,6 +292,11 @@ class SimuloServerController {
     constructor(theme: SimuloTheme, server: http.Server | null, localClient: boolean) {
         this.theme = theme;
         this.physicsServer = new SimuloPhysicsServer(this.theme);
+        this.physicsServer.on('collision', (data: any) => {
+            // .sound, .volume and .pitch. we can just send it as-is through network
+            this.sendAll('collision', data);
+        });
+
         if (server) {
             this.networkServer = new SimuloNetworkServer(server);
 
@@ -300,7 +313,9 @@ class SimuloServerController {
         }
 
         if (localClient) {
-            this.localClients.push(new SimuloLocalClient(this, 'local'));
+            var id = 'local';
+            this.localClients.push(new SimuloLocalClient(this, id));
+            this.tools[id] = "drag";
         }
 
         setInterval(() => {
