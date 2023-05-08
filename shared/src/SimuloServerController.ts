@@ -117,11 +117,14 @@ class SimuloServerController {
                 });
             });
 
+            var springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
+            springsFormatted2 = springsFormatted2.concat(springsFormatted);
+
             this.sendAll("player mouse", {
                 id: uuid,
                 x: formatted.data.x,
                 y: formatted.data.y,
-                springs: springsFormatted // TODO: concat previousStep springs, this is just mousesprings
+                springs: springsFormatted2 // TODO: concat previousStep springs, this is just mousesprings
             });
 
             // 👍 we did it, yay, we're so cool

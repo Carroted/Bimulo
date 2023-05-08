@@ -793,6 +793,30 @@ class SimuloPhysicsServer {
 
         return thisStep;
     }
+    getAllSprings() {
+        var joint: Box2D.b2Joint = this.world.GetJointList();
+        var springs: { p1: number[], p2: number[] }[] = []; // distance joints are considered springs
+        var mouseSprings: { p1: number[], p2: number[] }[] = [];
+        while (box2D.getPointer(joint)) {
+            var j = joint;
+            joint = joint.GetNext();
+            if (j.GetType() == box2D.e_distanceJoint) {
+                var d = box2D.castObject(j, box2D.b2DistanceJoint);
+                springs.push({
+                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                });
+            }
+            else if (j.GetType() == box2D.e_mouseJoint) {
+                var m = box2D.castObject(j, box2D.b2MouseJoint);
+                mouseSprings.push({
+                    p1: [m.GetAnchorA().get_x(), m.GetAnchorA().get_y()],
+                    p2: [m.GetAnchorB().get_x(), m.GetAnchorB().get_y()],
+                });
+            }
+        }
+        return { springs: springs, mouseSprings: mouseSprings };
+    }
 }
 
 export default SimuloPhysicsServer;
