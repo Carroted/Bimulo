@@ -7,8 +7,17 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import path from 'path';
 
+import chalk from 'chalk';
+
 // import child_process
 import { exec } from 'child_process';
+
+const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+console.log(chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n'));
 
 var steps = [
     // remove dist folder
@@ -17,7 +26,7 @@ var steps = [
         const distPath = path.join(__dirname, 'dist');
         if (fs.existsSync(distPath)) {
             console.log(stepInfo, 'Clearing previous build...');
-            fs.rmdirSync(distPath, { recursive: true });
+            fs.rmSync(distPath, { recursive: true });
         }
         else {
             console.log(stepInfo, 'No previous build');
@@ -49,7 +58,6 @@ var steps = [
     },
     // generate distPackage
     async (stepInfo) => {
-        const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
         console.log(stepInfo, 'Creating dist-package.json...');
         // create a `dist-package.json` file
         var distPackage = {
@@ -127,4 +135,4 @@ for (var i = 0; i < steps.length; i++) {
 }
 
 
-console.log('Build complete!');
+console.log(chalk.greenBright.bold('\nBuild complete!'));
