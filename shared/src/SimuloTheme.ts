@@ -21,7 +21,12 @@ interface SimuloTheme {
         border_width: number | null;
         border_scale_with_zoom: boolean;
         circle_cake: boolean;
+        spring_image: string | null;
     };
+    tool_icons: { [key: string]: string | null };
+    system_cursor: boolean;
+    tool_icon_size: number
+    tool_icon_offset: [x: number, y: number];
 };
 
 export default SimuloTheme;

@@ -22,6 +22,7 @@ var themes = {
             border_width: null,
             border_scale_with_zoom: false,
             circle_cake: false,
+            spring_image: null,
         },
         tool_icons: {
             "drag": null,
@@ -56,6 +57,7 @@ var themes = {
             border_width: 1,
             border_scale_with_zoom: true,
             circle_cake: true,
+            spring_image: "/assets/textures/spring.png",
         },
         tool_icons: {
             "drag": "/assets/textures/tools/drag.png",
@@ -68,7 +70,7 @@ var themes = {
         tool_icon_offset: [0.3, 0.4]
     },
 };
-var theme = themes.default;
+var theme = themes.nostalgia;
 
 // on click tool, set active tool
 const tools = document.querySelectorAll('.tool');
@@ -244,6 +246,7 @@ function setTimeScale(timeScale) {
 
 var entities = []; // We update this every time we receive a world update from the server
 var creatingObjects = {};
+var creatingSprings = {};
 var players = {}; // We update this every time we receive a player mouse update from the server
 var springs = [];
 
@@ -252,6 +255,7 @@ function handleData(body) { // World data from the host, sent to all clients and
         if (body.type == 'world update') {
             entities = body.data.shapes;
             creatingObjects = body.data.creating_objects;
+            creatingSprings = body.data.creating_springs;
             // change :root background to body.data.background
             document.documentElement.style.background = body.data.background;
             springs = body.data.springs;
@@ -991,6 +995,7 @@ function draw() {
         }
     }
 
+
     for (var id in players) {
         //console.log('ID: ' + id);
         var player = players[id];
@@ -1003,6 +1008,20 @@ function draw() {
         // draw image getImage('/cursor.png')
         ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
 
+        if (creatingSprings[id]) {
+            if (creatingSprings[id].image) {
+                //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
+                console.log('img on spring')
+                drawStretchedImageLine(getImage(creatingSprings[id].image), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.4);
+            }
+            else {
+                console.log('no img on spring')
+                ctx.beginPath();
+                ctx.moveTo(creatingSprings[id].start[0], creatingSprings[id].start[1]);
+                ctx.lineTo(player.x, player.y);
+                ctx.stroke();
+            }
+        }
         if (creatingObjects[id]) {
             if (creatingObjects[id].shape === 'rectangle') {
                 // Calculate the difference between creatingObjects[id] x and y and the current player x and y
@@ -1065,6 +1084,20 @@ function draw() {
         ctx.drawImage(getImage(toolIcon), mousePos.x + ((toolIconOffset[0] * cursorSize)), mousePos.y + ((toolIconOffset[1] * cursorSize)), (toolIconSize * cursorSize), (toolIconSize * cursorSize));
     }
     if (client.id) {
+        if (creatingSprings[client.id]) {
+            if (creatingSprings[client.id].image) {
+                //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
+                console.log('img on spring')
+                drawStretchedImageLine(getImage(creatingSprings[client.id].image), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.4);
+            }
+            else {
+                console.log('no img on spring')
+                ctx.beginPath();
+                ctx.moveTo(creatingSprings[client.id].start[0], creatingSprings[client.id].start[1]);
+                ctx.lineTo(mousePos.x, mousePos.y);
+                ctx.stroke();
+            }
+        }
         if (creatingObjects[client.id]) {
             if (creatingObjects[client.id].shape === 'rectangle') {
                 // Calculate the difference between creatingObjects[id] x and y and the current player x and y

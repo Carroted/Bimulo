@@ -362,6 +362,10 @@ class SimuloPhysicsServer {
         jd.set_collideConnected(false);
         this.world.CreateJoint(jd);
     }
+    getLocalPoint(body: SimuloObject, point: [x: number, y: number]) {
+        var p = body.body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
+        return [p.get_x(), p.get_y()];
+    }
     addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, image?: string) {
         // distance joint
         const jd = new box2D.b2DistanceJointDef();

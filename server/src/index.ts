@@ -56,7 +56,17 @@ var themes: { [key: string]: SimuloTheme } = {
 			border_width: null,
 			border_scale_with_zoom: false,
 			circle_cake: false,
+			spring_image: null,
 		},
+		tool_icons: {
+			"drag": null,
+			"add_rectangle": "/assets/textures/add_rectangle.png",
+			"add_circle": "/assets/textures/add_circle.png",
+			"add_person": "/media/icon_square.png"
+		},
+		system_cursor: false,
+		tool_icon_size: 0.5,
+		tool_icon_offset: [0.55, 0.75]
 	},
 	nostalgia: {
 		background: "#738cff",
@@ -81,7 +91,17 @@ var themes: { [key: string]: SimuloTheme } = {
 			border_width: 1,
 			border_scale_with_zoom: true,
 			circle_cake: true,
+			spring_image: "/assets/textures/spring.png",
 		},
+		tool_icons: {
+			"drag": "/assets/textures/tools/drag.png",
+			"add_rectangle": "/assets/textures/tools/box.png",
+			"add_circle": "/assets/textures/tools/circle.png",
+			"add_person": "/media/icon_square.png"
+		},
+		system_cursor: true,
+		tool_icon_size: 0.7,
+		tool_icon_offset: [0.3, 0.4]
 	},
 };
 

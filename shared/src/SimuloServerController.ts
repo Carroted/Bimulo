@@ -25,6 +25,14 @@ interface SimuloStepExtended extends SimuloStep {
     creating_objects: object;
     time_scale: number;
     paused: boolean;
+    creating_springs: object;
+}
+
+function rotatePoint(point: [x: number, y: number], angle: number): [number, number] {
+    const [x, y] = point;
+    const newX = x * Math.cos(angle) - y * Math.sin(angle);
+    const newY = x * Math.sin(angle) + y * Math.cos(angle);
+    return [newX, newY] as [x: number, y: number];
 }
 
 interface SpringData {
@@ -55,6 +63,7 @@ class SimuloServerController {
     positionIterations: number = 2;
     springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
     creatingObjects: { [key: string]: SimuloCreatingObject } = {};
+    creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null } } = {};
     timeScaleMultiplier: number = 1;
     paused: boolean = false;
     theme: SimuloTheme;
@@ -99,7 +108,8 @@ class SimuloServerController {
             springs: springs3,
             time_scale: this.timeScaleMultiplier,
             paused: this.paused,
-            mouseSprings: []
+            mouseSprings: [],
+            creating_springs: this.creatingSprings
         };
 
         this.sendAll("world update", thisStep);
@@ -128,7 +138,7 @@ class SimuloServerController {
                 id: uuid,
                 x: formatted.data.x,
                 y: formatted.data.y,
-                springs: springsFormatted2 // TODO: concat previousStep springs, this is just mousesprings
+                springs: springsFormatted2
             });
 
             // 👍 we did it, yay, we're so cool
@@ -193,6 +203,9 @@ class SimuloServerController {
                     this.springs.push(mouseJoint);
                 }
             }
+            else if (this.tools[uuid] == 'add_spring') {
+                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.new_objects.spring_image };
+            }
             else if (this.tools[uuid] == "add_person") {
                 // just run this.physicsServer.addPerson
                 var person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
@@ -209,6 +222,64 @@ class SimuloServerController {
                 this.physicsServer.destroy(spring);
             });
             this.springs = [];
+            if (this.creatingSprings[uuid]) {
+                var pointABodies = this.physicsServer.getObjectsAtPoint(this.creatingSprings[uuid].start);
+                var pointBBodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                if (pointABodies.length > 0 && pointBBodies.length > 0) {
+                    /*// Calculate rotated anchor points
+                    var anchorAPosition = [
+                        this.creatingSprings[uuid][0] - pointABodies[0].position[0],
+                        this.creatingSprings[uuid][1] - pointABodies[0].position[1]
+                    ];
+                    var anchorBPosition = [
+                        formatted.data.x - pointBBodies[0].position[0],
+                        formatted.data.y - pointBBodies[0].position[1]
+                    ];
+
+                    var rotatedAnchorA = rotatePoint(anchorAPosition as [x: number, y: number], pointABodies[0].rotation);
+                    var rotatedAnchorB = rotatePoint(anchorBPosition as [x: number, y: number], pointBBodies[0].rotation);*/
+
+                    // just getlocalpoint
+                    var rotatedAnchorA = this.physicsServer.getLocalPoint(pointABodies[0], this.creatingSprings[uuid].start);
+                    var rotatedAnchorB = this.physicsServer.getLocalPoint(pointBBodies[0], [formatted.data.x, formatted.data.y]);
+
+                    // Add the spring with rotated anchor points
+                    if (this.creatingSprings[uuid].image == undefined) {
+                        var spring = this.physicsServer.addSpring(
+                            rotatedAnchorA as [x: number, y: number],
+                            rotatedAnchorB as [x: number, y: number],
+                            pointABodies[0],
+                            pointBBodies[0],
+                            30,
+                            // Calculate the distance between the two points using the Pythagorean theorem
+                            Math.sqrt(
+                                Math.pow(this.creatingSprings[uuid].start[0] - formatted.data.x, 2) +
+                                Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)
+                            ),
+                            0
+                        );
+                    }
+                    else {
+                        var spring = this.physicsServer.addSpring(
+                            rotatedAnchorA as [x: number, y: number],
+                            rotatedAnchorB as [x: number, y: number],
+                            pointABodies[0],
+                            pointBBodies[0],
+                            30,
+                            // Calculate the distance between the two points using the Pythagorean theorem
+                            Math.sqrt(
+                                Math.pow(this.creatingSprings[uuid].start[0] - formatted.data.x, 2) +
+                                Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)
+                            ),
+                            0,
+                            this.creatingSprings[uuid].image as string
+                        );
+                    }
+                }
+
+
+                delete this.creatingSprings[uuid];
+            }
             // Check if there's a creatingObject for this uuid
             if (this.creatingObjects[uuid]) {
                 // if cursor hasnt moved beyond 0.001, delete the object
@@ -247,7 +318,7 @@ class SimuloServerController {
                         [-width / 2, height / 2],
                     ];
 
-                    this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0, bodyData, false);
+                    this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false);
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
@@ -280,7 +351,7 @@ class SimuloServerController {
                         circle_cake: this.creatingObjects[uuid].circle_cake
                     };
 
-                    this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0, bodyData, false);
+                    this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0.5, bodyData, false);
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
