@@ -24,20 +24,18 @@ const box2D = await Box2DFactory();
 //import { Box2D } from "../../node_modules/box2d-wasm/dist/es/entry";
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
 //import earcut from 'earcut';
-/*
-var earcut;
-if (isNode) {
-    let module: any = await import("earcut");
-    earcut = module.default;
-} else {
-    /// @ts-ignore
-    let module: any = await import("../../node_modules/earcut/dist/earcut.min.js");
-    earcut = module.default;
-}*/
+
+/*// @ts-ignore
+import * as earcut from "../../node_modules/earcut/dist/earcut.min.js"; // cant figure out how to get typescript to let me import this properly. have type definitions but its not reading it when i relatively import it (which is needed for browser)
+console.log('earcut:', earcut);
+console.log('earcut.default:', earcut.default);*/
+// @ts-ignore
+import earcut from 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/+esm'
 
 const box2D = await Box2DFactory();
 
 import SimuloObjectData from "./SimuloObjectData.js";
+import SimuloJointData from "./SimuloJointData.js";
 import SimuloTheme from "./SimuloTheme.js";
 
 import { randomRange } from "./utils.js";
@@ -283,18 +281,29 @@ class SimuloPhysicsServer {
         data: { [key: string]: any },
         isStatic: boolean = false
     ) { // TODO: change above into an interface or class or whatever named SimuloPolygon simuloobjectdata wont be needed anymore after that, can have stuff directly in the interface
-        var shape = createPolygonShape(vertices);
+        //var shape = createPolygonShape(vertices);
+        // earcut triangulation
+        var triangles: number[] = earcut(vertices.flat());
+
         var bd = new box2D.b2BodyDef();
         bd.set_type(isStatic ? box2D.b2_staticBody : box2D.b2_dynamicBody);
         bd.set_position(new box2D.b2Vec2(position[0], position[1]));
         bd.set_angle(rotation);
         var body = this.world.CreateBody(bd);
-        var fd = new box2D.b2FixtureDef();
-        fd.set_shape(shape);
-        fd.set_density(density);
-        fd.set_friction(friction);
-        fd.set_restitution(restitution);
-        body.CreateFixture(fd);
+        // make a bunch of polygons
+        for (var i = 0; i < triangles.length; i += 3) {
+            var shape = createPolygonShape([
+                [vertices[triangles[i]][0], vertices[triangles[i]][1]],
+                [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
+                [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
+            ]);
+            var fd = new box2D.b2FixtureDef();
+            fd.set_shape(shape);
+            fd.set_density(density);
+            fd.set_friction(friction);
+            fd.set_restitution(restitution);
+            body.CreateFixture(fd);
+        }
         var bodyData = body.GetUserData() as SimuloObjectData;
         // for each key in data, set bodyData[key] to data[key]
         /* here are all the keys:
@@ -334,6 +343,9 @@ class SimuloPhysicsServer {
             }
         }
 
+        // set points to vertices
+        bodyData.points = vertices;
+
         var object = new SimuloObject(this, body);
         if (bodyData.id != null) {
             this.bodies[bodyData.id] = object;
@@ -350,7 +362,7 @@ class SimuloPhysicsServer {
         jd.set_collideConnected(false);
         this.world.CreateJoint(jd);
     }
-    addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number) {
+    addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, image?: string) {
         // distance joint
         const jd = new box2D.b2DistanceJointDef();
         jd.set_bodyA(objectA.body);
@@ -361,9 +373,16 @@ class SimuloPhysicsServer {
         jd.set_stiffness(stiffness);
         jd.set_length(length);
         jd.set_damping(damping);
-        this.world.CreateJoint(jd);
+        var joint = this.world.CreateJoint(jd);
+        var jointData = joint.GetUserData() as SimuloJointData;
+        if (image) {
+            jointData.image = image;
+        }
+        else {
+            jointData.image = null;
+        }
     }
-    addPerson() {
+    addPerson(offset: [x: number, y: number]) {
         var personBodyPoints: [x: number, y: number][] = [
             [0.0, 0.64],
             [0.712, 0.499],
@@ -389,16 +408,16 @@ class SimuloPhysicsServer {
             return [point[0] * personScale, point[1] * personScale];
         });
 
-        var body = this.addPolygon(personBodyPoints as [x: number, y: number][], [0, 0], 0, 1, 0.5, 0, {
-            color: "#000000a0",
-            border: '#ffffff',
-            border_width: 1,
-            border_scale_with_zoom: true,
-            //image: "/assets/textures/body.png",
+        var body = this.addPolygon(personBodyPoints as [x: number, y: number][], [offset[0], offset[1]], 0, 1, 0.5, 0, {
+            color: "#00000000",
+            border: null,
+            border_width: null,
+            border_scale_with_zoom: false,
+            image: "/assets/textures/body.png",
             sound: "ground.wav"
         } as SimuloObjectData, false);
 
-        var head = this.addCircle(1.71 * personScale, [0, 1.88 * personScale], 0, 1, 0.5, 0, {
+        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * personScale)], 0, 1, 0.5, 0, {
             color: "#99e077",
             border: null,
             border_width: null,
@@ -407,11 +426,16 @@ class SimuloPhysicsServer {
             sound: "ground.wav"
         } as SimuloObjectData, false);
 
-        var axle = this.addAxle([0, 0.32 * personScale], [0, (1.88 - 0.32) * personScale], body, head);
+        var axle = this.addAxle([0, (0.32 * personScale)], [0, ((1.88 - 0.32) * personScale)], body, head);
         // arguments (in order): anchorA, anchorB, bodyA, bodyB
 
-
-        var spring = this.addSpring([0, 3.26 * personScale], [0, (1.88 - 3.26) * personScale], body, head, 20 * personScale, 0.005 * personScale, 0);
+        /*if (Math.random() < 0.5) {
+            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0);
+        }
+        else*/ {
+            // add image (last param) as /assets/textures/spring.png
+            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0, "/assets/textures/spring.png");
+        }
     }
     addCircle(
         radius: number,
@@ -592,7 +616,7 @@ class SimuloPhysicsServer {
             theme.ground.border_scale_with_zoom;
         floorData.sound = "ground.wav";
 
-        this.addPerson();
+        this.addPerson([0, 0]);
     }
 
     getObjectsAtPoint(point: [x: number, y: number]) {
@@ -708,19 +732,37 @@ class SimuloPhysicsServer {
                             y: vertex.y,
                         });
                     }
-                    shapes.push({
-                        x: position.x,
-                        y: position.y,
-                        type: "polygon",
-                        vertices: verts,
-                        angle: b.GetAngle(),
-                        color: color,
-                        border: bodyData.border,
-                        border_width: bodyData.border_width,
-                        border_scale_with_zoom: bodyData.border_scale_with_zoom,
-                        //points: bodyData.points,
-                        image: bodyData.image,
-                    } as SimuloPolygon);
+                    if (bodyData.points != null) {
+                        shapes.push({
+                            x: position.x,
+                            y: position.y,
+                            type: "polygon",
+                            vertices: verts,
+                            angle: b.GetAngle(),
+                            color: color,
+                            border: bodyData.border,
+                            border_width: bodyData.border_width,
+                            border_scale_with_zoom: bodyData.border_scale_with_zoom,
+                            points: bodyData.points.map((p) => {
+                                return { x: p[0], y: p[1] };
+                            }),
+                            image: bodyData.image,
+                        } as SimuloPolygon);
+                    }
+                    else {
+                        shapes.push({
+                            x: position.x,
+                            y: position.y,
+                            type: "polygon",
+                            vertices: verts,
+                            angle: b.GetAngle(),
+                            color: color,
+                            border: bodyData.border,
+                            border_width: bodyData.border_width,
+                            border_scale_with_zoom: bodyData.border_scale_with_zoom,
+                            image: bodyData.image,
+                        } as SimuloPolygon);
+                    }
                 } else if (shapeType == box2D.b2Shape.e_edge) {
                     const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
                     var vertices = [
@@ -763,17 +805,28 @@ class SimuloPhysicsServer {
         });*/
 
         var joint = this.world.GetJointList();
-        var springs: { p1: number[], p2: number[] }[] = []; // distance joints are considered springs
+        var springs: { p1: number[], p2: number[], image: string | null }[] = []; // distance joints are considered springs
         var mouseSprings: { p1: number[], p2: number[] }[] = [];
         while (box2D.getPointer(joint)) {
             var j = joint;
             joint = joint.GetNext();
             if (j.GetType() == box2D.e_distanceJoint) {
                 var d = box2D.castObject(j, box2D.b2DistanceJoint);
-                springs.push({
-                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                });
+                var dData = d.GetUserData() as SimuloJointData;
+                if (dData.image != null) {
+                    springs.push({
+                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                        image: dData.image
+                    });
+                }
+                else {
+                    springs.push({
+                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                        image: null
+                    });
+                }
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
                 var m = box2D.castObject(j, box2D.b2MouseJoint);
@@ -795,17 +848,30 @@ class SimuloPhysicsServer {
     }
     getAllSprings() {
         var joint: Box2D.b2Joint = this.world.GetJointList();
-        var springs: { p1: number[], p2: number[] }[] = []; // distance joints are considered springs
+        var springs: { p1: number[], p2: number[], image: string | null }[] = []; // distance joints are considered springs
         var mouseSprings: { p1: number[], p2: number[] }[] = [];
         while (box2D.getPointer(joint)) {
             var j = joint;
             joint = joint.GetNext();
             if (j.GetType() == box2D.e_distanceJoint) {
                 var d = box2D.castObject(j, box2D.b2DistanceJoint);
-                springs.push({
-                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                });
+                var dData = d.GetUserData() as SimuloJointData;
+                if (dData.image != null) {
+                    console.log("PHYSICSSERVER SPRING: image");
+                    springs.push({
+                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                        image: dData.image
+                    });
+                }
+                else {
+                    console.log("PHYSICSSERVER SPRING: no image");
+                    springs.push({
+                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                        image: null
+                    });
+                }
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
                 var m = box2D.castObject(j, box2D.b2MouseJoint);

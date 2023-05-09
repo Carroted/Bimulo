@@ -30,6 +30,7 @@ interface SimuloStepExtended extends SimuloStep {
 interface SpringData {
     p1: [number, number];
     p2: [number, number];
+    image?: string | null;
 }
 
 interface SimuloCreatingObject {
@@ -118,6 +119,9 @@ class SimuloServerController {
             });
 
             var springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
+            springsFormatted2.forEach((spring: SpringData) => {
+                console.log('SERVERCONTROLLER SPRING img:', spring.image);
+            });
             springsFormatted2 = springsFormatted2.concat(springsFormatted);
 
             this.sendAll("player mouse", {
@@ -188,7 +192,12 @@ class SimuloServerController {
 
                     this.springs.push(mouseJoint);
                 }
-            } else {
+            }
+            else if (this.tools[uuid] == "add_person") {
+                // just run this.physicsServer.addPerson
+                var person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
+            }
+            else {
                 console.log("Unknown tool: " + this.tools[uuid]);
             }
 

@@ -75,6 +75,10 @@
   padding: 0;
 }
 
+#game.cursor {
+  cursor: default;
+}
+
 html,
 :root,
 body {
@@ -114,7 +118,7 @@ body {
   left: 0.5rem;
   background: #03081dc0;
   color: #ffffff50;
-  font-family: sans-serif;
+  font-family: "Urbanist", sans-serif;
   font-size: 1.2em;
   padding: 0 0.7em;
   z-index: 100;
@@ -138,6 +142,67 @@ body {
 .toolbar.secondary {
   bottom: 4.3rem;
   height: 3rem;
+}
+
+.toolbar.file {
+  /* at top left */
+  top: 0.5rem;
+  height: 2rem;
+}
+
+.file-menu {
+  /* element in file toolbar */
+  /* 0.5rem horizontal padding */
+  padding: 0 0.4rem;
+  margin: 0;
+  border-radius: 10000rem;
+  font-family: "Urbanist", sans-serif;
+  font-size: 0.9em;
+  user-select: none;
+  cursor: default;
+  color: #e0ddff40;
+}
+
+.file-menu:hover {
+  background: #ffffff20;
+  color: #ffffffd0;
+}
+
+.file-menu:active {
+  background: #ffffff30;
+  color: #ffffff20;
+}
+
+.file-menu.active {
+  background: #ffffff30;
+  color: #ffffff;
+}
+
+.file-menu-content {
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1.2em;
+  padding: 0 0.7em;
+  z-index: 100;
+  border-radius: 10000rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(15px);
+  top: 3rem;
+  left: 0.5rem;
+  display: none;
+  position: absolute;
+}
+
+.file-menu-content.active {
+  display: block;
 }
 
 .toolbar .tool {

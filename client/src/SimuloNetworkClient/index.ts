@@ -1,4 +1,5 @@
-import { io } from "./socket.io.esm.min.js";
+/// @ts-nocheck
+import { io } from "./socket.io.esm.min.js"; // dont think theres TS types for this, why not just ignore and move on
 
 class SimuloNetworkClient {
     activeDc: RTCDataChannel | null = null;

@@ -185,7 +185,7 @@ app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg")
 app.use("/media", express.static(__dirname + "/../../media"));
 
 // static serve /../../node_modules/box2d-wasm/dist/es to /box2d-wasm
-app.use("/node_modules/box2d-wasm/dist/es", express.static(__dirname + "/../../node_modules/box2d-wasm/dist/es"));
+app.use("/node_modules", express.static(__dirname + "/../../node_modules"));
 
 // note the two ../ because it'll end up in dist. if you ever run the TS directly without transpiling to a different directory, you'll need to remove one of the ../
 

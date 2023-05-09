@@ -1,6 +1,80 @@
+var themes = {
+    default: {
+        background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
+        ground: {
+            color: "#a1acfa",
+            border: null,
+            border_width: null,
+            border_scale_with_zoom: false,
+        },
+        new_objects: {
+            color: {
+                hue_min: 0,
+                hue_max: 360,
+                sat_min: 0,
+                sat_max: 100,
+                val_min: 80,
+                val_max: 100,
+                alp_min: 1,
+                alp_max: 1,
+            },
+            border: null,
+            border_width: null,
+            border_scale_with_zoom: false,
+            circle_cake: false,
+        },
+        tool_icons: {
+            "drag": null,
+            "add_rectangle": "/assets/textures/add_rectangle.png",
+            "add_circle": "/assets/textures/add_circle.png",
+            "add_person": "/media/icon_square.png"
+        },
+        system_cursor: false,
+        tool_icon_size: 0.5,
+        tool_icon_offset: [0.55, 0.75]
+    },
+    nostalgia: {
+        background: "#738cff",
+        ground: {
+            color: "#57b00d",
+            border: "#111111a0",
+            border_width: 1,
+            border_scale_with_zoom: true,
+        },
+        new_objects: {
+            color: {
+                hue_min: 0,
+                hue_max: 360,
+                sat_min: 0,
+                sat_max: 100,
+                val_min: 0,
+                val_max: 100,
+                alp_min: 1,
+                alp_max: 1,
+            },
+            border: "#111111a0",
+            border_width: 1,
+            border_scale_with_zoom: true,
+            circle_cake: true,
+        },
+        tool_icons: {
+            "drag": "/assets/textures/tools/drag.png",
+            "add_rectangle": "/assets/textures/tools/box.png",
+            "add_circle": "/assets/textures/tools/circle.png",
+            "add_person": "/media/icon_square.png"
+        },
+        system_cursor: true,
+        tool_icon_size: 0.7,
+        tool_icon_offset: [0.3, 0.4]
+    },
+};
+var theme = themes.default;
+
 // on click tool, set active tool
 const tools = document.querySelectorAll('.tool');
 var toolIcon = null;
+var toolIconSize = null;
+var toolIconOffset = null;
 tools.forEach(tool => {
     setUpClickSound(tool);
     tool.addEventListener('click', () => {
@@ -17,11 +91,15 @@ tools.forEach(tool => {
             console.log('setting tool to', tool.dataset.tool);
             setTool(tool.dataset.tool);
             // if theres data-img, set the icon to that
-            if (tool.dataset.img) {
-                toolIcon = tool.dataset.img;
+            if (theme.tool_icons[tool.dataset.tool]) {
+                toolIcon = theme.tool_icons[tool.dataset.tool];
+                toolIconSize = theme.tool_icon_size;
+                toolIconOffset = theme.tool_icon_offset;
             }
             else {
                 toolIcon = null;
+                toolIconSize = null;
+                toolIconOffset = null;
             }
         }
         // if data-action, handle
@@ -53,6 +131,41 @@ tools.forEach(tool => {
     });
 });
 
+// on click .file-menu, show the thing
+const fileMenus = document.querySelectorAll('.file-menu');
+fileMenus.forEach(fileMenu => {
+    console.log('fileMenu', fileMenu);
+    fileMenu.addEventListener('click', () => {
+        console.log('fileMenu clicked');
+        // if data-file, show the .file-menu-content with that id
+        if (fileMenu.dataset.file) {
+            console.log('fileMenu.dataset.file', fileMenu.dataset.file);
+            document.querySelectorAll('.file-menu-content').forEach(fileMenuContent => {
+                console.log('fileMenuContent', fileMenuContent);
+                if (fileMenuContent.id == fileMenu.dataset.file) {
+                    console.log('showing fileMenuContent');
+                    if (!fileMenuContent.classList.contains('active')) {
+                        fileMenuContent.classList.add('active');
+                    }
+                    else {
+                        fileMenuContent.classList.remove('active');
+                    }
+                }
+                else {
+                    console.log('hiding fileMenuContent');
+                    if (fileMenuContent.classList.contains('active')) {
+                        fileMenuContent.classList.remove('active');
+                    }
+                }
+            });
+        }
+        else {
+            console.log('no fileMenu.dataset.file');
+        }
+    });
+});
+
+
 //import SimuloNetworkClient from '/src/SimuloNetworkClient/index.js';
 //import SimuloLocalClient from '/shared/src/SimuloLocalClient.js';
 
@@ -82,31 +195,23 @@ var paused = null;
 
 //var client = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
 import SimuloServerController from '../../shared/src/SimuloServerController.js';
-var serverController = new SimuloServerController({
-    background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
-    ground: {
-        color: "#a1acfa",
-        border: null,
-        border_width: null,
-        border_scale_with_zoom: false,
-    },
-    new_objects: {
-        color: {
-            hue_min: 0,
-            hue_max: 360,
-            sat_min: 0,
-            sat_max: 100,
-            val_min: 80,
-            val_max: 100,
-            alp_min: 1,
-            alp_max: 1,
-        },
-        border: null,
-        border_width: null,
-        border_scale_with_zoom: false,
-        circle_cake: false,
-    },
-}, null, true);
+
+var serverController = new SimuloServerController(theme, null, true);
+var systemCursor = false;
+function enableSystemCursor() {
+    document.getElementById('game').classList.add('cursor');
+    systemCursor = true;
+}
+function disableSystemCursor() {
+    document.getElementById('game').classList.remove('cursor');
+    systemCursor = false;
+}
+if (theme.system_cursor) {
+    enableSystemCursor();
+}
+else {
+    disableSystemCursor();
+}
 var client = serverController.localClients[0];
 // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
@@ -228,6 +333,32 @@ function drawVerts(verts) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+}
+
+function drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength) // if useHeight false, will stretch along width
+{
+    // if useHeight is true, we will stretch along height between p1 and p2. if false, we will stretch along width between p1 and p2
+    if (useHeight) {
+        // draw between 2 points, offsetting other axis by half of otherAxisLength
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        var halfOtherAxisLength = otherAxisLength / 2;
+        ctx.save();
+        ctx.translate(x1, y1);
+        ctx.rotate(angle);
+        ctx.drawImage(image, -halfOtherAxisLength, 0, otherAxisLength, length);
+        ctx.restore();
+    } else {
+        // draw between 2 points, offsetting other axis by half of otherAxisLength
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        var halfOtherAxisLength = otherAxisLength / 2;
+        ctx.save();
+        ctx.translate(x1, y1);
+        ctx.rotate(angle);
+        ctx.drawImage(image, 0, -halfOtherAxisLength, length, otherAxisLength);
+        ctx.restore();
+    }
 }
 
 function rotateVerts(vertices, angle) {
@@ -846,10 +977,18 @@ function draw() {
     ctx.lineWidth = 3 / cameraZoom;
     for (var i = 0; i < springs.length; i++) {
         var spring = springs[i];
-        ctx.beginPath();
-        ctx.moveTo(spring.p1[0], spring.p1[1]);
-        ctx.lineTo(spring.p2[0], spring.p2[1]);
-        ctx.stroke();
+        if (spring.image) {
+            //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
+            console.log('img on spring')
+            drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.4);
+        }
+        else {
+            console.log('no img on spring')
+            ctx.beginPath();
+            ctx.moveTo(spring.p1[0], spring.p1[1]);
+            ctx.lineTo(spring.p2[0], spring.p2[1]);
+            ctx.stroke();
+        }
     }
 
     for (var id in players) {
@@ -918,11 +1057,12 @@ function draw() {
     if (scaleWithZoom) {
         cursorSize = cursorSize * 40 / cameraZoom;
     }
-
-    ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
+    if (!systemCursor) {
+        ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
+    }
     if (toolIcon) {
         console.log('drawing tool icon');
-        ctx.drawImage(getImage(toolIcon), mousePos.x + ((0.55 * cursorSize)), mousePos.y + ((0.75 * cursorSize)), (0.5 * cursorSize), (0.5 * cursorSize));
+        ctx.drawImage(getImage(toolIcon), mousePos.x + ((toolIconOffset[0] * cursorSize)), mousePos.y + ((toolIconOffset[1] * cursorSize)), (toolIconSize * cursorSize), (toolIconSize * cursorSize));
     }
     if (client.id) {
         if (creatingObjects[client.id]) {

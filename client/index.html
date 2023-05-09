@@ -40,11 +40,14 @@
     <div class="tool active" data-tool="drag">
       <svg data-src="/icons/cursor-default.svg"></svg>
     </div>
-    <div class="tool" data-tool="add_rectangle" data-img="/assets/textures/add_rectangle.png">
+    <div class="tool" data-tool="add_rectangle">
       <svg data-src="/icons/add-box.svg"></svg>
     </div>
-    <div class="tool" data-tool="add_circle" data-img="/assets/textures/add_circle.png">
+    <div class="tool" data-tool="add_circle">
       <svg data-src="/icons/add-circle.svg"></svg>
+    </div>
+    <div class="tool" data-tool="add_person">
+      <svg data-src="/media/icon.svg"></svg>
     </div>
     <div class="tool fake">
       <svg data-src="/icons/vector-polygon.svg"></svg>
@@ -57,6 +60,19 @@
     <input id="paused-toggle" type="checkbox">
   </div>
   <div class="toolbar secondary" id="objects" style="display: none;">coming soon</div>
+
+  <div class="toolbar file">
+    <div class="file-menu" data-file="file">File</div>
+    <div class="file-menu" data-file="settings">Settings</div>
+  </div>
+
+  <div class="file-menu-content" id="file">
+    Coming soon! Check Settings for now.
+  </div>
+
+  <div class="file-menu-content" id="settings">
+    Coming soon! Check File for now.
+  </div>
 
   <div class="chat" style="display: none;">
     <div class="messages">
