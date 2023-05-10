@@ -983,11 +983,9 @@ function draw() {
         var spring = springs[i];
         if (spring.image) {
             //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
-            console.log('img on spring')
             drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.4);
         }
         else {
-            console.log('no img on spring')
             ctx.beginPath();
             ctx.moveTo(spring.p1[0], spring.p1[1]);
             ctx.lineTo(spring.p2[0], spring.p2[1]);
@@ -1159,6 +1157,33 @@ function draw() {
 
                 // Draw the circle
                 drawCircleAt(posX, posY, radius, 0, creatingObjects[client.id].circle_cake);
+            }
+            // if polygon,just drawvertsat
+            else if (creatingObjects[client.id].shape === 'polygon') {
+                var splitColor = creatingObjects[client.id].color.split(',');
+                var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
+                alpha = alpha / 2;
+                splitColor[3] = alpha + ')';
+                var newColor = splitColor.join(',');
+                ctx.fillStyle = newColor;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3.5 / cameraZoom;
+
+                console.log('creatingObjects[client.id]:', creatingObjects[client.id]);
+
+                var points = creatingObjects[client.id].points;
+                console.log('points:', points);
+                points.push(points[0]);
+
+                points = points.map(function (point) {
+                    console.log('point:', point);
+                    // add a dot at the point
+                    drawCircleAt(point[0] - 0.05, point[1] - 0.05, 0.1, 0, false);
+                    return { x: point[0], y: point[1] };
+                });
+
+                // Draw the circle
+                drawVertsAt(0, 0, points, 0);
             }
         }
     }

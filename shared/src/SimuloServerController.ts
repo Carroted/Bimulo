@@ -49,7 +49,8 @@ interface SimuloCreatingObject {
     border: string | null;
     border_width: number | null;
     border_scale_with_zoom: boolean;
-    circle_cake?: boolean;
+    circle_cake?: boolean; // for circles
+    points?: [x: number, y: number][]; // for polygons
 }
 
 class SimuloServerController {
@@ -111,7 +112,6 @@ class SimuloServerController {
             mouseSprings: [],
             creating_springs: this.creatingSprings
         };
-
         this.sendAll("world update", thisStep);
         this.previousStep = thisStep;
 
@@ -127,6 +127,30 @@ class SimuloServerController {
                     p2: [spring.anchor[0], spring.anchor[1]]
                 });
             });
+            /*
+                        // if creatingObjects[uuid] exists and is polygon, add point to it if it's not too close to the last point
+                        if (this.creatingObjects[uuid] && this.creatingObjects[uuid].shape == "polygon") {
+                            if (!this.creatingObjects[uuid].points) {
+                                this.creatingObjects[uuid].points = [[formatted.data.x, formatted.data.y]];
+                            }
+                            else {
+                                var points = this.creatingObjects[uuid].points as [x: number, y: number][];
+                                if (points && points.length > 0) {
+                                    var lastPoint = points[points.length - 1];
+                                    var distance = Math.sqrt(Math.pow(formatted.data.x - lastPoint[0], 2) + Math.pow(formatted.data.y - lastPoint[1], 2));
+                                    if (distance > 0.1) {
+                                        console.log('line 145 of servercontroller. points before:', this.creatingObjects[uuid].points);
+                                        (this.creatingObjects[uuid].points as [x: number, y: number][]).push([formatted.data.x, formatted.data.y]);
+                                        console.log('pushed point', [formatted.data.x, formatted.data.y]);
+                                        console.log('line 148 of servercontroller. points after:', this.creatingObjects[uuid].points);
+                                    }
+                                }
+                                else {
+                                    this.creatingObjects[uuid].points = [[formatted.data.x, formatted.data.y]];
+                                }
+                            }
+                        }*/
+
 
             var springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
             springsFormatted2.forEach((spring: SpringData) => {
@@ -138,7 +162,8 @@ class SimuloServerController {
                 id: uuid,
                 x: formatted.data.x,
                 y: formatted.data.y,
-                springs: springsFormatted2
+                springs: springsFormatted2,
+                creating_objects: this.creatingObjects,
             });
 
             // 👍 we did it, yay, we're so cool
@@ -210,6 +235,28 @@ class SimuloServerController {
                 // just run this.physicsServer.addPerson
                 var person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
             }
+            else if (this.tools[uuid] == "add_polygon") {
+                this.creatingObjects[uuid] = {
+                    x: formatted.data.x,
+                    y: formatted.data.y,
+                    color: getRandomColor(
+                        this.theme.new_objects.color.hue_min,
+                        this.theme.new_objects.color.hue_max,
+                        this.theme.new_objects.color.sat_min,
+                        this.theme.new_objects.color.sat_max,
+                        this.theme.new_objects.color.val_min,
+                        this.theme.new_objects.color.val_max,
+                        this.theme.new_objects.color.alp_min,
+                        this.theme.new_objects.color.alp_max,
+                        true
+                    ) as string,
+                    shape: "polygon",
+                    border: this.theme.new_objects.border,
+                    border_width: this.theme.new_objects.border_width,
+                    border_scale_with_zoom: this.theme.new_objects.border_scale_with_zoom,
+                    points: [[formatted.data.x, formatted.data.y]],
+                };
+            }
             else {
                 console.log("Unknown tool: " + this.tools[uuid]);
             }
@@ -235,7 +282,7 @@ class SimuloServerController {
                         formatted.data.x - pointBBodies[0].position[0],
                         formatted.data.y - pointBBodies[0].position[1]
                     ];
-
+ 
                     var rotatedAnchorA = rotatePoint(anchorAPosition as [x: number, y: number], pointABodies[0].rotation);
                     var rotatedAnchorB = rotatePoint(anchorBPosition as [x: number, y: number], pointBBodies[0].rotation);*/
 
@@ -354,6 +401,26 @@ class SimuloServerController {
                     this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0.5, bodyData, false);
 
                     // Remove the creatingObject for this uuid
+                    delete this.creatingObjects[uuid];
+                }
+                else if (this.creatingObjects[uuid].shape == "polygon") {
+                    /*// just addPolygon with the points
+                    var pointsLocal = this.creatingObjects[uuid].points as [x: number, y: number][];
+                    pointsLocal.forEach((point) => {
+                        point[0] = this.creatingObjects[uuid].x - point[0];
+                        point[1] = this.creatingObjects[uuid].y - point[1];
+                    });
+                    this.physicsServer.addPolygon(pointsLocal as [x: number, y: number][], [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y], 0, 1, 0.5, 0.5, {
+                        color: this.creatingObjects[uuid].color,
+                        border: this.theme.new_objects.border,
+                        border_width: this.theme.new_objects.border_width,
+                        border_scale_with_zoom:
+                            this.theme.new_objects.border_scale_with_zoom,
+                        id: 92797981789171,
+                        sound: 'impact.wav',
+                        image: null,
+                    }, false);*/
+
                     delete this.creatingObjects[uuid];
                 }
             }
