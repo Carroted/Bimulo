@@ -28,7 +28,9 @@ var themes = {
             "drag": null,
             "add_rectangle": "/assets/textures/add_rectangle.png",
             "add_circle": "/assets/textures/add_circle.png",
-            "add_person": "/media/icon_square.png"
+            "add_person": "/media/icon_square.png",
+            "add_polygon": "/assets/textures/add_polygon.png",
+            "add_spring": "/assets/textures/add_spring.png",
         },
         system_cursor: false,
         tool_icon_size: 0.5,
@@ -72,6 +74,17 @@ var themes = {
 };
 var theme = themes.default;
 
+function queryParent(element, className) {
+    var parent = element.parentNode;
+    while (parent) {
+        if (parent.classList.contains(className)) {
+            return parent;
+        }
+        parent = parent.parentNode;
+    }
+    return null;
+}
+
 // on click tool, set active tool
 const tools = document.querySelectorAll('.tool');
 var toolIcon = null;
@@ -85,7 +98,7 @@ tools.forEach(tool => {
             return;
         }
         // remove active class from all tools in that toolbar, without removing it from other toolbars
-        tool.parentElement.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+        queryParent(tool, "toolbar").querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
         tool.classList.add('active');
 
         // if it has data-tool, setTool with that value

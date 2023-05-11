@@ -144,6 +144,21 @@ body {
   height: 3rem;
 }
 
+.toolbar.secondary.grouped {
+  height: auto;
+  flex-direction: column;
+  border-radius: 1.75rem;
+  padding-top: 1.2rem;
+  padding-bottom: 1.2rem;
+}
+
+.tool-group {
+  display: flex;
+  flex-direction: row;
+  align-items: start;
+  width: 100%;
+}
+
 .toolbar.file {
   /* at top left */
   top: 0.5rem;

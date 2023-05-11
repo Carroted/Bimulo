@@ -36,24 +36,30 @@
     </div>
   </div>
 
-  <div class="toolbar secondary" id="tools">
-    <div class="tool active" data-tool="drag">
-      <svg data-src="/icons/cursor-default.svg"></svg>
+  <div class="toolbar secondary grouped" id="tools">
+    <div class="tool-group">
+      <div class="tool active" data-tool="drag">
+        <svg data-src="/icons/cursor-default.svg"></svg>
+      </div>
     </div>
-    <div class="tool" data-tool="add_rectangle">
-      <svg data-src="/icons/add-box.svg"></svg>
-    </div>
-    <div class="tool" data-tool="add_circle">
-      <svg data-src="/icons/add-circle.svg"></svg>
-    </div>
-    <div class="tool" data-tool="add_person">
+    <div class="tool-group">
+      <div class="tool" data-tool="add_rectangle">
+        <svg data-src="/icons/add-box.svg"></svg>
+      </div>
+      <div class="tool" data-tool="add_circle">
+        <svg data-src="/icons/add-circle.svg"></svg>
+      </div>
+      <!--<div class="tool" data-tool="add_person">
       <svg data-src="/media/icon.svg"></svg>
+    </div>-->
+      <div class="tool" data-tool="add_polygon">
+        <svg data-src="/icons/add-polygon.svg"></svg>
+      </div>
     </div>
-    <div class="tool" data-tool="add_polygon">
-      <svg data-src="/icons/add-polygon.svg"></svg>
-    </div>
-    <div class="tool" data-tool="add_spring">
-      <svg data-src="/icons/add-spring.svg"></svg>
+    <div class="tool-group">
+      <div class="tool" data-tool="add_spring">
+        <svg data-src="/icons/add-spring.svg"></svg>
+      </div>
     </div>
   </div>
   <div class="toolbar secondary" id="time-control" style="display: none;">
