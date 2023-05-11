@@ -861,7 +861,7 @@ class SimuloPhysicsServer {
                 var d = box2D.castObject(j, box2D.b2DistanceJoint);
                 var dData = d.GetUserData() as SimuloJointData;
                 if (dData.image != null) {
-                    console.log("PHYSICSSERVER SPRING: image");
+                    //console.log("PHYSICSSERVER SPRING: image");
                     springs.push({
                         p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
                         p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
@@ -869,7 +869,7 @@ class SimuloPhysicsServer {
                     });
                 }
                 else {
-                    console.log("PHYSICSSERVER SPRING: no image");
+                    //console.log("PHYSICSSERVER SPRING: no image");
                     springs.push({
                         p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
                         p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],

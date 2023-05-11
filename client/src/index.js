@@ -22,7 +22,7 @@ var themes = {
             border_width: null,
             border_scale_with_zoom: false,
             circle_cake: false,
-            spring_image: null,
+            spring_image: "/assets/textures/spring.png",
         },
         tool_icons: {
             "drag": null,
@@ -983,7 +983,7 @@ function draw() {
         var spring = springs[i];
         if (spring.image) {
             //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
-            drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.4);
+            drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
         }
         else {
             ctx.beginPath();
@@ -1010,7 +1010,7 @@ function draw() {
             if (creatingSprings[id].image) {
                 //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                 console.log('img on spring')
-                drawStretchedImageLine(getImage(creatingSprings[id].image), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.4);
+                drawStretchedImageLine(getImage(creatingSprings[id].image), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
             }
             else {
                 console.log('no img on spring')
@@ -1086,7 +1086,7 @@ function draw() {
             if (creatingSprings[client.id].image) {
                 //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                 console.log('img on spring')
-                drawStretchedImageLine(getImage(creatingSprings[client.id].image), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.4);
+                drawStretchedImageLine(getImage(creatingSprings[client.id].image), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.2);
             }
             else {
                 console.log('no img on spring')
@@ -1171,9 +1171,9 @@ function draw() {
 
                 console.log('creatingObjects[client.id]:', creatingObjects[client.id]);
 
-                var points = creatingObjects[client.id].points;
+                var points = creatingObjects[client.id].vertices;
                 console.log('points:', points);
-                points.push(points[0]);
+                //points.push(points[0]);
 
                 points = points.map(function (point) {
                     console.log('point:', point);
