@@ -31,6 +31,8 @@ var themes = {
             "add_person": "/media/icon_square.png",
             "add_polygon": "/assets/textures/add_polygon.png",
             "add_spring": "/assets/textures/add_spring.png",
+            "add_axle": "/assets/textures/add_axle.png",
+            "add_fixed_joint": "/assets/textures/add_fixed_joint.png",
         },
         system_cursor: false,
         tool_icon_size: 0.5,
@@ -65,14 +67,18 @@ var themes = {
             "drag": "/assets/textures/tools/drag.png",
             "add_rectangle": "/assets/textures/tools/box.png",
             "add_circle": "/assets/textures/tools/circle.png",
-            "add_person": "/media/icon_square.png"
+            "add_person": "/media/icon_square.png",
+            "add_polygon": "/assets/textures/tools/polygon.png",
+            "add_spring": "/assets/textures/tools/spring.png",
+            "add_axle": "/assets/textures/tools/hinge.png",
+            "add_fixed_joint": "/assets/textures/tools/fixjoint.png",
         },
         system_cursor: true,
         tool_icon_size: 0.7,
         tool_icon_offset: [0.3, 0.4]
     },
 };
-var theme = themes.default;
+var theme = themes.nostalgia;
 
 function queryParent(element, className) {
     var parent = element.parentNode;
