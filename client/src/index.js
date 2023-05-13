@@ -78,7 +78,7 @@ var themes = {
         tool_icon_offset: [0.3, 0.4]
     },
 };
-var theme = themes.nostalgia;
+var theme = themes.default;
 
 function queryParent(element, className) {
     var parent = element.parentNode;
