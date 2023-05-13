@@ -459,10 +459,10 @@ var tintedImages = {};
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d'); // main layer
 
-var windowEnd = transformPoint(window.innerWidth, window.innerWidth);
+var windowEnd = transformPoint(window.innerWidth, window.innerHeight);
 
-let cameraOffset = { x: windowEnd.x / 2, y: windowEnd.y / 2 };
-let cameraZoom = 42;
+let cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 };
+let cameraZoom = 30;
 let MAX_ZOOM = 5;
 let MIN_ZOOM = 0.1;
 let SCROLL_SENSITIVITY = 0.0005;
@@ -1005,10 +1005,17 @@ function draw() {
             drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
         }
         else {
-            ctx.beginPath();
-            ctx.moveTo(spring.p1[0], spring.p1[1]);
-            ctx.lineTo(spring.p2[0], spring.p2[1]);
-            ctx.stroke();
+            if (spring.line) {
+                ctx.strokeStyle = spring.line.color;
+                ctx.lineWidth = spring.line.width;
+                if (spring.line.scale_with_zoom) {
+                    ctx.lineWidth /= cameraZoom;
+                }
+                ctx.beginPath();
+                ctx.moveTo(spring.p1[0], spring.p1[1]);
+                ctx.lineTo(spring.p2[0], spring.p2[1]);
+                ctx.stroke();
+            }
         }
     }
 

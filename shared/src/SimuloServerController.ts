@@ -39,6 +39,7 @@ interface SpringData {
     p1: [number, number];
     p2: [number, number];
     image?: string | null;
+    line: { color: string, width: number, scale_with_zoom: boolean } | null;
 }
 
 interface SimuloCreatingObject {
@@ -108,7 +109,9 @@ class SimuloServerController {
         var springs2 = this.springs.map((s) => {
             return {
                 p1: s.target,
-                p2: s.anchor
+                p2: s.anchor,
+                image: s.image,
+                line: s.line
             };
         });
         var springs3 = springs1.concat(springs2);
@@ -135,7 +138,9 @@ class SimuloServerController {
                 spring.target = [formatted.data.x, formatted.data.y];
                 springsFormatted.push({
                     p1: [formatted.data.x, formatted.data.y],
-                    p2: [spring.anchor[0], spring.anchor[1]]
+                    p2: [spring.anchor[0], spring.anchor[1]],
+                    image: spring.image,
+                    line: spring.line
                 });
             });
 

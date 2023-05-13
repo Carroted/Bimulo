@@ -5,3 +5,4 @@ log.txt
 dist/
 dist
 dist/*
+build-log.json

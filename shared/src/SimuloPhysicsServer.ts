@@ -238,6 +238,73 @@ class SimuloMouseSpring extends SimuloJoint {
         let anchor = this.mouseJoint.GetAnchorB();
         return [anchor.get_x(), anchor.get_y()];
     }
+    get image(): string | null {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        return jointData.image;
+    }
+    set image(image: string | null) {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        jointData.image = image;
+    }
+    get lineColor(): string | null {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            return jointData.line.color;
+        }
+        else {
+            return null;
+        }
+    }
+    set lineColor(color: string | null) {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            if (color == null) {
+                color = "#000000";
+            }
+            jointData.line.color = color;
+        }
+    }
+    get lineWidth(): number | null {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            return jointData.line.width;
+        }
+        else {
+            return null;
+        }
+    }
+    set lineWidth(width: number | null) {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            if (width == null) {
+                width = 1;
+            }
+            jointData.line.width = width;
+        }
+    }
+    get line(): { color: string, width: number, scale_with_zoom: boolean } | null {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        return jointData.line;
+    }
+    set line(line: { color: string, width: number, scale_with_zoom: boolean } | null) {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        jointData.line = line;
+    }
+    get lineScaleWithZoom(): boolean {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            return jointData.line.scale_with_zoom;
+        }
+        else {
+            return false;
+        }
+    }
+    set lineScaleWithZoom(scale_with_zoom: boolean) {
+        let jointData = this.mouseJoint.GetUserData() as SimuloJointData;
+        if (jointData.line) {
+            jointData.line.scale_with_zoom = scale_with_zoom;
+        }
+    }
 }
 
 
@@ -366,7 +433,7 @@ class SimuloPhysicsServer {
         var p = body.body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
         return [p.get_x(), p.get_y()];
     }
-    addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, image?: string) {
+    addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, image?: string, line?: { color: string, width: number, scale_with_zoom: boolean }) {
         // distance joint
         const jd = new box2D.b2DistanceJointDef();
         jd.set_bodyA(objectA.body);
@@ -384,6 +451,12 @@ class SimuloPhysicsServer {
         }
         else {
             jointData.image = null;
+        }
+        if (line) {
+            jointData.line = line;
+        }
+        else {
+            jointData.line = null;
         }
     }
     addPerson(offset: [x: number, y: number]) {
@@ -438,7 +511,7 @@ class SimuloPhysicsServer {
         }
         else*/ {
             // add image (last param) as /assets/textures/spring.png
-            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0, "/assets/textures/spring.png");
+            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0/*, "/assets/textures/spring.png"*/);
         }
     }
     addCircle(
@@ -526,6 +599,14 @@ class SimuloPhysicsServer {
         mouseJointDef.set_stiffness(stiffness);
         mouseJointDef.set_damping(damping);
         var mouseJoint = this.world.CreateJoint(mouseJointDef);
+        // add jointdata
+        var jointData = mouseJoint.GetUserData() as SimuloJointData;
+        jointData.line = {
+            color: "#ffffff",
+            width: 3,
+            scale_with_zoom: true
+        };
+        jointData.image = null;
         var joint = new SimuloMouseSpring(this, mouseJoint);
         return joint;
     }
@@ -809,34 +890,57 @@ class SimuloPhysicsServer {
         });*/
 
         var joint = this.world.GetJointList();
-        var springs: { p1: number[], p2: number[], image: string | null }[] = []; // distance joints are considered springs
-        var mouseSprings: { p1: number[], p2: number[] }[] = [];
+        var springs: { p1: number[], p2: number[], image: string | null, line: { color: string, width: number, scale_with_zoom: boolean } | null }[] = []; // distance joints are considered springs
+        var mouseSprings: { p1: number[], p2: number[], image: string | null, line: { color: string, width: number, scale_with_zoom: boolean } | null }[] = [];
         while (box2D.getPointer(joint)) {
             var j = joint;
             joint = joint.GetNext();
             if (j.GetType() == box2D.e_distanceJoint) {
                 var d = box2D.castObject(j, box2D.b2DistanceJoint);
                 var dData = d.GetUserData() as SimuloJointData;
+                var image: string | null;
                 if (dData.image != null) {
-                    springs.push({
-                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                        image: dData.image
-                    });
+                    image = dData.image;
                 }
                 else {
-                    springs.push({
-                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                        image: null
-                    });
+                    image = null;
                 }
+                var line: { color: string, width: number, scale_with_zoom: boolean } | null;
+                if (dData.line != null) {
+                    line = dData.line;
+                }
+                else {
+                    line = null;
+                }
+                springs.push({
+                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                    image: image,
+                    line: line,
+                });
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
                 var m = box2D.castObject(j, box2D.b2MouseJoint);
+                var mData = m.GetUserData() as SimuloJointData;
+                var image: string | null;
+                if (mData.image != null) {
+                    image = mData.image;
+                }
+                else {
+                    image = null;
+                }
+                var line: { color: string, width: number, scale_with_zoom: boolean } | null;
+                if (mData.line != null) {
+                    line = mData.line;
+                }
+                else {
+                    line = null;
+                }
                 mouseSprings.push({
                     p1: [m.GetAnchorA().get_x(), m.GetAnchorA().get_y()],
                     p2: [m.GetAnchorB().get_x(), m.GetAnchorB().get_y()],
+                    image: image,
+                    line: line,
                 });
             }
         }
@@ -852,36 +956,57 @@ class SimuloPhysicsServer {
     }
     getAllSprings() {
         var joint: Box2D.b2Joint = this.world.GetJointList();
-        var springs: { p1: number[], p2: number[], image: string | null }[] = []; // distance joints are considered springs
-        var mouseSprings: { p1: number[], p2: number[] }[] = [];
+        var springs: { p1: number[], p2: number[], image: string | null, line: { color: string, width: number, scale_with_zoom: boolean } | null }[] = []; // distance joints are considered springs
+        var mouseSprings: { p1: number[], p2: number[], image: string | null, line: { color: string, width: number, scale_with_zoom: boolean } | null }[] = [];
         while (box2D.getPointer(joint)) {
             var j = joint;
             joint = joint.GetNext();
             if (j.GetType() == box2D.e_distanceJoint) {
                 var d = box2D.castObject(j, box2D.b2DistanceJoint);
                 var dData = d.GetUserData() as SimuloJointData;
+                var image: string | null;
                 if (dData.image != null) {
-                    //console.log("PHYSICSSERVER SPRING: image");
-                    springs.push({
-                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                        image: dData.image
-                    });
+                    image = dData.image;
                 }
                 else {
-                    //console.log("PHYSICSSERVER SPRING: no image");
-                    springs.push({
-                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                        image: null
-                    });
+                    image = null;
                 }
+                var line: { color: string, width: number, scale_with_zoom: boolean } | null;
+                if (dData.line != null) {
+                    line = dData.line;
+                }
+                else {
+                    line = null;
+                }
+                springs.push({
+                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                    image: image,
+                    line: line,
+                });
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
                 var m = box2D.castObject(j, box2D.b2MouseJoint);
+                var mData = m.GetUserData() as SimuloJointData;
+                var image: string | null;
+                if (mData.image != null) {
+                    image = mData.image;
+                }
+                else {
+                    image = null;
+                }
+                var line: { color: string, width: number, scale_with_zoom: boolean } | null;
+                if (mData.line != null) {
+                    line = mData.line;
+                }
+                else {
+                    line = null;
+                }
                 mouseSprings.push({
                     p1: [m.GetAnchorA().get_x(), m.GetAnchorA().get_y()],
                     p2: [m.GetAnchorB().get_x(), m.GetAnchorB().get_y()],
+                    image: image,
+                    line: line,
                 });
             }
         }

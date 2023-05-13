@@ -31,7 +31,7 @@
   border-radius: 10000rem;
   align-items: center;
   padding: 0 1rem;
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(35px);
 }
 
 .chat * {
@@ -45,7 +45,7 @@
   color: white;
   padding: 0 1rem;
   height: 3rem;
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(35px);
   border-radius: 10000rem;
   margin: 0.5rem 0.5rem;
   background-color: #03081d50;
@@ -132,7 +132,7 @@ body {
   perspective: 1000;
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(35px);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -218,7 +218,7 @@ body {
   perspective: 1000;
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
-  backdrop-filter: blur(15px);
+  backdrop-filter: blur(35px);
   top: 3rem;
   left: 0.5rem;
   display: none;

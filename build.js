@@ -17,7 +17,41 @@ const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
-console.log(chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n'));
+
+var buildLogPath = path.join(__dirname, 'build-log.json');
+var buildInfo = chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n');
+var prevBuildTime = null;
+if (fs.existsSync(buildLogPath)) {
+    var buildLog = JSON.parse(fs.readFileSync(buildLogPath, 'utf8'));
+    var timeToBuild;
+    if (buildLog.prevBuildTime) {
+        var timeToBuild1 = buildLog.buildTime; // ms
+        var timeToBuild2 = buildLog.prevBuildTime; // ms
+        timeToBuild = (timeToBuild1 + timeToBuild2) / 2; // average
+    }
+    else {
+        timeToBuild = buildLog.buildTime;
+    }
+    var timeToBuildSeconds = timeToBuild / 1000;
+    // ceil it
+    timeToBuildSeconds = Math.ceil(timeToBuildSeconds);
+    console.log(buildInfo + 'Estimated time to build: ' + timeToBuildSeconds + 's\n');
+
+    prevBuildTime = timeToBuild;
+}
+else {
+    console.log(buildInfo);
+}
+var startTime = Date.now();
+
+function indentLines(str, count) {
+    var lines = str.split('\n');
+    var newLines = [];
+    for (var line of lines) {
+        newLines.push(' '.repeat(count) + line);
+    }
+    return newLines.join('\n');
+}
 
 var steps = [
     // remove dist folder
@@ -36,15 +70,22 @@ var steps = [
     async (stepInfo) => {
         console.log(stepInfo, 'Compiling TypeScript...');
         return new Promise((resolve, reject) => {
-            exec('tsc', (err, stdout, stderr) => {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    resolve(stdout);
+            const child = exec('tsc');
+            child.stdout.on('data', (data) => {
+                console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
+            });
+            child.stderr.on('data', (data) => {
+                console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
+            });
+            child.on('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(`TypeScript compiler exited with code ${code}`));
+                } else {
+                    resolve();
                 }
             });
         });
+
     },
     // make dist/client folder if doesnt exist
     async (stepInfo) => {
@@ -104,6 +145,23 @@ var steps = [
     async (stepInfo) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'src'), path.join(__dirname, 'dist', 'client', 'src'));
+    },
+    async (stepInfo) => {
+        console.log(stepInfo, 'Creating log...');
+        var endTime = Date.now();
+        var log;
+        if (prevBuildTime) {
+            log = {
+                buildTime: endTime - startTime,
+                prevBuildTime: prevBuildTime,
+            };
+        }
+        else {
+            log = {
+                buildTime: endTime - startTime
+            };
+        }
+        fs.writeFileSync(buildLogPath, JSON.stringify(log, null, 4));
     }
 ];
 
