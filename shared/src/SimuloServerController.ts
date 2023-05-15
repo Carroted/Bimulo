@@ -75,12 +75,13 @@ class SimuloServerController {
     velocityIterations: number = 3;
     positionIterations: number = 2;
     springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
-    creatingObjects: { [key: string]: SimuloCreatingObject } = {};
+    creatingObjects: { [key: string]: SimuloCreatingObject } = {}; // will be renamed for clarity, but this is all the tool actions in progress. for example, a circle being drawn, selection box, spring being added, etc
     creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null } } = {};
     timeScaleMultiplier: number = 1;
     paused: boolean = false;
     theme: SimuloTheme;
     localClients: SimuloLocalClient[] = [];
+    selectedObjects: { [key: string]: (SimuloJoint | SimuloObject)[] } = {};
 
     sendAll(type: string, data: any) {
         if (this.networkServer) {
