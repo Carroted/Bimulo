@@ -478,9 +478,17 @@ class SimuloServerController {
             this.tools[id] = "drag";
         }
 
-        setInterval(() => {
+        /*setInterval(() => {
             this.loop(this.frameRate);
-        }, this.frameRate);
+        }, this.frameRate);*/
+        let handle: number;
+        var loop = (prevMs: number) => {
+            const nowMs = window.performance.now();
+            handle = requestAnimationFrame(loop.bind(null, nowMs));
+            const deltaMs = nowMs - prevMs;
+            this.loop(deltaMs);
+        }
+        loop(window.performance.now());
     }
 
 }
