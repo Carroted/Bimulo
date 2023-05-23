@@ -146,6 +146,11 @@ var steps = [
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'src'), path.join(__dirname, 'dist', 'client', 'src'));
     },
+    // copy shared/src/intersect.js to dist/shared/src
+    async (stepInfo) => {
+        console.log(stepInfo, 'Copying shared/src/intersect.js to dist/shared/src...');
+        fs.copyFileSync(path.join(__dirname, 'shared', 'src', 'intersect.js'), path.join(__dirname, 'dist', 'shared', 'src', 'intersect.js'));
+    },
     async (stepInfo) => {
         console.log(stepInfo, 'Creating log...');
         var endTime = Date.now();

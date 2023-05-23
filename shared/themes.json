@@ -1,0 +1,80 @@
+{
+  "default": {
+    "background": "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
+    "ground": {
+      "color": "#a1acfa",
+      "border": null,
+      "border_width": null,
+      "border_scale_with_zoom": false
+    },
+    "new_objects": {
+      "color": {
+        "hue_min": 0,
+        "hue_max": 360,
+        "sat_min": 0,
+        "sat_max": 100,
+        "val_min": 80,
+        "val_max": 100,
+        "alp_min": 1,
+        "alp_max": 1
+      },
+      "border": null,
+      "border_width": null,
+      "border_scale_with_zoom": false,
+      "circle_cake": false,
+      "spring_image": "/assets/textures/spring.png"
+    },
+    "tool_icons": {
+      "drag": null,
+      "add_rectangle": "/assets/textures/add_rectangle.png",
+      "add_circle": "/assets/textures/add_circle.png",
+      "add_person": "/media/icon_square.png",
+      "add_polygon": "/assets/textures/add_polygon.png",
+      "add_spring": "/assets/textures/add_spring.png",
+      "add_axle": "/assets/textures/add_axle.png",
+      "add_fixed_joint": "/assets/textures/add_fixed_joint.png"
+    },
+    "system_cursor": false,
+    "tool_icon_size": 0.5,
+    "tool_icon_offset": [0.55, 0.75]
+  },
+  "nostalgia": {
+    "background": "#738cff",
+    "ground": {
+      "color": "#57b00d",
+      "border": "#111111a0",
+      "border_width": 1,
+      "border_scale_with_zoom": true
+    },
+    "new_objects": {
+      "color": {
+        "hue_min": 0,
+        "hue_max": 360,
+        "sat_min": 0,
+        "sat_max": 100,
+        "val_min": 0,
+        "val_max": 100,
+        "alp_min": 1,
+        "alp_max": 1
+      },
+      "border": "#111111a0",
+      "border_width": 1,
+      "border_scale_with_zoom": true,
+      "circle_cake": true,
+      "spring_image": "/assets/textures/spring.png"
+    },
+    "tool_icons": {
+      "drag": "/assets/textures/tools/drag.png",
+      "add_rectangle": "/assets/textures/tools/box.png",
+      "add_circle": "/assets/textures/tools/circle.png",
+      "add_person": "/media/icon_square.png",
+      "add_polygon": "/assets/textures/tools/polygon.png",
+      "add_spring": "/assets/textures/tools/spring.png",
+      "add_axle": "/assets/textures/tools/hinge.png",
+      "add_fixed_joint": "/assets/textures/tools/fixjoint.png"
+    },
+    "system_cursor": true,
+    "tool_icon_size": 0.7,
+    "tool_icon_offset": [0.3, 0.4]
+  }
+}

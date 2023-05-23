@@ -42,22 +42,7 @@ interface SpringData {
     line: { color: string, width: number, scale_with_zoom: boolean } | null;
 }
 
-interface SimuloCreatingObject {
-    x: number;
-    y: number;
-    color: string;
-    shape: "circle" | "rectangle" | "polygon" | "edge" | "square";
-    border: string | null;
-    border_width: number | null;
-    border_scale_with_zoom: boolean;
-    circle_cake?: boolean; // for circles
-}
-
-// extension of creatingobject called creatingpolygon
-interface SimuloCreatingPolygon extends SimuloCreatingObject {
-    vertices: [x: number, y: number][];
-    shape: "polygon";
-}
+import { SimuloCreatingObject, SimuloCreatingPolygon } from "./SimuloCreatingObject.js";
 
 function getDistance(point1: [x: number, y: number], point2: [x: number, y: number]): number {
     const xDiff = point2[0] - point1[0];
@@ -197,7 +182,20 @@ class SimuloServerController {
                     border_width: this.theme.new_objects.border_width,
                     border_scale_with_zoom: this.theme.new_objects.border_scale_with_zoom,
                 };
-            } else if (this.tools[uuid] == "add_circle") {
+            }
+            else if (this.tools[uuid] == "select") {
+                // same as rectangle
+                this.creatingObjects[uuid] = {
+                    x: formatted.data.x,
+                    y: formatted.data.y,
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    shape: "select",
+                    border: null,
+                    border_width: null,
+                    border_scale_with_zoom: false
+                };
+            }
+            else if (this.tools[uuid] == "add_circle") {
                 this.creatingObjects[uuid] = {
                     x: formatted.data.x,
                     y: formatted.data.y,
@@ -378,7 +376,26 @@ class SimuloServerController {
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
-                } else if (this.creatingObjects[uuid].shape == "square") {
+                } else if (this.creatingObjects[uuid].shape == "select") {
+                    // select draws a box with the same properties, but instead of creating a new object, it selects all objects in the box. for now, we'll just console.log the objects since we dont have a selection system yet
+
+                    // now we query world
+                    var bodies = this.physicsServer.getObjectsInRect(
+                        // point A
+                        [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y],
+                        // point B
+                        [formatted.data.x, formatted.data.y]
+                    );
+
+                    // on each object, set color to red
+                    for (var i = 0; i < bodies.length; i++) {
+                        bodies[i].color = "#ff0000"; // trolled :uber_troll:
+                    }
+
+                    delete this.creatingObjects[uuid]; // void
+                }
+
+                else if (this.creatingObjects[uuid].shape == "square") {
                     // TODO: make this work (lol)
                 } else if (this.creatingObjects[uuid].shape == "circle") {
                     // Calculate the radius of the new circle
@@ -454,7 +471,11 @@ class SimuloServerController {
         this.physicsServer = new SimuloPhysicsServer(this.theme);
         this.physicsServer.on('collision', (data: any) => {
             // .sound, .volume and .pitch. we can just send it as-is through network
-            this.sendAll('collision', data);
+            this.sendAll('collision', {
+                sound: data.sound,
+                volume: data.volume,
+                pitch: data.pitch * this.timeScaleMultiplier
+            });
         });
 
         if (server) {

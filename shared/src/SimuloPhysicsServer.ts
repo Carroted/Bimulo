@@ -23,6 +23,9 @@ const box2D = await Box2DFactory();
 
 //import { Box2D } from "../../node_modules/box2d-wasm/dist/es/entry";
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
+
+// @ts-ignore
+import intersect from './intersect.js'; // ignoring for now until migrate to TS
 //import earcut from 'earcut';
 
 /*// @ts-ignore
@@ -308,6 +311,24 @@ class SimuloMouseSpring extends SimuloJoint {
 }
 
 
+function rotateVerts(vertices: { x: number, y: number }[], angle: number): { x: number, y: number }[] {
+    // rotate the vertices at the origin (0,0)
+    var rotatedVertices: { x: number, y: number }[] = [];
+    for (var i = 0; i < vertices.length; i++) {
+        // use math to rotate the vertices
+        var rotatedX = vertices[i].x * Math.cos(angle) - vertices[i].y * Math.sin(angle);
+        var rotatedY = vertices[i].x * Math.sin(angle) + vertices[i].y * Math.cos(angle);
+        // add the rotated vertices to the array
+        rotatedVertices.push({ x: rotatedX, y: rotatedY });
+    }
+    return rotatedVertices;
+}
+
+function translateVerts(vertices: { x: number, y: number }[], xOffset: number, yOffset: number): { x: number, y: number }[] {
+    return vertices.map((vertex) => {
+        return { x: vertex.x + xOffset, y: vertex.y + yOffset };
+    });
+}
 
 
 class SimuloPhysicsServer {
@@ -615,6 +636,7 @@ class SimuloPhysicsServer {
     constructor(theme: SimuloTheme) { // theme is the starting theme for the room to know what to set background to for example and new objects
         const gravity = new box2D.b2Vec2(0, 9.81);
         const world = new box2D.b2World(gravity);
+
         world.SetContinuousPhysics(true);
 
         const bd_ground = new box2D.b2BodyDef();
@@ -743,6 +765,89 @@ class SimuloPhysicsServer {
             return new SimuloObject(this, b);
         });
     }
+    getObjectsInRect(pointA: [x: number, y: number], pointB: [x: number, y: number]) {
+        var posA = new box2D.b2Vec2(pointA[0], pointA[1]);
+        var posB = new box2D.b2Vec2(pointB[0], pointB[1]);
+
+        // reverse the points if they are backwards (posA needs to be top left, posB needs to be bottom right)
+        if (posA.get_x() > posB.get_x()) {
+            var temp = posA.get_x();
+            posA.set_x(posB.get_x());
+            posB.set_x(temp);
+        }
+        if (posA.get_y() > posB.get_y()) {
+            var temp = posA.get_y();
+            posA.set_y(posB.get_y());
+            posB.set_y(temp);
+        }
+
+        // we queryaabb
+        var selectedBodies: Box2D.b2Body[] = [];
+        var aabb = new box2D.b2AABB();
+        aabb.set_lowerBound(posA);
+        aabb.set_upperBound(posB);
+        /*this.world.QueryAABB((fixturePtr: number) => {
+            var fixture = box2D.wrapPointer(fixturePtr, box2D.b2Fixture);
+            var body = fixture.GetBody();
+            selectedBodies.push(body);
+            return true;
+        }, aabb);*/
+        var callback = new box2D.JSQueryCallback();
+        callback.ReportFixture = function (fixturePtr: number) {
+            var fixture = box2D.wrapPointer(fixturePtr, box2D.b2Fixture);
+            var body = fixture.GetBody();
+            selectedBodies.push(body);
+            return true;
+        };
+        this.world.QueryAABB(callback, aabb);
+        /*return selectedBodies.map((b) => {
+            return new SimuloObject(this, b);
+        });*/
+
+        // now we have a rough selection. however, on rotated boxes and on polygons, the selection is not perfect. lets testpoint on the fixtures
+        var selectedObjects: SimuloObject[] = [];
+        // lets use intersect function. it takes {x: number, y:number}[]s
+        var rect = [
+            { x: posA.get_x(), y: posA.get_y() },
+            { x: posB.get_x(), y: posA.get_y() },
+            { x: posB.get_x(), y: posB.get_y() },
+            { x: posA.get_x(), y: posB.get_y() },
+        ];
+        selectedBodies.forEach((b) => {
+            var fl = b.GetFixtureList();
+            if (!fl) {
+                return;
+            }
+            while (box2D.getPointer(fl)) {
+                var shape = fl.GetShape();
+                var shapeType = shape.GetType();
+                if (shapeType == box2D.b2Shape.e_circle) {
+                    // coming soon, polygon-only for now
+                } else if (shapeType == box2D.b2Shape.e_polygon) {
+                    var points: { x: number; y: number }[] = [];
+                    var polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
+                    var vertexCount = polygonShape.get_m_count();
+                    for (let i = 0; i < vertexCount; i++) {
+                        const vertex = polygonShape.get_m_vertices(i);
+                        points.push({
+                            x: vertex.x,
+                            y: vertex.y,
+                        });
+                    }
+                    // rotate points with rotateVerts func
+                    var angle = b.GetAngle();
+                    points = rotateVerts(points, angle);
+                    if (intersect(rect, points)) {
+                        selectedObjects.push(new SimuloObject(this, b));
+                        break;
+                    }
+                }
+                fl = fl.GetNext();
+            }
+        });
+        return selectedObjects;
+    }
+
     step(delta: number, velocityIterations: number, positionIterations: number) {
         this.world.Step(delta, velocityIterations, positionIterations);
         this.deleteObjects.forEach((obj) => {

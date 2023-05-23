@@ -1,102 +1,42 @@
-var themes = {
-    default: {
-        background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
-        ground: {
-            color: "#a1acfa",
-            border: null,
-            border_width: null,
-            border_scale_with_zoom: false,
-        },
-        new_objects: {
-            color: {
-                hue_min: 0,
-                hue_max: 360,
-                sat_min: 0,
-                sat_max: 100,
-                val_min: 80,
-                val_max: 100,
-                alp_min: 1,
-                alp_max: 1,
-            },
-            border: null,
-            border_width: null,
-            border_scale_with_zoom: false,
-            circle_cake: false,
-            spring_image: "/assets/textures/spring.png",
-        },
-        tool_icons: {
-            "drag": null,
-            "add_rectangle": "/assets/textures/add_rectangle.png",
-            "add_circle": "/assets/textures/add_circle.png",
-            "add_person": "/media/icon_square.png",
-            "add_polygon": "/assets/textures/add_polygon.png",
-            "add_spring": "/assets/textures/add_spring.png",
-            "add_axle": "/assets/textures/add_axle.png",
-            "add_fixed_joint": "/assets/textures/add_fixed_joint.png",
-        },
-        system_cursor: false,
-        tool_icon_size: 0.5,
-        tool_icon_offset: [0.55, 0.75]
-    },
-    nostalgia: {
-        background: "#738cff",
-        ground: {
-            color: "#57b00d",
-            border: "#111111a0",
-            border_width: 1,
-            border_scale_with_zoom: true,
-        },
-        new_objects: {
-            color: {
-                hue_min: 0,
-                hue_max: 360,
-                sat_min: 0,
-                sat_max: 100,
-                val_min: 0,
-                val_max: 100,
-                alp_min: 1,
-                alp_max: 1,
-            },
-            border: "#111111a0",
-            border_width: 1,
-            border_scale_with_zoom: true,
-            circle_cake: true,
-            spring_image: "/assets/textures/spring.png",
-        },
-        tool_icons: {
-            "drag": "/assets/textures/tools/drag.png",
-            "add_rectangle": "/assets/textures/tools/box.png",
-            "add_circle": "/assets/textures/tools/circle.png",
-            "add_person": "/media/icon_square.png",
-            "add_polygon": "/assets/textures/tools/polygon.png",
-            "add_spring": "/assets/textures/tools/spring.png",
-            "add_axle": "/assets/textures/tools/hinge.png",
-            "add_fixed_joint": "/assets/textures/tools/fixjoint.png",
-        },
-        system_cursor: true,
-        tool_icon_size: 0.7,
-        tool_icon_offset: [0.3, 0.4]
-    },
-};
-var theme = themes.default;
+var timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
+var timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
+var pausedToggle = document.getElementById('paused-toggle') as HTMLInputElement;
 
-function queryParent(element, className) {
-    var parent = element.parentNode;
+var tintedImages: { [key: string]: HTMLCanvasElement } = {};
+
+var windowEnd = transformPoint(window.innerWidth, window.innerHeight);
+
+let cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 };
+let cameraZoom = 30;
+let MAX_ZOOM = 5;
+let MIN_ZOOM = 0.1;
+let SCROLL_SENSITIVITY = 0.0005;
+
+let lastX = window.innerWidth / 2;
+let lastY = window.innerHeight / 2;
+
+// lastX is for touch and mouse, this is specifically for mouse
+let lastMouseX = window.innerWidth / 2;
+let lastMouseY = window.innerHeight / 2;
+
+function queryParent(element: HTMLElement, className: string): HTMLElement | null {
+    var parent: HTMLElement = element.parentNode as HTMLElement;
     while (parent) {
         if (parent.classList.contains(className)) {
             return parent;
         }
-        parent = parent.parentNode;
+        parent = parent.parentNode as HTMLElement;
     }
     return null;
 }
 
 // on click tool, set active tool
 const tools = document.querySelectorAll('.tool');
-var toolIcon = null;
-var toolIconSize = null;
-var toolIconOffset = null;
-tools.forEach(tool => {
+var toolIcon: string | null = null;
+var toolIconSize: number | null = null;
+var toolIconOffset: [x: number, y: number] | null = null;
+tools.forEach((toolElement) => {
+    let tool = toolElement as HTMLElement;
     setUpClickSound(tool);
     tool.addEventListener('click', () => {
         // return if has fake class
@@ -104,57 +44,62 @@ tools.forEach(tool => {
             return;
         }
         // remove active class from all tools in that toolbar, without removing it from other toolbars
-        queryParent(tool, "toolbar").querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
-        tool.classList.add('active');
+        let toolbar = queryParent(tool, "toolbar");
+        if (toolbar) {
+            toolbar.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
+            tool.classList.add('active');
 
-        // if it has data-tool, setTool with that value
-        if (tool.dataset.tool) {
-            console.log('setting tool to', tool.dataset.tool);
-            setTool(tool.dataset.tool);
-            // if theres data-img, set the icon to that
-            if (theme.tool_icons[tool.dataset.tool]) {
-                toolIcon = theme.tool_icons[tool.dataset.tool];
-                toolIconSize = theme.tool_icon_size;
-                toolIconOffset = theme.tool_icon_offset;
-            }
-            else {
-                toolIcon = null;
-                toolIconSize = null;
-                toolIconOffset = null;
-            }
-        }
-        // if data-action, handle
-        if (tool.dataset.action) {
-            if (tool.dataset.action == 'play') {
-                setPaused(false);
-            }
-            if (tool.dataset.action == 'pause') {
-                setPaused(true);
-            }
-            if (tool.dataset.action == '2x') {
-                setTimeScale(5);
-            }
-            if (tool.dataset.action == '1x') {
-                setTimeScale(1);
-            }
-        }
-        // if data-menu, show that .toolbar.secondary and hide all others
-        if (tool.dataset.menu) {
-            document.querySelectorAll('.toolbar.secondary').forEach(toolbar => {
-                if (toolbar.id == tool.dataset.menu) {
-                    toolbar.style.display = 'flex';
+            // if it has data-tool, setTool with that value
+            if (tool.dataset.tool) {
+                console.log('setting tool to', tool.dataset.tool);
+                setTool(tool.dataset.tool);
+                // if theres data-img, set the icon to that
+                if (theme.tool_icons[tool.dataset.tool]) {
+                    toolIcon = theme.tool_icons[tool.dataset.tool];
+                    toolIconSize = theme.tool_icon_size;
+                    toolIconOffset = theme.tool_icon_offset;
                 }
                 else {
-                    toolbar.style.display = 'none';
+                    toolIcon = null;
+                    toolIconSize = null;
+                    toolIconOffset = null;
                 }
-            });
+            }
+            // if data-action, handle
+            if (tool.dataset.action) {
+                if (tool.dataset.action == 'play') {
+                    setPaused(false);
+                }
+                if (tool.dataset.action == 'pause') {
+                    setPaused(true);
+                }
+                if (tool.dataset.action == '2x') {
+                    setTimeScale(5);
+                }
+                if (tool.dataset.action == '1x') {
+                    setTimeScale(1);
+                }
+            }
+            // if data-menu, show that .toolbar.secondary and hide all others
+            if (tool.dataset.menu) {
+                document.querySelectorAll('.toolbar.secondary').forEach(toolbarElement => {
+                    let toolbar = toolbarElement as HTMLElement;
+                    if (toolbar.id == tool.dataset.menu) {
+                        toolbar.style.display = 'flex';
+                    }
+                    else {
+                        toolbar.style.display = 'none';
+                    }
+                });
+            }
         }
     });
 });
 
 // on click .file-menu, show the thing
 const fileMenus = document.querySelectorAll('.file-menu');
-fileMenus.forEach(fileMenu => {
+fileMenus.forEach(fileMenuElement => {
+    let fileMenu = fileMenuElement as HTMLElement;
     console.log('fileMenu', fileMenu);
     fileMenu.addEventListener('click', () => {
         console.log('fileMenu clicked');
@@ -208,23 +153,20 @@ if (queryString) {
     });
 }
 
-import Box2DFactory from '../../node_modules/box2d-wasm/dist/es/entry.js';
 
-
-var timeScale = null;
-var paused = null;
-
-//var client = new SimuloNetworkClient(host); // If true, our client is a host that loops data back to itself.
-import SimuloServerController from '../../shared/src/SimuloServerController.js';
-
-var serverController = new SimuloServerController(theme, null, true);
 var systemCursor = false;
+var game = document.getElementById('game');
+
 function enableSystemCursor() {
-    document.getElementById('game').classList.add('cursor');
+    if (game != null) {
+        game.classList.add('cursor');
+    }
     systemCursor = true;
 }
 function disableSystemCursor() {
-    document.getElementById('game').classList.remove('cursor');
+    if (game != null) {
+        game.classList.remove('cursor');
+    }
     systemCursor = false;
 }
 if (theme.system_cursor) {
@@ -233,43 +175,33 @@ if (theme.system_cursor) {
 else {
     disableSystemCursor();
 }
-var client = serverController.localClients[0];
-// Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-client.on('connect', () => { // Connect fires when the WebSocket connects
-    console.log('WebSocket connection established');
-});
+import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape } from '../../shared/src/SimuloShape.js';
+import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../shared/src/SimuloCreatingObject.js';
 
-client.on('ready', () => { // Ready fires when the WebRTC connection is established
-    console.log('WebRTC connection established');
-});
+var entities: SimuloShape[] = []; // We update this every time we receive a world update from the server
+var creatingObjects: {
+    [key: string]: SimuloCreatingObject;
+} = {};
+var creatingSprings: {
+    [key: string]: {
+        start: [x: number, y: number];
+        image: string | null;
+    };
+} = {};
+var players: { [key: string]: { x: number, y: number } } = {}; // We update this every time we receive a player mouse update from the server
+var springs: {
+    p1: number[];
+    p2: number[];
+    image: string | null;
+    line: {
+        color: string;
+        width: number;
+        scale_with_zoom: boolean;
+    } | null;
+}[] = [];
 
-client.on('data', (data) => { // Data fires when data is received from the server
-    handleData(data); // Parses and displays the data in the world
-});
-
-client.connect(); // Connects to the server
-function setTheme(name) {
-    client.emitData('set_theme', name);
-}
-function setTool(name) {
-    client.emitData('set_tool', name);
-}
-
-function setPaused(paused) {
-    client.emitData('set_paused', paused);
-}
-function setTimeScale(timeScale) {
-    client.emitData('set_time_scale', timeScale);
-}
-
-var entities = []; // We update this every time we receive a world update from the server
-var creatingObjects = {};
-var creatingSprings = {};
-var players = {}; // We update this every time we receive a player mouse update from the server
-var springs = [];
-
-function handleData(body) { // World data from the host, sent to all clients and to the host itself (loopback)
+function handleData(body: { type: string, data: any }) { // World data from the host, sent to all clients and to the host itself (loopback)
     if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
         if (body.type == 'world update') {
             entities = body.data.shapes;
@@ -280,12 +212,12 @@ function handleData(body) { // World data from the host, sent to all clients and
             springs = body.data.springs;
             if (timeScale == null) {
                 timeScale = body.data.time_scale;
-                document.getElementById('time-scale-slider').value = timeScale;
-                document.getElementById('time-scale-input').value = timeScale;
+                timeScaleSlider.value = (timeScale as number).toString();
+                timeScaleInput.value = (timeScale as number).toString();
             }
             if (paused == null) {
                 paused = body.data.paused;
-                document.getElementById('paused-toggle').checked = paused;
+                pausedToggle.checked = paused as boolean;
             }
         }
         if (body.type == 'player mouse') {
@@ -305,35 +237,42 @@ function handleData(body) { // World data from the host, sent to all clients and
         }
         if (body.type == 'set_time_scale') {
             timeScale = body.data;
-            // set #time-scale-slider and #time-scale-input
-            document.getElementById('time-scale-slider').value = timeScale;
-            document.getElementById('time-scale-input').value = timeScale;
+            timeScaleSlider.value = (timeScale as number).toString();
+            timeScaleInput.value = (timeScale as number).toString();
         }
         if (body.type == 'set_paused') {
             paused = body.data;
             // set #paused-toggle
-            document.getElementById('paused-toggle').checked = paused;
+            pausedToggle.checked = paused as boolean;
         }
     }
 }
 
-// on change slider (not just on release, every step)
-document.getElementById('time-scale-slider').addEventListener('input', function (e) {
-    setTimeScale(e.target.value);
-    // change input
-    document.getElementById('time-scale-input').value = e.target.value;
+timeScaleSlider.addEventListener('input', function (e) {
+    if (e.target) {
+        let targetInput = e.target as HTMLInputElement;
+        setTimeScale(parseFloat(targetInput.value));
+        // change input
+        timeScaleSlider.value = targetInput.value;
+    }
 });
 
 // on change input
-document.getElementById('time-scale-input').addEventListener('change', function (e) {
-    setTimeScale(e.target.value);
-    // change slider
-    document.getElementById('time-scale-slider').value = e.target.value;
+timeScaleInput.addEventListener('change', function (e) {
+    if (e.target) {
+        let targetInput = e.target as HTMLInputElement;
+        setTimeScale(parseFloat(targetInput.value));
+        // change slider
+        timeScaleSlider.value = targetInput.value;
+    }
 });
 
 // on change toggle
-document.getElementById('paused-toggle').addEventListener('change', function (e) {
-    setPaused(e.target.checked);
+pausedToggle.addEventListener('change', function (e) {
+    if (e.target) {
+        let targetInput = e.target as HTMLInputElement;
+        setPaused(targetInput.checked);
+    }
 });
 
 // load all svg data-src images
@@ -341,7 +280,7 @@ var svgs = document.querySelectorAll('svg[data-src]');
 svgs.forEach(function (svg) {
     var src = svg.getAttribute('data-src');
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', src, true);
+    xhr.open('GET', src as string, true);
     xhr.onload = function () {
         if (xhr.status === 200) {
             svg.outerHTML = xhr.responseText;
@@ -350,7 +289,7 @@ svgs.forEach(function (svg) {
     xhr.send();
 });
 
-function drawVerts(verts) {
+function drawVerts(verts: { x: number, y: number }[]) {
     ctx.beginPath();
     verts.forEach(e => ctx.lineTo(e.x, e.y));
     ctx.closePath();
@@ -358,8 +297,7 @@ function drawVerts(verts) {
     ctx.stroke();
 }
 
-function drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength) // if useHeight false, will stretch along width
-{
+function drawStretchedImageLine(image: HTMLImageElement, x1: number, y1: number, x2: number, y2: number, useHeight: boolean, otherAxisLength: number) {
     // if useHeight is true, we will stretch along height between p1 and p2. if false, we will stretch along width between p1 and p2
     if (useHeight) {
         // draw between 2 points, offsetting other axis by half of otherAxisLength
@@ -384,13 +322,13 @@ function drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLengt
     }
 }
 
-function rotateVerts(vertices, angle) {
+function rotateVerts(verts: { x: number, y: number }[], angle: number) {
     // rotate the vertices at the origin (0,0)
-    var rotatedVertices = [];
-    for (var i = 0; i < vertices.length; i++) {
+    var rotatedVertices: { x: number, y: number }[] = [];
+    for (var i = 0; i < verts.length; i++) {
         // use math to rotate the vertices
-        var rotatedX = vertices[i].x * Math.cos(angle) - vertices[i].y * Math.sin(angle);
-        var rotatedY = vertices[i].x * Math.sin(angle) + vertices[i].y * Math.cos(angle);
+        var rotatedX = verts[i].x * Math.cos(angle) - verts[i].y * Math.sin(angle);
+        var rotatedY = verts[i].x * Math.sin(angle) + verts[i].y * Math.cos(angle);
         // add the rotated vertices to the array
         rotatedVertices.push({ x: rotatedX, y: rotatedY });
     }
@@ -399,7 +337,7 @@ function rotateVerts(vertices, angle) {
 
 const scaleOffset = 0.009999999776482582;
 
-function drawVertsAt(x, y, verts, rotation = 0) {
+function drawVertsAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
     ctx.beginPath();
     verts = rotateVerts(verts, rotation);
     verts.forEach(e => {
@@ -419,7 +357,7 @@ function drawVertsAt(x, y, verts, rotation = 0) {
         ctx.stroke();
         */
 }
-function drawVertsNoFillAt(x, y, verts, rotation = 0) {
+function drawVertsNoFillAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
     ctx.beginPath();
     verts = rotateVerts(verts, rotation);
     verts.forEach(e => {
@@ -435,7 +373,7 @@ function drawVertsNoFillAt(x, y, verts, rotation = 0) {
     ctx.strokeStyle = 'transparent';
 }
 
-function drawCircleAt(x, y, radius, rotation = 0, circleCake = false) {
+function drawCircleAt(x: number, y: number, radius: number, rotation = 0, circleCake = false) {
     ctx.beginPath();
     ctx.arc(x, y, radius, 0, 2 * Math.PI);
     ctx.fill();
@@ -454,41 +392,27 @@ function drawCircleAt(x, y, radius, rotation = 0, circleCake = false) {
         ctx.fill();
     }
 }
-var tintedImages = {};
 
-var canvas = document.getElementById('game');
-var ctx = canvas.getContext('2d'); // main layer
-
-var windowEnd = transformPoint(window.innerWidth, window.innerHeight);
-
-let cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 };
-let cameraZoom = 30;
-let MAX_ZOOM = 5;
-let MIN_ZOOM = 0.1;
-let SCROLL_SENSITIVITY = 0.0005;
-
-let lastX = window.innerWidth / 2;
-let lastY = window.innerHeight / 2;
-
-// lastX is for touch and mouse, this is specifically for mouse
-let lastMouseX = window.innerWidth / 2;
-let lastMouseY = window.innerHeight / 2;
 
 // Gets the relevant location from a mouse or single touch event
-function getEventLocation(e) {
-    if (e.touches && e.touches.length == 1) {
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+function getEventLocation(e: MouseEvent | TouchEvent) {
+    // check if its a touch event
+    if (e instanceof TouchEvent) {
+        if (e.touches && e.touches.length == 1) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
     }
     else if (e.clientX && e.clientY) {
         return { x: e.clientX, y: e.clientY };
     }
+    return { x: 0, y: 0 };
 }
 
-function drawRect(x, y, width, height) {
+function drawRect(x: number, y: number, width: number, height: number) {
     ctx.fillRect(x, y, width, height);
 }
 
-function drawText(text, x, y, size, font) {
+function drawText(text: string, x: number, y: number, size: number, font: string) {
     ctx.font = `${size}px ${font}`;
     ctx.fillText(text, x, y);
 }
@@ -500,55 +424,79 @@ let dragStart2 = { x: 0, y: 0 };
 
 
 // movement system where we can move in multiple directions at once
-var keysDown = {};
+var keysDown: { [key: number]: boolean } = {};
 
 var pointerDown = false;
 
 
 
-function onPointerDown(e) {
+function onPointerDown(e: MouseEvent | TouchEvent) {
     var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-
-    if (e.button == 2 || e.button && 3) {
-        isDragging = true;
-        dragStart.x = getEventLocation(e).x - cameraOffset.x;
-        dragStart.y = getEventLocation(e).y - cameraOffset.y;
-
-        dragStart2.x = getEventLocation(e).x;
-        dragStart2.y = getEventLocation(e).y;
-    }
-    // if its not those buttons, we will see how much cursor moves first
-
-    if (e.button == 0) {
+    if (e instanceof TouchEvent) {
         player = {
             x: mousePos.x,
             y: mousePos.y,
-            down: true
+            down: true,
+            name: player.name
         };
         client.emitData("player mouse down", player);
         pointerDown = true;
     }
+    else {
+        if (e.button == 2 || e.button && 3) {
+            isDragging = true;
+            dragStart.x = getEventLocation(e).x - cameraOffset.x;
+            dragStart.y = getEventLocation(e).y - cameraOffset.y;
+
+            dragStart2.x = getEventLocation(e).x;
+            dragStart2.y = getEventLocation(e).y;
+        }
+        // if its not those buttons, we will see how much cursor moves first
+
+        if (e.button == 0) {
+            player = {
+                x: mousePos.x,
+                y: mousePos.y,
+                down: true,
+                name: player.name
+            };
+            client.emitData("player mouse down", player);
+            pointerDown = true;
+        }
+    }
 }
 
-function onPointerUp(e) {
-    if (e.button == 0) {
+function onPointerUp(e: MouseEvent | TouchEvent) {
+    if (e instanceof TouchEvent) {
         pointerDown = false;
         var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
         player = {
             x: mousePos.x,
             y: mousePos.y,
-            down: false
+            down: false,
+            name: player.name
         };
         client.emitData("player mouse up", player);
     }
+    else {
+        if (e.button == 0) {
+            pointerDown = false;
+            var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+            player = {
+                x: mousePos.x,
+                y: mousePos.y,
+                down: false,
+                name: player.name
+            };
+            client.emitData("player mouse up", player);
+        }
+    }
     isDragging = false;
-    initialPinchDistance = null;
     lastZoom = cameraZoom;
+    initialPinchDistance = null;
 }
 
-var prevSprite;
-
-function onPointerMove(e) {
+function onPointerMove(e: MouseEvent | TouchEvent) {
     if (isDragging) {
         cameraOffset.x = getEventLocation(e).x - dragStart.x;
         cameraOffset.y = getEventLocation(e).y - dragStart.y;
@@ -565,14 +513,15 @@ function onPointerMove(e) {
     player = {
         x: mousePos.x,
         y: mousePos.y,
-        down: pointerDown
+        down: pointerDown,
+        name: player.name
     };
     client.emitData("player mouse", player);
 }
 
-var touchStartElement = null;
+var touchStartElement: HTMLElement | null = null;
 
-function handleTouch(e, singleTouchHandler) {
+function handleTouch(e: TouchEvent, singleTouchHandler: (e: TouchEvent) => void) {
     if (touchStartElement != canvas) {
         return;
     }
@@ -586,12 +535,12 @@ function handleTouch(e, singleTouchHandler) {
     }
 }
 
-let initialPinchDistance = null;
+let initialPinchDistance: number | null = null;
 let lastZoom = cameraZoom;
 
-let previousPinchDistance = null;
+let previousPinchDistance: number | null = null;
 
-function handlePinch(e) {
+function handlePinch(e: TouchEvent) {
     e.preventDefault();
 
     let touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -612,13 +561,13 @@ function handlePinch(e) {
     previousPinchDistance = currentDistance;
 }
 
-function scaleAt(x, y, scaleBy) {  // at pixel coords x, y scale by scaleBy
+function scaleAt(x: number, y: number, scaleBy: number) {  // at pixel coords x, y scale by scaleBy
     cameraZoom *= scaleBy;
     cameraOffset.x = x - (x - cameraOffset.x) * scaleBy;
     cameraOffset.y = y - (y - cameraOffset.y) * scaleBy;
 }
 
-function adjustZoom(zoomAmount, zoomFactor, center) {
+function adjustZoom(zoomAmount: number | null, zoomFactor: number | null, center: { x: number, y: number } | null) {
     if (!isDragging) {
         if (center) {
             lastX = center.x;
@@ -673,9 +622,9 @@ canvas.addEventListener('touchstart', (e) => {
 });
 
 document.addEventListener('touchstart', (e) => {
-    touchStartElement = e.target;
+    touchStartElement = e.target as HTMLElement;
 });
-function setUpClickSound(element) {
+function setUpClickSound(element: HTMLElement) {
     element.addEventListener('mousedown', (e) => {
         // if element has active class, ignore
         if (element.classList.contains('active')) {
@@ -713,17 +662,13 @@ canvas.height = window.innerHeight;
 var player = {
     x: 0,
     y: 0,
-    name: 'Anonymous'
+    name: 'Anonymous',
+    down: false
 };
 
-var images = {};
-var imageNames = [];
+var images: { [key: string]: HTMLImageElement } = {};
 
-for (var i = 0; i < imageNames.length; i++) {
-    getImage(spritesDir + player.color + '/' + imageNames[i] + '.png');
-}
-
-function getImage(src) {
+function getImage(src: string) {
     if (images[src] != undefined) {
         return images[src];
     }
@@ -746,7 +691,7 @@ window.addEventListener('resize', function () {
     draw();
 }, false);
 
-function setName(name) {
+function setName(name: string) {
     player.name = name;
     client.emitData('update player', player);
 }
@@ -754,7 +699,7 @@ function setName(name) {
 
 
 // polyfill for roundRect
-function roundRect(x, y, w, h, r) {
+function roundRect(x: number, y: number, w: number, h: number, r: number) {
     if (w < 2 * r) r = w / 2;
     if (h < 2 * r) r = h / 2;
     ctx.beginPath();
@@ -767,7 +712,7 @@ function roundRect(x, y, w, h, r) {
     return ctx;
 }
 
-function roundTri(x, y, w, h) {
+function roundTri(x: number, y: number, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.arcTo(x + w, y, x + w, y + h, 10);
@@ -781,8 +726,6 @@ function roundTri(x, y, w, h) {
 
 
 document.addEventListener('keydown', function (e) {
-
-
     keysDown[e.keyCode] = true;
     movementUpdate();
     if (e.keyCode === 37) {
@@ -857,31 +800,19 @@ var speed = 300 / framerate;
 speed = Math.round(speed / 8) * 8;
 
 
-
-
-
-
-
-function update() {
-    var moved = false;
-
-
-    return moved;
-
-    // this is the most useful function of all time.
-    // it is the most called function in the entire game. if you remove this, the game will not work. we are not quite sure why. but we dont mess with the update function.
-}
-
 // Modified version of https://stackoverflow.com/a/28416298 to render on top of canvas and at the same place image would otherwise be rendered, with size
-function outlinedImage(img, s, color, x, y, width, height) {
+function outlinedImage(img: HTMLImageElement, s: number, color: string, x: number, y: number, width: number, height: number) {
 
     var canvas2 = document.createElement('canvas');
-    var ctx2 = canvas2.getContext('2d');
+    var ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
     canvas2.width = width + (s * 4);
     canvas2.height = height + (s * 4);
     ctx2.imageSmoothingEnabled = false;
-    ctx2.mozImageSmoothingEnabled = false;
+    // @ts-ignore
+    ctx2.mozImageSmoothingEnabled = false; // we ignore because typescript doesnt know about these
+    // @ts-ignore
     ctx2.webkitImageSmoothingEnabled = false;
+    // @ts-ignore
     ctx2.msImageSmoothingEnabled = false;
 
     var dArr = [-1, -1, 0, -1, 1, -1, -1, 0, 1, 0, -1, 1, 0, 1, 1, 1], // offset array
@@ -901,10 +832,6 @@ function outlinedImage(img, s, color, x, y, width, height) {
     ctx2.drawImage(img, 1 + s, 1 + s, width, height);
 
     ctx.drawImage(canvas2, x - 1 - s, y - 1 - s);
-
-    // dispose responsibly
-    canvas2 = null;
-    ctx2 = null;
 }
 
 
@@ -944,35 +871,37 @@ function draw() {
         ctx.fillStyle = entity.color;
         if (entity.border) {
             ctx.strokeStyle = entity.border;
-            ctx.lineWidth = entity.border_width / (entity.border_scale_with_zoom ? cameraZoom : 1);
+            ctx.lineWidth = entity.border_width as number / (entity.border_scale_with_zoom ? cameraZoom : 1);
         }
         else {
             ctx.strokeStyle = 'transparent';
         }
         if (entity.type === 'polygon') {
-            //console.log('drawing polygon');
-            if (!entity.points) {
-                drawVertsAt(entity.x, entity.y, entity.vertices, entity.angle);
-                entity.vertices.forEach(function (vert) {
+            let entityPolygon = entity as SimuloPolygon;
+            if (!entityPolygon.points) {
+                drawVertsAt(entityPolygon.x, entityPolygon.y, entityPolygon.vertices, entityPolygon.angle);
+                entityPolygon.vertices.forEach(function (vert) {
                     if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                     if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                 });
             }
             else {
-                drawVertsAt(entity.x, entity.y, entity.points, entity.angle);
-                entity.points.forEach(function (vert) {
+                drawVertsAt(entityPolygon.x, entityPolygon.y, entityPolygon.points, entityPolygon.angle);
+                entityPolygon.points.forEach(function (vert) {
                     if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                     if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                 });
             }
         }
         else if (entity.type === 'circle') {
+            let entityCircle = entity as SimuloCircle;
             // console.log('drawing circle');
-            drawCircleAt(entity.x, entity.y, entity.radius, entity.angle, entity.circle_cake);
+            drawCircleAt(entityCircle.x, entityCircle.y, entityCircle.radius as number, entityCircle.angle, entityCircle.circle_cake);
         }
         else if (entity.type === 'edge') {
+            let entityEdge = entity as SimuloEdge;
             //console.log('drawing edge');
-            drawVertsNoFillAt(entity.x, entity.y, entity.vertices, entity.angle);
+            drawVertsNoFillAt(entityEdge.x, entityEdge.y, entityEdge.vertices, entityEdge.angle);
         }
         else {
             //console.log('what is ' + entity.type);
@@ -1036,7 +965,7 @@ function draw() {
             if (creatingSprings[id].image) {
                 //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                 console.log('img on spring')
-                drawStretchedImageLine(getImage(creatingSprings[id].image), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
+                drawStretchedImageLine(getImage(creatingSprings[id].image as string), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
             }
             else {
                 console.log('no img on spring')
@@ -1047,7 +976,7 @@ function draw() {
             }
         }
         if (creatingObjects[id]) {
-            if (creatingObjects[id].shape === 'rectangle') {
+            if (creatingObjects[id].shape === 'rectangle' || creatingObjects[id].shape === 'select') { // selection box is a rectangle and has same properties for rendering
                 // Calculate the difference between creatingObjects[id] x and y and the current player x and y
                 const width = Math.abs(player.x - creatingObjects[id].x);
                 const height = Math.abs(player.y - creatingObjects[id].y);
@@ -1105,14 +1034,14 @@ function draw() {
     }
     if (toolIcon) {
         console.log('drawing tool icon');
-        ctx.drawImage(getImage(toolIcon), mousePos.x + ((toolIconOffset[0] * cursorSize)), mousePos.y + ((toolIconOffset[1] * cursorSize)), (toolIconSize * cursorSize), (toolIconSize * cursorSize));
+        ctx.drawImage(getImage(toolIcon), mousePos.x + (((toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
     }
     if (client.id) {
         if (creatingSprings[client.id]) {
             if (creatingSprings[client.id].image) {
                 //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                 console.log('img on spring')
-                drawStretchedImageLine(getImage(creatingSprings[client.id].image), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.2);
+                drawStretchedImageLine(getImage(creatingSprings[client.id].image as string), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.2);
             }
             else {
                 console.log('no img on spring')
@@ -1123,7 +1052,7 @@ function draw() {
             }
         }
         if (creatingObjects[client.id]) {
-            if (creatingObjects[client.id].shape === 'rectangle') {
+            if (creatingObjects[client.id].shape === 'rectangle' || creatingObjects[client.id].shape === 'select') {
                 // Calculate the difference between creatingObjects[id] x and y and the current player x and y
                 const width = Math.abs(mousePos.x - creatingObjects[client.id].x);
                 const height = Math.abs(mousePos.y - creatingObjects[client.id].y);
@@ -1197,11 +1126,11 @@ function draw() {
 
                 console.log('creatingObjects[client.id]:', creatingObjects[client.id]);
 
-                var points = creatingObjects[client.id].vertices;
+                var points = (creatingObjects[client.id] as SimuloCreatingPolygon).vertices;
                 console.log('points:', points);
                 //points.push(points[0]);
 
-                points = points.map(function (point) {
+                var pointsMapped = points.map(function (point) {
                     console.log('point:', point);
                     // add a dot at the point
                     drawCircleAt(point[0] - 0.05, point[1] - 0.05, 0.1, 0, false);
@@ -1209,11 +1138,10 @@ function draw() {
                 });
 
                 // Draw the circle
-                drawVertsAt(0, 0, points, 0);
+                drawVertsAt(0, 0, pointsMapped, 0);
             }
         }
     }
-
 
     // draw text that says mouse pos in world space
     ctx.fillStyle = 'white';
@@ -1225,10 +1153,10 @@ function draw() {
 }
 
 
-function tintImage(image, color) {
+function tintImage(image: HTMLImageElement, color: string) {
     if (!tintedImages[image.src + ' -> ' + color]) {
         const buffer = document.createElement('canvas');
-        const btx = buffer.getContext('2d');
+        const btx = buffer.getContext('2d') as CanvasRenderingContext2D;
         buffer.width = image.width;
         buffer.height = image.height;
         btx.drawImage(image, 0, 0);
@@ -1247,48 +1175,5 @@ function tintImage(image, color) {
         console.log('already tinted image')
         return tintedImages[image.src + ' -> ' + color];
     }
-
-
-
 }
 
-function transformPoint(x, y) {
-    // transform a point in the ctx from screen space to world space
-    var newX, newY;
-    // calculate, based on ctx translation and scale, what the point would be
-    newX = (x - ctx.getTransform().e) / (ctx.getTransform().a);
-    newY = (y - ctx.getTransform().f) / (ctx.getTransform().d);
-
-    return { x: newX, y: newY };
-}
-
-function inverseTransformPoint(x, y) {
-    // transform a point in the ctx from world space to screen space
-    var newX, newY;
-    // calculate, based on ctx translation and scale, what the point would be
-    newX = (x * ctx.getTransform().a) + ctx.getTransform().e;
-    newY = (y * ctx.getTransform().d) + ctx.getTransform().f;
-
-    return { x: newX, y: newY };
-}
-
-
-
-
-
-function loop() {
-    if (update()) {
-        //socket.emit('movement', player);
-    }
-
-    physics();
-    draw();
-
-    window.requestAnimationFrame(loop);
-}
-
-function physics() {
-    // fall d
-}
-
-window.requestAnimationFrame(loop);
