@@ -229,6 +229,15 @@ class SimuloClientController {
         });
 
         var viewer = new SimuloViewer(canvas);
+        viewer.on('mouseMove', (pos: { x: number, y: number }) => {
+            this.player = {
+                x: pos.x,
+                y: pos.y,
+                down: this.pointerDown,
+                name: this.player.name
+            };
+            this.client.emitData("player mouse", player);
+        });
         viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
     }
     setTheme(name: string) {

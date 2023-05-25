@@ -1,3 +1,17 @@
+/** Gets the relevant location from a mouse or single touch event */
+function getEventLocation(e: MouseEvent | TouchEvent) {
+    // check if its a touch event
+    if (e instanceof TouchEvent) {
+        if (e.touches && e.touches.length == 1) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+    }
+    else if (e.clientX && e.clientY) {
+        return { x: e.clientX, y: e.clientY };
+    }
+    return { x: 0, y: 0 };
+}
+
 /** Displays shapes and images on a canvas at high performance, typically paired with `SimuloClientController` or a custom controller. */
 class SimuloViewer {
     /** Whether the viewer is currently running, should only be altered by `start()` and `stop()` */
@@ -14,6 +28,26 @@ class SimuloViewer {
     private lastMouseX: number;
     private lastMouseY: number;
     touchStartElement: HTMLElement | null = null;
+
+    listeners: { [key: string]: Function[] } = {};
+    emit(event: string, data: any) {
+        if (this.listeners[event]) {
+            this.listeners[event].forEach((listener) => {
+                listener(data);
+            });
+        }
+    }
+    on(event: string, listener: Function) {
+        if (!this.listeners[event]) {
+            this.listeners[event] = [];
+        }
+        this.listeners[event].push(listener);
+    }
+    off(event: string, listener: Function) {
+        if (this.listeners[event]) {
+            this.listeners[event] = this.listeners[event].filter((l) => l != listener);
+        }
+    }
 
     /** Transform a point from screen space to world space */
     transformPoint(x: number, y: number) {
@@ -72,6 +106,27 @@ class SimuloViewer {
         this.canvas.addEventListener('touchmove', (e) => this.handleTouch(e, this.onPointerMove));
         this.canvas.addEventListener('wheel', (e) => this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null));
     }
+
+    onPointerMove(e: MouseEvent | TouchEvent) {
+        if (this.isDragging) {
+            this.cameraOffset.x = getEventLocation(e).x - this.dragStart.x;
+            this.cameraOffset.y = getEventLocation(e).y - this.dragStart.y;
+        }
+
+        this.lastX = getEventLocation(e).x;
+        this.lastY = getEventLocation(e).y;
+
+        this.lastMouseX = getEventLocation(e).x;
+        this.lastMouseY = getEventLocation(e).y;
+
+        // send mouse position to server
+        var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+        this.emit("mouseMove", {
+            x: mousePos.x,
+            y: mousePos.y
+        });
+    }
+
 }
 
 export default SimuloViewer;

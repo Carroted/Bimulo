@@ -169,19 +169,7 @@ function drawCircleAt(x: number, y: number, radius: number, rotation = 0, circle
 }
 
 
-// Gets the relevant location from a mouse or single touch event
-function getEventLocation(e: MouseEvent | TouchEvent) {
-    // check if its a touch event
-    if (e instanceof TouchEvent) {
-        if (e.touches && e.touches.length == 1) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-    }
-    else if (e.clientX && e.clientY) {
-        return { x: e.clientX, y: e.clientY };
-    }
-    return { x: 0, y: 0 };
-}
+
 
 function drawRect(x: number, y: number, width: number, height: number) {
     ctx.fillRect(x, y, width, height);
@@ -271,28 +259,6 @@ function onPointerUp(e: MouseEvent | TouchEvent) {
     initialPinchDistance = null;
 }
 
-function onPointerMove(e: MouseEvent | TouchEvent) {
-    if (isDragging) {
-        cameraOffset.x = getEventLocation(e).x - dragStart.x;
-        cameraOffset.y = getEventLocation(e).y - dragStart.y;
-    }
-
-    lastX = getEventLocation(e).x;
-    lastY = getEventLocation(e).y;
-
-    lastMouseX = getEventLocation(e).x;
-    lastMouseY = getEventLocation(e).y;
-
-    // send mouse position to server
-    var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-    player = {
-        x: mousePos.x,
-        y: mousePos.y,
-        down: pointerDown,
-        name: player.name
-    };
-    client.emitData("player mouse", player);
-}
 
 
 
