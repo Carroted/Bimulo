@@ -6,6 +6,14 @@ class SimuloViewer {
     ctx: CanvasRenderingContext2D;
     /** The canvas that the viewer is drawing to. You can update this along with `ctx` to change the canvas mid-run. */
     canvas: HTMLCanvasElement;
+    cameraOffset: { x: number, y: number };
+    cameraZoom = 30;
+    private lastX: number;
+    private lastY: number;
+    // lastX is for touch and mouse, these are specifically for mouse
+    private lastMouseX: number;
+    private lastMouseY: number;
+    touchStartElement: HTMLElement | null = null;
 
     /** Transform a point from screen space to world space */
     transformPoint(x: number, y: number) {
@@ -48,6 +56,21 @@ class SimuloViewer {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+        var windowEnd = this.transformPoint(this.canvas.width, this.canvas.height);
+        this.cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
+
+        this.lastX = window.innerWidth / 2;
+        this.lastY = window.innerHeight / 2;
+        this.lastMouseX = this.lastX;
+        this.lastMouseY = this.lastY;
+
+        this.canvas.addEventListener('touchstart', (e) => {
+            this.touchStartElement = e.target as HTMLElement;
+        });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouch(e, this.onPointerUp));
+        this.canvas.addEventListener('mousemove', this.onPointerMove);
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouch(e, this.onPointerMove));
+        this.canvas.addEventListener('wheel', (e) => this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null));
     }
 }
 

@@ -1,139 +1,9 @@
-var timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
-var timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
-var pausedToggle = document.getElementById('paused-toggle') as HTMLInputElement;
+
 
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
-var windowEnd = transformPoint(window.innerWidth, window.innerHeight);
-
-let cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 };
-let cameraZoom = 30;
-let MAX_ZOOM = 5;
-let MIN_ZOOM = 0.1;
-let SCROLL_SENSITIVITY = 0.0005;
-
-let lastX = window.innerWidth / 2;
-let lastY = window.innerHeight / 2;
-
-// lastX is for touch and mouse, this is specifically for mouse
-let lastMouseX = window.innerWidth / 2;
-let lastMouseY = window.innerHeight / 2;
-
-function queryParent(element: HTMLElement, className: string): HTMLElement | null {
-    var parent: HTMLElement = element.parentNode as HTMLElement;
-    while (parent) {
-        if (parent.classList.contains(className)) {
-            return parent;
-        }
-        parent = parent.parentNode as HTMLElement;
-    }
-    return null;
-}
-
-// on click tool, set active tool
-const tools = document.querySelectorAll('.tool');
-var toolIcon: string | null = null;
-var toolIconSize: number | null = null;
-var toolIconOffset: [x: number, y: number] | null = null;
-tools.forEach((toolElement) => {
-    let tool = toolElement as HTMLElement;
-    setUpClickSound(tool);
-    tool.addEventListener('click', () => {
-        // return if has fake class
-        if (tool.classList.contains('fake')) {
-            return;
-        }
-        // remove active class from all tools in that toolbar, without removing it from other toolbars
-        let toolbar = queryParent(tool, "toolbar");
-        if (toolbar) {
-            toolbar.querySelectorAll('.tool').forEach(tool => tool.classList.remove('active'));
-            tool.classList.add('active');
-
-            // if it has data-tool, setTool with that value
-            if (tool.dataset.tool) {
-                console.log('setting tool to', tool.dataset.tool);
-                setTool(tool.dataset.tool);
-                // if theres data-img, set the icon to that
-                if (theme.tool_icons[tool.dataset.tool]) {
-                    toolIcon = theme.tool_icons[tool.dataset.tool];
-                    toolIconSize = theme.tool_icon_size;
-                    toolIconOffset = theme.tool_icon_offset;
-                }
-                else {
-                    toolIcon = null;
-                    toolIconSize = null;
-                    toolIconOffset = null;
-                }
-            }
-            // if data-action, handle
-            if (tool.dataset.action) {
-                if (tool.dataset.action == 'play') {
-                    setPaused(false);
-                }
-                if (tool.dataset.action == 'pause') {
-                    setPaused(true);
-                }
-                if (tool.dataset.action == '2x') {
-                    setTimeScale(5);
-                }
-                if (tool.dataset.action == '1x') {
-                    setTimeScale(1);
-                }
-            }
-            // if data-menu, show that .toolbar.secondary and hide all others
-            if (tool.dataset.menu) {
-                document.querySelectorAll('.toolbar.secondary').forEach(toolbarElement => {
-                    let toolbar = toolbarElement as HTMLElement;
-                    if (toolbar.id == tool.dataset.menu) {
-                        toolbar.style.display = 'flex';
-                    }
-                    else {
-                        toolbar.style.display = 'none';
-                    }
-                });
-            }
-        }
-    });
-});
-
-// on click .file-menu, show the thing
-const fileMenus = document.querySelectorAll('.file-menu');
-fileMenus.forEach(fileMenuElement => {
-    let fileMenu = fileMenuElement as HTMLElement;
-    console.log('fileMenu', fileMenu);
-    fileMenu.addEventListener('click', () => {
-        console.log('fileMenu clicked');
-        // if data-file, show the .file-menu-content with that id
-        if (fileMenu.dataset.file) {
-            console.log('fileMenu.dataset.file', fileMenu.dataset.file);
-            document.querySelectorAll('.file-menu-content').forEach(fileMenuContent => {
-                console.log('fileMenuContent', fileMenuContent);
-                if (fileMenuContent.id == fileMenu.dataset.file) {
-                    console.log('showing fileMenuContent');
-                    if (!fileMenuContent.classList.contains('active')) {
-                        fileMenuContent.classList.add('active');
-                    }
-                    else {
-                        fileMenuContent.classList.remove('active');
-                    }
-                }
-                else {
-                    console.log('hiding fileMenuContent');
-                    if (fileMenuContent.classList.contains('active')) {
-                        fileMenuContent.classList.remove('active');
-                    }
-                }
-            });
-        }
-        else {
-            console.log('no fileMenu.dataset.file');
-        }
-    });
-});
-
-
-//import SimuloNetworkClient from '/src/SimuloNetworkClient/index.js';
-//import SimuloLocalClient from '/shared/src/SimuloLocalClient.js';
+import SimuloClientController from './SimuloClientController/index.js';
+new SimuloClientController(document.getElementById('game') as HTMLCanvasElement); // We don't need to store it as we have no need to access it later.
 
 var host = false;
 // get query string for host (?host=true, ?host=false or none for false)
@@ -176,104 +46,9 @@ else {
     disableSystemCursor();
 }
 
-import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape } from '../../shared/src/SimuloShape.js';
-import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../shared/src/SimuloCreatingObject.js';
 
-var entities: SimuloShape[] = []; // We update this every time we receive a world update from the server
-var creatingObjects: {
-    [key: string]: SimuloCreatingObject;
-} = {};
-var creatingSprings: {
-    [key: string]: {
-        start: [x: number, y: number];
-        image: string | null;
-    };
-} = {};
-var players: { [key: string]: { x: number, y: number } } = {}; // We update this every time we receive a player mouse update from the server
-var springs: {
-    p1: number[];
-    p2: number[];
-    image: string | null;
-    line: {
-        color: string;
-        width: number;
-        scale_with_zoom: boolean;
-    } | null;
-}[] = [];
 
-function handleData(body: { type: string, data: any }) { // World data from the host, sent to all clients and to the host itself (loopback)
-    if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
-        if (body.type == 'world update') {
-            entities = body.data.shapes;
-            creatingObjects = body.data.creating_objects;
-            creatingSprings = body.data.creating_springs;
-            // change :root background to body.data.background
-            document.documentElement.style.background = body.data.background;
-            springs = body.data.springs;
-            if (timeScale == null) {
-                timeScale = body.data.time_scale;
-                timeScaleSlider.value = (timeScale as number).toString();
-                timeScaleInput.value = (timeScale as number).toString();
-            }
-            if (paused == null) {
-                paused = body.data.paused;
-                pausedToggle.checked = paused as boolean;
-            }
-        }
-        if (body.type == 'player mouse') {
-            players[body.data.id] = {
-                x: body.data.x,
-                y: body.data.y
-            };
-            springs = body.data.springs;
-        }
-        if (body.type == 'collision') {
-            // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
-            var audio = new Audio('/assets/sounds/' + body.data.sound);
-            audio.volume = body.data.volume;
-            // pitch from 0.5 to 1.5
-            audio.playbackRate = body.data.pitch;
-            audio.play();
-        }
-        if (body.type == 'set_time_scale') {
-            timeScale = body.data;
-            timeScaleSlider.value = (timeScale as number).toString();
-            timeScaleInput.value = (timeScale as number).toString();
-        }
-        if (body.type == 'set_paused') {
-            paused = body.data;
-            // set #paused-toggle
-            pausedToggle.checked = paused as boolean;
-        }
-    }
-}
 
-timeScaleSlider.addEventListener('input', function (e) {
-    if (e.target) {
-        let targetInput = e.target as HTMLInputElement;
-        setTimeScale(parseFloat(targetInput.value));
-        // change input
-        timeScaleSlider.value = targetInput.value;
-    }
-});
-
-// on change input
-timeScaleInput.addEventListener('change', function (e) {
-    if (e.target) {
-        let targetInput = e.target as HTMLInputElement;
-        setTimeScale(parseFloat(targetInput.value));
-        // change slider
-        timeScaleSlider.value = targetInput.value;
-    }
-});
-
-// on change toggle
-pausedToggle.addEventListener('change', function (e) {
-    if (e.target) {
-        let targetInput = e.target as HTMLInputElement;
-        setPaused(targetInput.checked);
-    }
-});
 
 // load all svg data-src images
 var svgs = document.querySelectorAll('svg[data-src]');
@@ -519,7 +294,7 @@ function onPointerMove(e: MouseEvent | TouchEvent) {
     client.emitData("player mouse", player);
 }
 
-var touchStartElement: HTMLElement | null = null;
+
 
 function handleTouch(e: TouchEvent, singleTouchHandler: (e: TouchEvent) => void) {
     if (touchStartElement != canvas) {
@@ -621,39 +396,7 @@ canvas.addEventListener('touchstart', (e) => {
     return false;
 });
 
-document.addEventListener('touchstart', (e) => {
-    touchStartElement = e.target as HTMLElement;
-});
-function setUpClickSound(element: HTMLElement) {
-    element.addEventListener('mousedown', (e) => {
-        // if element has active class, ignore
-        if (element.classList.contains('active')) {
-            return;
-        }
-        var audio = new Audio(element.classList.contains('fake') ? '/assets/sounds/deny.wav' : '/assets/sounds/button_down.wav');
-        audio.volume = element.classList.contains('fake') ? 0.3 : 0.02;
-        audio.playbackRate = element.classList.contains('fake') ? 1 : 5;
-        audio.play();
-    });
-    element.addEventListener('mouseup', (e) => {
-        if (element.classList.contains('active')) {
-            return;
-        }
-        // return if fake
-        if (element.classList.contains('fake')) {
-            return;
-        }
-        var audio = new Audio('/assets/sounds/button_up.wav');
-        audio.volume = 0.02;
-        // pitch up
-        audio.playbackRate = element.classList.contains('fake') ? 1 : 5;
-        audio.play();
-    });
-}
-document.addEventListener('touchend', (e) => handleTouch(e, onPointerUp));
-document.addEventListener('mousemove', onPointerMove);
-document.addEventListener('touchmove', (e) => handleTouch(e, onPointerMove));
-canvas.addEventListener('wheel', (e) => adjustZoom((-e.deltaY * SCROLL_SENSITIVITY) > 0 ? 1.1 : 0.9, null, null));
+
 
 // make canvas full screen
 canvas.width = window.innerWidth;
