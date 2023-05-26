@@ -48,6 +48,15 @@ class SimuloClientController {
     minZoom = 0.1;
     scrollSensitivity = 0.0005;
 
+    player = {
+        x: 0,
+        y: 0,
+        name: 'Anonymous',
+        down: false
+    };
+
+    viewer: SimuloViewer;
+
     // TODO: Make these created by this script (loaded from an HTML file) so each ClientController can define its own UI
     timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
     timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
@@ -228,17 +237,17 @@ class SimuloClientController {
             }
         });
 
-        var viewer = new SimuloViewer(canvas);
-        viewer.on('mouseMove', (pos: { x: number, y: number }) => {
+        this.viewer = new SimuloViewer(canvas);
+        this.viewer.on('mouseMove', (pos: { x: number, y: number }) => {
             this.player = {
                 x: pos.x,
                 y: pos.y,
-                down: this.pointerDown,
+                down: this.viewer.pointerDown,
                 name: this.player.name
             };
-            this.client.emitData("player mouse", player);
+            this.client.emitData("player mouse", this.player);
         });
-        viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
+        this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
     }
     setTheme(name: string) {
         this.client.emitData('set_theme', name);

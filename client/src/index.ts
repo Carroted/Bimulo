@@ -97,76 +97,10 @@ function drawStretchedImageLine(image: HTMLImageElement, x1: number, y1: number,
     }
 }
 
-function rotateVerts(verts: { x: number, y: number }[], angle: number) {
-    // rotate the vertices at the origin (0,0)
-    var rotatedVertices: { x: number, y: number }[] = [];
-    for (var i = 0; i < verts.length; i++) {
-        // use math to rotate the vertices
-        var rotatedX = verts[i].x * Math.cos(angle) - verts[i].y * Math.sin(angle);
-        var rotatedY = verts[i].x * Math.sin(angle) + verts[i].y * Math.cos(angle);
-        // add the rotated vertices to the array
-        rotatedVertices.push({ x: rotatedX, y: rotatedY });
-    }
-    return rotatedVertices;
-}
 
 const scaleOffset = 0.009999999776482582;
 
-function drawVertsAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
-    ctx.beginPath();
-    verts = rotateVerts(verts, rotation);
-    verts.forEach(e => {
-        ctx.lineTo((e.x + x), (e.y + y));
-    });
-    ctx.closePath();
-    //ctx.strokeStyle = '#000000a0';
 
-    ctx.save();
-    ctx.clip();
-    ctx.lineWidth *= 2;
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-    /*
-        ctx.fill();
-        ctx.stroke();
-        */
-}
-function drawVertsNoFillAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
-    ctx.beginPath();
-    verts = rotateVerts(verts, rotation);
-    verts.forEach(e => {
-        ctx.lineTo((e.x + x), (e.y + y));
-    });
-    ctx.closePath();
-    // set stroke color
-    ctx.strokeStyle = '#9ac4f1';
-    // set line width
-    ctx.lineWidth = 0.01;
-    ctx.stroke();
-    // reset to transparent
-    ctx.strokeStyle = 'transparent';
-}
-
-function drawCircleAt(x: number, y: number, radius: number, rotation = 0, circleCake = false) {
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.stroke();
-    // if circleCake, draw a partial circle (20 degrees)
-    if (circleCake) {
-        // fill color darker
-        ctx.fillStyle = '#00000080';
-        ctx.strokeStyle = 'transparent';
-        ctx.beginPath();
-        //ctx.arc(x, y, radius, 0, 20 * Math.PI / 180);
-        // offset based on rotation
-        ctx.arc(x, y, radius, rotation, rotation + 23 * Math.PI / 180);
-        ctx.lineTo(x, y);
-        ctx.closePath();
-        ctx.fill();
-    }
-}
 
 
 
@@ -180,165 +114,14 @@ function drawText(text: string, x: number, y: number, size: number, font: string
     ctx.fillText(text, x, y);
 }
 
-let isDragging = false;
-let dragStart = { x: 0, y: 0 };
-let dragStart2 = { x: 0, y: 0 };
+
 
 
 
 // movement system where we can move in multiple directions at once
 var keysDown: { [key: number]: boolean } = {};
 
-var pointerDown = false;
 
-
-
-function onPointerDown(e: MouseEvent | TouchEvent) {
-    var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-    if (e instanceof TouchEvent) {
-        player = {
-            x: mousePos.x,
-            y: mousePos.y,
-            down: true,
-            name: player.name
-        };
-        client.emitData("player mouse down", player);
-        pointerDown = true;
-    }
-    else {
-        if (e.button == 2 || e.button && 3) {
-            isDragging = true;
-            dragStart.x = getEventLocation(e).x - cameraOffset.x;
-            dragStart.y = getEventLocation(e).y - cameraOffset.y;
-
-            dragStart2.x = getEventLocation(e).x;
-            dragStart2.y = getEventLocation(e).y;
-        }
-        // if its not those buttons, we will see how much cursor moves first
-
-        if (e.button == 0) {
-            player = {
-                x: mousePos.x,
-                y: mousePos.y,
-                down: true,
-                name: player.name
-            };
-            client.emitData("player mouse down", player);
-            pointerDown = true;
-        }
-    }
-}
-
-function onPointerUp(e: MouseEvent | TouchEvent) {
-    if (e instanceof TouchEvent) {
-        pointerDown = false;
-        var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-        player = {
-            x: mousePos.x,
-            y: mousePos.y,
-            down: false,
-            name: player.name
-        };
-        client.emitData("player mouse up", player);
-    }
-    else {
-        if (e.button == 0) {
-            pointerDown = false;
-            var mousePos = transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-            player = {
-                x: mousePos.x,
-                y: mousePos.y,
-                down: false,
-                name: player.name
-            };
-            client.emitData("player mouse up", player);
-        }
-    }
-    isDragging = false;
-    lastZoom = cameraZoom;
-    initialPinchDistance = null;
-}
-
-
-
-
-function handleTouch(e: TouchEvent, singleTouchHandler: (e: TouchEvent) => void) {
-    if (touchStartElement != canvas) {
-        return;
-    }
-
-    if (e.touches.length == 1) {
-        singleTouchHandler(e);
-    }
-    else if (e.type == "touchmove" && e.touches.length == 2) {
-        isDragging = false;
-        handlePinch(e);
-    }
-}
-
-let initialPinchDistance: number | null = null;
-let lastZoom = cameraZoom;
-
-let previousPinchDistance: number | null = null;
-
-function handlePinch(e: TouchEvent) {
-    e.preventDefault();
-
-    let touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    let touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY };
-
-    // This is distance squared, but no need for an expensive sqrt as it's only used in ratio
-    let currentDistance = (touch1.x - touch2.x) ** 2 + (touch1.y - touch2.y) ** 2;
-    if (!previousPinchDistance)
-        previousPinchDistance = currentDistance;
-
-    if (initialPinchDistance == null) {
-        initialPinchDistance = currentDistance;
-    }
-    else {
-        adjustZoom((currentDistance - previousPinchDistance) > 0 ? 1.05 : (currentDistance - previousPinchDistance) < 0 ? 0.95 : 0, null, { x: (touch1.x + touch2.x) / 2, y: (touch1.y + touch2.y) / 2 });
-    }
-
-    previousPinchDistance = currentDistance;
-}
-
-function scaleAt(x: number, y: number, scaleBy: number) {  // at pixel coords x, y scale by scaleBy
-    cameraZoom *= scaleBy;
-    cameraOffset.x = x - (x - cameraOffset.x) * scaleBy;
-    cameraOffset.y = y - (y - cameraOffset.y) * scaleBy;
-}
-
-function adjustZoom(zoomAmount: number | null, zoomFactor: number | null, center: { x: number, y: number } | null) {
-    if (!isDragging) {
-        if (center) {
-            lastX = center.x;
-            lastY = center.y;
-        }
-        if (zoomAmount) {
-            // cameraZoom += zoomAmount
-            scaleAt(lastX, lastY, zoomAmount);
-        }
-        else if (zoomFactor) {
-            console.log(zoomFactor + ' is zoom factor');
-            scaleAt(lastX, lastY, zoomFactor);
-            // cameraZoom = zoomFactor * lastZoom
-        }
-
-
-        //cameraZoom = Math.min(cameraZoom, MAX_ZOOM)
-        //cameraZoom = Math.max(cameraZoom, MIN_ZOOM)
-
-
-
-
-
-        console.log(zoomAmount)
-
-        // mouse moved, lets send
-        var mousePos = transformPoint(lastX, lastY);
-        client.emitData("player mouse", { x: mousePos.x, y: mousePos.y });
-    }
-}
 
 
 canvas.addEventListener('mousedown', (e) => {
@@ -365,15 +148,9 @@ canvas.addEventListener('touchstart', (e) => {
 
 
 // make canvas full screen
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
 
-var player = {
-    x: 0,
-    y: 0,
-    name: 'Anonymous',
-    down: false
-};
+
+
 
 var images: { [key: string]: HTMLImageElement } = {};
 
