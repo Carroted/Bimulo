@@ -23,28 +23,9 @@ if (queryString) {
     });
 }
 
-
-var systemCursor = false;
 var game = document.getElementById('game');
 
-function enableSystemCursor() {
-    if (game != null) {
-        game.classList.add('cursor');
-    }
-    systemCursor = true;
-}
-function disableSystemCursor() {
-    if (game != null) {
-        game.classList.remove('cursor');
-    }
-    systemCursor = false;
-}
-if (theme.system_cursor) {
-    enableSystemCursor();
-}
-else {
-    disableSystemCursor();
-}
+
 
 
 
@@ -64,55 +45,12 @@ svgs.forEach(function (svg) {
     xhr.send();
 });
 
-function drawVerts(verts: { x: number, y: number }[]) {
-    ctx.beginPath();
-    verts.forEach(e => ctx.lineTo(e.x, e.y));
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-}
 
-function drawStretchedImageLine(image: HTMLImageElement, x1: number, y1: number, x2: number, y2: number, useHeight: boolean, otherAxisLength: number) {
-    // if useHeight is true, we will stretch along height between p1 and p2. if false, we will stretch along width between p1 and p2
-    if (useHeight) {
-        // draw between 2 points, offsetting other axis by half of otherAxisLength
-        var angle = Math.atan2(y2 - y1, x2 - x1);
-        var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-        var halfOtherAxisLength = otherAxisLength / 2;
-        ctx.save();
-        ctx.translate(x1, y1);
-        ctx.rotate(angle);
-        ctx.drawImage(image, -halfOtherAxisLength, 0, otherAxisLength, length);
-        ctx.restore();
-    } else {
-        // draw between 2 points, offsetting other axis by half of otherAxisLength
-        var angle = Math.atan2(y2 - y1, x2 - x1);
-        var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-        var halfOtherAxisLength = otherAxisLength / 2;
-        ctx.save();
-        ctx.translate(x1, y1);
-        ctx.rotate(angle);
-        ctx.drawImage(image, 0, -halfOtherAxisLength, length, otherAxisLength);
-        ctx.restore();
-    }
-}
 
 
 const scaleOffset = 0.009999999776482582;
 
 
-
-
-
-
-function drawRect(x: number, y: number, width: number, height: number) {
-    ctx.fillRect(x, y, width, height);
-}
-
-function drawText(text: string, x: number, y: number, size: number, font: string) {
-    ctx.font = `${size}px ${font}`;
-    ctx.fillText(text, x, y);
-}
 
 
 
@@ -123,27 +61,6 @@ var keysDown: { [key: number]: boolean } = {};
 
 
 
-
-canvas.addEventListener('mousedown', (e) => {
-    onPointerDown(e);
-    // stop propagation to prevent text selection
-    e.stopPropagation();
-    e.preventDefault();
-    return false;
-});
-canvas.addEventListener('mouseup', (e) => {
-    onPointerUp(e);
-    e.stopPropagation();
-    e.preventDefault();
-    return false;
-});
-
-canvas.addEventListener('touchstart', (e) => {
-    handleTouch(e, onPointerDown);
-    e.stopPropagation();
-    e.preventDefault();
-    return false;
-});
 
 
 

@@ -247,6 +247,9 @@ class SimuloClientController {
             };
             this.client.emitData("player mouse", this.player);
         });
+
+        this.viewer.systemCursor = this.theme.system_cursor;
+
         this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
     }
     setTheme(name: string) {

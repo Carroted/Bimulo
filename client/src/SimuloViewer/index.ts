@@ -148,6 +148,28 @@ class SimuloViewer {
         }
 
         this.canvas.classList.add(viewerClass);
+
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.onPointerDown(e);
+            // stop propagation to prevent text selection
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
+        this.canvas.addEventListener('mouseup', (e) => {
+            this.onPointerUp(e);
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
+
+        this.canvas.addEventListener('touchstart', (e) => {
+            this.handleTouch(e, this.onPointerDown);
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
     }
 
     onPointerMove(e: MouseEvent | TouchEvent) {
@@ -344,7 +366,7 @@ class SimuloViewer {
         }
     }
 
-    fullscreen: boolean = false;
+    /** Adds or removes `.fullscreen` class from the canvas element, which has CSS to make it fill the screen. */
     setFullscreen(fullscreen: boolean) {
         if (fullscreen) {
             this.canvas.classList.add("fullscreen");
@@ -352,7 +374,66 @@ class SimuloViewer {
         else {
             this.canvas.classList.remove("fullscreen");
         }
-        this.fullscreen = fullscreen;
+    }
+    /** Returns true if the canvas element has the `.fullscreen` class. */
+    get fullscreen(): boolean {
+        return this.canvas.classList.contains("fullscreen");
+    }
+
+    /** Adds or removes `.cursor` class from the canvas element, which has CSS to make it show the system cursor or hide it. */
+    get systemCursor(): boolean {
+        return this.canvas.classList.contains('cursor');
+    }
+    set systemCursor(value: boolean) {
+        if (value) {
+            this.canvas.classList.add('cursor');
+        }
+        else {
+            this.canvas.classList.remove('cursor');
+        }
+    }
+
+    drawVerts(verts: { x: number, y: number }[]) {
+        this.ctx.beginPath();
+        verts.forEach(e => this.ctx.lineTo(e.x, e.y));
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+    }
+
+    drawStretchedImageLine(image: HTMLImageElement, x1: number, y1: number, x2: number, y2: number, useHeight: boolean, otherAxisLength: number) {
+        // if useHeight is true, we will stretch along height between p1 and p2. if false, we will stretch along width between p1 and p2
+        if (useHeight) {
+            // draw between 2 points, offsetting other axis by half of otherAxisLength
+            var angle = Math.atan2(y2 - y1, x2 - x1);
+            var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            var halfOtherAxisLength = otherAxisLength / 2;
+            this.ctx.save();
+            this.ctx.translate(x1, y1);
+            this.ctx.rotate(angle);
+            this.ctx.drawImage(image, -halfOtherAxisLength, 0, otherAxisLength, length);
+            this.ctx.restore();
+        } else {
+            // draw between 2 points, offsetting other axis by half of otherAxisLength
+            var angle = Math.atan2(y2 - y1, x2 - x1);
+            var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            var halfOtherAxisLength = otherAxisLength / 2;
+            this.ctx.save();
+            this.ctx.translate(x1, y1);
+            this.ctx.rotate(angle);
+            this.ctx.drawImage(image, 0, -halfOtherAxisLength, length, otherAxisLength);
+            this.ctx.restore();
+        }
+    }
+
+
+    drawRect(x: number, y: number, width: number, height: number) {
+        this.ctx.fillRect(x, y, width, height);
+    }
+
+    drawText(text: string, x: number, y: number, size: number, font: string) {
+        this.ctx.font = `${size}px ${font}`;
+        this.ctx.fillText(text, x, y);
     }
 }
 
