@@ -57,7 +57,7 @@ const scaleOffset = 0.009999999776482582;
 
 
 // movement system where we can move in multiple directions at once
-var keysDown: { [key: number]: boolean } = {};
+
 
 
 
@@ -68,31 +68,11 @@ var keysDown: { [key: number]: boolean } = {};
 
 
 
-
-var images: { [key: string]: HTMLImageElement } = {};
-
-function getImage(src: string) {
-    if (images[src] != undefined) {
-        return images[src];
-    }
-    else {
-        var img = new Image();
-        img.src = src;
-        images[src] = img;
-        return img;
-    }
-
-} // with this system, all images are cached
-
 // make canvas bg black
 draw();
 
 // on resize, make canvas full screen
-window.addEventListener('resize', function () {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    draw();
-}, false);
+
 
 function setName(name: string) {
     player.name = name;
@@ -101,29 +81,7 @@ function setName(name: string) {
 
 
 
-// polyfill for roundRect
-function roundRect(x: number, y: number, w: number, h: number, r: number) {
-    if (w < 2 * r) r = w / 2;
-    if (h < 2 * r) r = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-    return ctx;
-}
 
-function roundTri(x: number, y: number, w: number, h: number) {
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arcTo(x + w, y, x + w, y + h, 10);
-    ctx.arcTo(x + w, y + h, x, y + h, 10);
-    ctx.arcTo(x, y + h, x, y, 10);
-    ctx.closePath();
-    return ctx;
-}
 
 
 
@@ -190,9 +148,7 @@ document.addEventListener('keyup', function (e) {
         }, false);*/
 
 // disable right click menu
-document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-}, false);
+
 
 var lastSpriteUpdate = new Date().getTime();
 var spriteUpdateDelay = 100;
@@ -204,38 +160,7 @@ speed = Math.round(speed / 8) * 8;
 
 
 // Modified version of https://stackoverflow.com/a/28416298 to render on top of canvas and at the same place image would otherwise be rendered, with size
-function outlinedImage(img: HTMLImageElement, s: number, color: string, x: number, y: number, width: number, height: number) {
 
-    var canvas2 = document.createElement('canvas');
-    var ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
-    canvas2.width = width + (s * 4);
-    canvas2.height = height + (s * 4);
-    ctx2.imageSmoothingEnabled = false;
-    // @ts-ignore
-    ctx2.mozImageSmoothingEnabled = false; // we ignore because typescript doesnt know about these
-    // @ts-ignore
-    ctx2.webkitImageSmoothingEnabled = false;
-    // @ts-ignore
-    ctx2.msImageSmoothingEnabled = false;
-
-    var dArr = [-1, -1, 0, -1, 1, -1, -1, 0, 1, 0, -1, 1, 0, 1, 1, 1], // offset array
-        i = 0;  // iterator
-
-    // draw images at offsets from the array scaled by s
-    for (; i < dArr.length; i += 2)
-        ctx2.drawImage(img, (1 + dArr[i] * s) + s, (1 + dArr[i + 1] * s) + s, width, height);
-
-    // fill with color
-    ctx2.globalCompositeOperation = "source-in";
-    ctx2.fillStyle = color;
-    ctx2.fillRect(0, 0, width + (s * 4), height + (s * 40));
-
-    // draw original image in normal mode
-    ctx2.globalCompositeOperation = "source-over";
-    ctx2.drawImage(img, 1 + s, 1 + s, width, height);
-
-    ctx.drawImage(canvas2, x - 1 - s, y - 1 - s);
-}
 
 
 function draw() {

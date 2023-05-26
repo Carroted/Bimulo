@@ -250,6 +250,10 @@ class SimuloClientController {
 
         this.viewer.systemCursor = this.theme.system_cursor;
 
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        }, false); // disable right click menu since we will make our own
+
         this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
     }
     setTheme(name: string) {

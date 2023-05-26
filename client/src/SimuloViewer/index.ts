@@ -51,7 +51,22 @@ class SimuloViewer {
     initialPinchDistance: number | null = null;
     lastZoom = this.cameraZoom;
 
+    keysDown: { [key: number]: boolean } = {};
+
     previousPinchDistance: number | null = null;
+
+    private cachedImages: { [key: string]: HTMLImageElement } = {};
+    getImage(src: string) {
+        if (this.cachedImages[src] != undefined) {
+            return this.cachedImages[src];
+        }
+        else {
+            var img = new Image();
+            img.src = src;
+            this.cachedImages[src] = img;
+            return img;
+        }
+    }
 
     listeners: { [key: string]: Function[] } = {};
     /** Emit data to listeners. Call `on` to add listeners and `off` to remove them. */
@@ -170,6 +185,10 @@ class SimuloViewer {
             e.preventDefault();
             return false;
         });
+
+        window.addEventListener('resize', () => {
+            this.draw();
+        }, false);
     }
 
     onPointerMove(e: MouseEvent | TouchEvent) {
@@ -434,6 +453,62 @@ class SimuloViewer {
     drawText(text: string, x: number, y: number, size: number, font: string) {
         this.ctx.font = `${size}px ${font}`;
         this.ctx.fillText(text, x, y);
+    }
+
+    outlinedImage(img: HTMLImageElement, s: number, color: string, x: number, y: number, width: number, height: number) {
+        var canvas2 = document.createElement('canvas');
+        var ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
+        canvas2.width = width + (s * 4);
+        canvas2.height = height + (s * 4);
+        ctx2.imageSmoothingEnabled = false;
+        // @ts-ignore
+        ctx2.mozImageSmoothingEnabled = false; // we ignore because typescript doesnt know about these
+        // @ts-ignore
+        ctx2.webkitImageSmoothingEnabled = false;
+        // @ts-ignore
+        ctx2.msImageSmoothingEnabled = false;
+
+        var dArr = [-1, -1, 0, -1, 1, -1, -1, 0, 1, 0, -1, 1, 0, 1, 1, 1], // offset array
+            i = 0;  // iterator
+
+        // draw images at offsets from the array scaled by s
+        for (; i < dArr.length; i += 2)
+            ctx2.drawImage(img, (1 + dArr[i] * s) + s, (1 + dArr[i + 1] * s) + s, width, height);
+
+        // fill with color
+        ctx2.globalCompositeOperation = "source-in";
+        ctx2.fillStyle = color;
+        ctx2.fillRect(0, 0, width + (s * 4), height + (s * 40));
+
+        // draw original image in normal mode
+        ctx2.globalCompositeOperation = "source-over";
+        ctx2.drawImage(img, 1 + s, 1 + s, width, height);
+
+        this.ctx.drawImage(canvas2, x - 1 - s, y - 1 - s);
+    }
+
+    // polyfill for roundRect
+    roundRect(x: number, y: number, w: number, h: number, r: number) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + r, y);
+        this.ctx.arcTo(x + w, y, x + w, y + h, r);
+        this.ctx.arcTo(x + w, y + h, x, y + h, r);
+        this.ctx.arcTo(x, y + h, x, y, r);
+        this.ctx.arcTo(x, y, x + w, y, r);
+        this.ctx.closePath();
+        return this.ctx;
+    }
+
+    roundTri(x: number, y: number, w: number, h: number) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+        this.ctx.arcTo(x + w, y, x + w, y + h, 10);
+        this.ctx.arcTo(x + w, y + h, x, y + h, 10);
+        this.ctx.arcTo(x, y + h, x, y, 10);
+        this.ctx.closePath();
+        return this.ctx;
     }
 }
 
