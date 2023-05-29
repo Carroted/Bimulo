@@ -512,36 +512,36 @@ class SimuloViewer {
     }
 
     draw() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        //this.canvas.width = window.innerWidth;
+        //this.canvas.height = window.innerHeight;
 
 
 
         // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
-        ctx.setTransform(cameraZoom, 0, 0, cameraZoom, cameraOffset.x, cameraOffset.y);
+        this.ctx.setTransform(this.cameraZoom, 0, 0, this.cameraZoom, this.cameraOffset.x, this.cameraOffset.y);
 
         //ctx.fillStyle = '#151832';
-        var origin = transformPoint(0, 0);
-        var end = transformPoint(window.innerWidth, window.innerHeight);
+        var origin = this.transformPoint(0, 0);
+        var end = this.transformPoint(this.canvas.width, this.canvas.height);
         var width = end.x - origin.x;
         var height = end.y - origin.y;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // draw map
         //ctx.drawImage(canvasMap, 0, 0);
 
 
-        var mousePos = transformPoint(lastX, lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
+        var mousePos = this.transformPoint(this.lastX, this.lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
 
-        var cursor = getImage('/assets/textures/cursor.png');
+        var cursor = this.getImage('/assets/textures/cursor.png');
 
         // fill
         ctx.fillStyle = '#a1acfa';
         // no border
         ctx.strokeStyle = 'transparent';
         // the entities are verts
-        for (var i = 0; i < entities.length; i++) {
-            var entity = entities[i];
+        for (var i = 0; i < this.entities.length; i++) {
+            var entity = this.entities[i];
             var shapeSize = 1; // width of shape
 
             ctx.fillStyle = entity.color;
@@ -810,7 +810,8 @@ class SimuloViewer {
                         console.log('point:', point);
                         // add a dot at the point
                         shapes.push({
-                            x: point[0] - 0.05, y: point[1] - 0.05, radius: 0.1, rotation: 0, circleCake: false
+                            x: point[0] - 0.05, y: point[1] - 0.05, radius: 0.1, rotation: 0, circleCake: false,
+                            type: 'circle', color: 'white', image: null
                         });
                         return { x: point[0], y: point[1] };
                     });
