@@ -12,11 +12,11 @@ function loadThemes() {
         themes[themeName] = {
             background: themesJSONAny[themeName].background,
             ground: themesJSONAny[themeName].ground,
-            new_objects: themesJSONAny[themeName].new_objects,
-            tool_icons: themesJSONAny[themeName].tool_icons,
-            system_cursor: themesJSONAny[themeName].system_cursor,
-            tool_icon_size: themesJSONAny[themeName].tool_icon_size,
-            tool_icon_offset: themesJSONAny[themeName].tool_icon_offset
+            newObjects: themesJSONAny[themeName].newObjects,
+            toolIcons: themesJSONAny[themeName].toolIcons,
+            systemCursor: themesJSONAny[themeName].systemCursor,
+            toolIconSize: themesJSONAny[themeName].toolIconSize,
+            toolIconOffset: themesJSONAny[themeName].toolIconOffset
         }
     };
     return themes;
@@ -132,10 +132,10 @@ class SimuloClientController {
                         console.log('setting tool to', tool.dataset.tool);
                         this.setTool(tool.dataset.tool);
                         // if theres data-img, set the icon to that
-                        if (this.theme.tool_icons[tool.dataset.tool]) {
-                            toolIcon = this.theme.tool_icons[tool.dataset.tool];
-                            toolIconSize = this.theme.tool_icon_size;
-                            toolIconOffset = this.theme.tool_icon_offset;
+                        if (this.theme.toolIcons[tool.dataset.tool]) {
+                            toolIcon = this.theme.toolIcons[tool.dataset.tool];
+                            toolIconSize = this.theme.toolIconSize;
+                            toolIconOffset = this.theme.toolIconOffset;
                         }
                         else {
                             toolIcon = null;
@@ -248,7 +248,7 @@ class SimuloClientController {
             this.client.emitData("player mouse", this.player);
         });
 
-        this.viewer.systemCursor = this.theme.system_cursor;
+        this.viewer.systemCursor = this.theme.systemCursor;
 
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();

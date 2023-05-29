@@ -1,0 +1,41 @@
+// main.js
+const obj = {foo: 'bar', baz: 42};
+const keys = Object.keys(obj);
+
+const worker = new Worker('worker.js');
+worker.postMessage(keys);
+
+worker.onmessage = function(event) {
+  if(event.data.type === 'get') {
+
+}
+};
+
+------------------------------------------------
+
+// worker.js
+onmessage = function(event) {
+  const keys = event.data;
+  const proxy = new Proxy({}, {
+    get(target, prop) {
+      return new Promise(resolve => {
+        postMessage({type: 'get', key: prop});
+        onmessage = function(event) {
+          if (event.data.type === 'get' && event.data.key === prop) {
+            resolve(event.data.value);
+          }
+        };
+      });
+    }
+  });
+  postMessage({type: 'ready'});
+  onmessage = function(event) {
+    if (event.data.type === 'get' && keys.includes(event.data.key)) {
+      postMessage({
+        type: 'response',
+        key: event.data.key,
+        value: obj[event.data.key]
+      });
+    }
+  };
+};

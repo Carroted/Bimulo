@@ -38,70 +38,70 @@ var themes: { [key: string]: SimuloTheme } = {
 		ground: {
 			color: "#a1acfa",
 			border: null,
-			border_width: null,
-			border_scale_with_zoom: false,
+			borderWidth: null,
+			borderScaleWithZoom: false,
 		},
-		new_objects: {
+		newObjects: {
 			color: {
-				hue_min: 0,
-				hue_max: 360,
-				sat_min: 0,
-				sat_max: 100,
-				val_min: 80,
-				val_max: 100,
-				alp_min: 1,
-				alp_max: 1,
+				hueMin: 0,
+				hueMax: 360,
+				satMin: 0,
+				satMax: 100,
+				valMin: 80,
+				valMax: 100,
+				alpMin: 1,
+				alpMax: 1,
 			},
 			border: null,
-			border_width: null,
-			border_scale_with_zoom: false,
-			circle_cake: false,
-			spring_image: null,
+			borderWidth: null,
+			borderScaleWithZoom: false,
+			circleCake: false,
+			springImage: null,
 		},
-		tool_icons: {
+		toolIcons: {
 			"drag": null,
-			"add_rectangle": "/assets/textures/add_rectangle.png",
-			"add_circle": "/assets/textures/add_circle.png",
-			"add_person": "/media/icon_square.png"
+			"addRectangle": "/assets/textures/add_rectangle.png",
+			"addCircle": "/assets/textures/add_circle.png",
+			"addPerson": "/media/icon_square.png"
 		},
-		system_cursor: false,
-		tool_icon_size: 0.5,
-		tool_icon_offset: [0.55, 0.75]
+		systemCursor: false,
+		toolIconSize: 0.5,
+		toolIconOffset: [0.55, 0.75]
 	},
 	nostalgia: {
 		background: "#738cff",
 		ground: {
 			color: "#57b00d",
 			border: "#111111a0",
-			border_width: 1,
-			border_scale_with_zoom: true,
+			borderWidth: 1,
+			borderScaleWithZoom: true,
 		},
-		new_objects: {
+		newObjects: {
 			color: {
-				hue_min: 0,
-				hue_max: 360,
-				sat_min: 0,
-				sat_max: 100,
-				val_min: 0,
-				val_max: 100,
-				alp_min: 1,
-				alp_max: 1,
+				hueMin: 0,
+				hueMax: 360,
+				satMin: 0,
+				satMax: 100,
+				valMin: 0,
+				valMax: 100,
+				alpMin: 1,
+				alpMax: 1,
 			},
 			border: "#111111a0",
-			border_width: 1,
-			border_scale_with_zoom: true,
-			circle_cake: true,
-			spring_image: "/assets/textures/spring.png",
+			borderWidth: 1,
+			borderScaleWithZoom: true,
+			circleCake: true,
+			springImage: "/assets/textures/spring.png",
 		},
-		tool_icons: {
+		toolIcons: {
 			"drag": "/assets/textures/tools/drag.png",
-			"add_rectangle": "/assets/textures/tools/box.png",
-			"add_circle": "/assets/textures/tools/circle.png",
-			"add_person": "/media/icon_square.png"
+			"addRectangle": "/assets/textures/tools/box.png",
+			"addCircle": "/assets/textures/tools/circle.png",
+			"addPerson": "/media/icon_square.png"
 		},
-		system_cursor: true,
-		tool_icon_size: 0.7,
-		tool_icon_offset: [0.3, 0.4]
+		systemCursor: true,
+		toolIconSize: 0.7,
+		toolIconOffset: [0.3, 0.4]
 	},
 };
 
@@ -131,21 +131,21 @@ import SimuloObjectData from "../../shared/src/SimuloObjectData.js";
 /*							x: formatted.data.x,
 							y: formatted.data.y,
 							color: getRandomColor(
-								theme.new_objects.color.hue_min,
-								theme.new_objects.color.hue_max,
-								theme.new_objects.color.sat_min,
-								theme.new_objects.color.sat_max,
-								theme.new_objects.color.val_min,
-								theme.new_objects.color.val_max,
-								theme.new_objects.color.alp_min,
-								theme.new_objects.color.alp_max,
+								theme.newObjects.color.hueMin,
+								theme.newObjects.color.hueMax,
+								theme.newObjects.color.satMin,
+								theme.newObjects.color.satMax,
+								theme.newObjects.color.valMin,
+								theme.newObjects.color.valMax,
+								theme.newObjects.color.alpMin,
+								theme.newObjects.color.alpMax,
 								true
 							),
 							shape: "circle",
-							border: theme.new_objects.border,
-							border_width: theme.new_objects.border_width,
-							border_scale_with_zoom: theme.new_objects.border_scale_with_zoom,
-							circle_cake: theme.new_objects.circle_cake,
+							border: theme.newObjects.border,
+							borderWidth: theme.newObjects.borderWidth,
+							borderScaleWithZoom: theme.newObjects.borderScaleWithZoom,
+							circleCake: theme.newObjects.circleCake,
 							*/
 
 

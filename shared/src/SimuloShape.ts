@@ -6,14 +6,14 @@ interface SimuloShape {
     angle: number;
     color: string;
     border?: string | null;
-    border_width?: number | null;
-    border_scale_with_zoom?: boolean;
+    borderWidth?: number | null;
+    borderScaleWithZoom?: boolean;
     image?: string | null;
 }
 
 interface SimuloCircle extends SimuloShape {
     type: "circle";
-    circle_cake: boolean;
+    circleCake: boolean;
 }
 
 interface SimuloPolygon extends SimuloShape {

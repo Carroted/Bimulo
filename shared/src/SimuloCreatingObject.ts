@@ -4,9 +4,9 @@ interface SimuloCreatingObject {
     color: string;
     shape: "circle" | "rectangle" | "polygon" | "edge" | "square" | "select";
     border: string | null;
-    border_width: number | null;
-    border_scale_with_zoom: boolean;
-    circle_cake?: boolean; // for circles
+    borderWidth: number | null;
+    borderScaleWithZoom: boolean;
+    circleCake?: boolean; // for circles
 }
 
 // extension of creatingobject called creatingpolygon

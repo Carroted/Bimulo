@@ -8,9 +8,9 @@ interface SimuloObjectData extends Box2D.b2BodyUserData {
     sound: string | null;
     color: string;
     border: string | null;
-    border_width: number | null;
-    border_scale_with_zoom: boolean;
-    circle_cake?: boolean;
+    borderWidth: number | null;
+    borderScaleWithZoom: boolean;
+    circleCake?: boolean;
     image: string | null;
     /** For polygons, this is the full shape used in rendering. In physics, the points from addPolygon are triangulated via earcut. */
     points?: [x: number, y: number][];

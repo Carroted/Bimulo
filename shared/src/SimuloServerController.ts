@@ -162,25 +162,25 @@ class SimuloServerController {
 
             // 👍 we did it, yay, we're so cool
         } else if (formatted.type == "player mouse down") {
-            if (this.tools[uuid] == "add_rectangle") {
+            if (this.tools[uuid] == "addRectangle") {
                 this.creatingObjects[uuid] = {
                     x: formatted.data.x,
                     y: formatted.data.y,
                     color: getRandomColor(
-                        this.theme.new_objects.color.hue_min,
-                        this.theme.new_objects.color.hue_max,
-                        this.theme.new_objects.color.sat_min,
-                        this.theme.new_objects.color.sat_max,
-                        this.theme.new_objects.color.val_min,
-                        this.theme.new_objects.color.val_max,
-                        this.theme.new_objects.color.alp_min,
-                        this.theme.new_objects.color.alp_max,
+                        this.theme.newObjects.color.hueMin,
+                        this.theme.newObjects.color.hueMax,
+                        this.theme.newObjects.color.satMin,
+                        this.theme.newObjects.color.satMax,
+                        this.theme.newObjects.color.valMin,
+                        this.theme.newObjects.color.valMax,
+                        this.theme.newObjects.color.alpMin,
+                        this.theme.newObjects.color.alpMax,
                         true
                     ) as string,
                     shape: "rectangle",
-                    border: this.theme.new_objects.border,
-                    border_width: this.theme.new_objects.border_width,
-                    border_scale_with_zoom: this.theme.new_objects.border_scale_with_zoom,
+                    border: this.theme.newObjects.border,
+                    borderWidth: this.theme.newObjects.borderWidth,
+                    borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
                 };
             }
             else if (this.tools[uuid] == "select") {
@@ -191,30 +191,30 @@ class SimuloServerController {
                     color: 'rgba(255, 255, 255, 0.5)',
                     shape: "select",
                     border: null,
-                    border_width: null,
-                    border_scale_with_zoom: false
+                    borderWidth: null,
+                    borderScaleWithZoom: false
                 };
             }
-            else if (this.tools[uuid] == "add_circle") {
+            else if (this.tools[uuid] == "addCircle") {
                 this.creatingObjects[uuid] = {
                     x: formatted.data.x,
                     y: formatted.data.y,
                     color: getRandomColor(
-                        this.theme.new_objects.color.hue_min,
-                        this.theme.new_objects.color.hue_max,
-                        this.theme.new_objects.color.sat_min,
-                        this.theme.new_objects.color.sat_max,
-                        this.theme.new_objects.color.val_min,
-                        this.theme.new_objects.color.val_max,
-                        this.theme.new_objects.color.alp_min,
-                        this.theme.new_objects.color.alp_max,
+                        this.theme.newObjects.color.hueMin,
+                        this.theme.newObjects.color.hueMax,
+                        this.theme.newObjects.color.satMin,
+                        this.theme.newObjects.color.satMax,
+                        this.theme.newObjects.color.valMin,
+                        this.theme.newObjects.color.valMax,
+                        this.theme.newObjects.color.alpMin,
+                        this.theme.newObjects.color.alpMax,
                         true
                     ) as string,
                     shape: "circle",
-                    border: this.theme.new_objects.border,
-                    border_width: this.theme.new_objects.border_width,
-                    border_scale_with_zoom: this.theme.new_objects.border_scale_with_zoom,
-                    circle_cake: this.theme.new_objects.circle_cake,
+                    border: this.theme.newObjects.border,
+                    borderWidth: this.theme.newObjects.borderWidth,
+                    borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
+                    circleCake: this.theme.newObjects.circleCake,
                 };
             } else if (this.tools[uuid] == "drag") {
                 // instead, start a spring
@@ -236,31 +236,31 @@ class SimuloServerController {
                 }
             }
             else if (this.tools[uuid] == 'add_spring') {
-                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.new_objects.spring_image };
+                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage };
             }
-            else if (this.tools[uuid] == "add_person") {
+            else if (this.tools[uuid] == "addPerson") {
                 // just run this.physicsServer.addPerson
                 var person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
             }
-            else if (this.tools[uuid] == "add_polygon") {
+            else if (this.tools[uuid] == "addPolygon") {
                 this.creatingObjects[uuid] = {
                     x: formatted.data.x,
                     y: formatted.data.y,
                     color: getRandomColor(
-                        this.theme.new_objects.color.hue_min,
-                        this.theme.new_objects.color.hue_max,
-                        this.theme.new_objects.color.sat_min,
-                        this.theme.new_objects.color.sat_max,
-                        this.theme.new_objects.color.val_min,
-                        this.theme.new_objects.color.val_max,
-                        this.theme.new_objects.color.alp_min,
-                        this.theme.new_objects.color.alp_max,
+                        this.theme.newObjects.color.hueMin,
+                        this.theme.newObjects.color.hueMax,
+                        this.theme.newObjects.color.satMin,
+                        this.theme.newObjects.color.satMax,
+                        this.theme.newObjects.color.valMin,
+                        this.theme.newObjects.color.valMax,
+                        this.theme.newObjects.color.alpMin,
+                        this.theme.newObjects.color.alpMax,
                         true
                     ) as string,
                     shape: "polygon",
-                    border: this.theme.new_objects.border,
-                    border_width: this.theme.new_objects.border_width,
-                    border_scale_with_zoom: this.theme.new_objects.border_scale_with_zoom,
+                    border: this.theme.newObjects.border,
+                    borderWidth: this.theme.newObjects.borderWidth,
+                    borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
                     vertices: [[formatted.data.x, formatted.data.y]] as [x: number, y: number][]
                 } as SimuloCreatingPolygon;
             }
@@ -355,10 +355,10 @@ class SimuloServerController {
 
                     var bodyData: object = {
                         color: this.creatingObjects[uuid].color,
-                        border: this.theme.new_objects.border,
-                        border_width: this.theme.new_objects.border_width,
-                        border_scale_with_zoom:
-                            this.theme.new_objects.border_scale_with_zoom,
+                        border: this.theme.newObjects.border,
+                        borderWidth: this.theme.newObjects.borderWidth,
+                        borderScaleWithZoom:
+                            this.theme.newObjects.borderScaleWithZoom,
                         id: 92797981789171,
                         sound: 'impact.wav',
                         image: null,
@@ -414,14 +414,14 @@ class SimuloServerController {
 
                     var bodyData: object = {
                         color: this.creatingObjects[uuid].color,
-                        border: this.theme.new_objects.border,
-                        border_width: this.theme.new_objects.border_width,
-                        border_scale_with_zoom:
-                            this.theme.new_objects.border_scale_with_zoom,
+                        border: this.theme.newObjects.border,
+                        borderWidth: this.theme.newObjects.borderWidth,
+                        borderScaleWithZoom:
+                            this.theme.newObjects.borderScaleWithZoom,
                         id: 92797981789171,
                         sound: 'impact.wav',
                         image: null,
-                        circle_cake: this.creatingObjects[uuid].circle_cake
+                        circleCake: this.creatingObjects[uuid].circleCake
                     };
 
                     this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0.5, bodyData, false);
@@ -439,10 +439,10 @@ class SimuloServerController {
                     });
                     this.physicsServer.addPolygon(pointsLocal as [x: number, y: number][], [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y], 0, 1, 0.5, 0.5, {
                         color: this.creatingObjects[uuid].color,
-                        border: this.theme.new_objects.border,
-                        border_width: this.theme.new_objects.border_width,
-                        border_scale_with_zoom:
-                            this.theme.new_objects.border_scale_with_zoom,
+                        border: this.theme.newObjects.border,
+                        borderWidth: this.theme.newObjects.borderWidth,
+                        borderScaleWithZoom:
+                            this.theme.newObjects.borderScaleWithZoom,
                         id: 92797981789171,
                         sound: 'impact.wav',
                         image: null,
