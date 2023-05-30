@@ -500,6 +500,9 @@ class SimuloPhysicsServer {
         jd.set_collideConnected(false);
         this.world.CreateJoint(jd);
     }
+    getProxy(body: SimuloObject) {
+        return createSandboxedInstance(body);
+    }
     getLocalPoint(body: SimuloObject, point: [x: number, y: number]) {
         var p = body._body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
         return [p.get_x(), p.get_y()];
@@ -814,6 +817,19 @@ class SimuloPhysicsServer {
         return selectedBodies.map((b) => {
             return new SimuloObject(this, b);
         });
+    }
+    getObjectByID(id: number) {
+        var node = this.world.GetBodyList();
+        while (box2D.getPointer(node)) {
+            var b = node;
+            node = node.GetNext();
+
+            var data = b.GetUserData() as SimuloObjectData;
+            if (data.id === id) {
+                return new SimuloObject(this, b);
+            }
+        }
+        return null;
     }
     getObjectsInRect(pointA: [x: number, y: number], pointB: [x: number, y: number]) {
         var posA = new box2D.b2Vec2(pointA[0], pointA[1]);

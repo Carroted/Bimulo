@@ -39,6 +39,36 @@ worker.onmessage = async function (event) {
             });
         }
     }
+    else if (event.data.type === 'call') {
+        if (cachedObjects[event.data.cachedObjectID]) {
+            try {
+                var returned = cachedObjects[event.data.cachedObjectID][event.data.key](...event.data.args); // this might error if its not a function or doesn't exist, but we're in try-catch and this way it'll send real error to the worker
+                worker.postMessage({
+                    type: 'response',
+                    key: event.data.key,
+                    value: returned,
+                    requestID: event.data.requestID // pass it back so it can identify what request it is responding to
+                });
+            }
+            catch (e) {
+                worker.postMessage({
+                    type: 'response',
+                    key: event.data.key,
+                    value: undefined,
+                    requestID: event.data.requestID, // pass it back so it can identify what request it is responding to
+                    error: e
+                });
+            }
+        }
+        else {
+            worker.postMessage({
+                type: 'response',
+                key: event.data.key,
+                value: undefined,
+                requestID: event.data.requestID // pass it back so it can identify what request it is responding to
+            });
+        }
+    }
     else if (event.data.type === 'set') {
         //(obj as any)[event.data.key] = event.data.value;
         if (cachedObjects[event.data.cachedObjectID]) {
@@ -63,27 +93,6 @@ worker.onmessage = async function (event) {
                 requestID: event.data.requestID, // pass it back so it can identify what request it is responding to
                 error: 'ReferenceError: object is not defined'
             });
-        }
-    }
-    else if (event.data.type === 'has') {
-        if (cachedObjects[event.data.cachedObjectID]) {
-            try {
-                worker.postMessage({
-                    type: 'response',
-                    key: event.data.key,
-                    value: cachedObjects[event.data.cachedObjectID][event.data.key] !== undefined,
-                    requestID: event.data.requestID // pass it back so it can identify what request it is responding to
-                });
-            }
-            catch (e) {
-                worker.postMessage({
-                    type: 'response',
-                    key: event.data.key,
-                    value: undefined,
-                    requestID: event.data.requestID, // pass it back so it can identify what request it is responding to
-                    error: e
-                });
-            }
         }
     }
     else if (event.data.type === 'log') {
