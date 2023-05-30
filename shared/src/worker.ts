@@ -43,32 +43,42 @@ onmessage = async function (event) {
         console.log(event.data.msg);
     }
 };
-
-async function getObjectByID(id: number) {
-    var res = await new Promise((resolve: (value: any) => void, reject: (reason?: any) => void) => {
-        requestID++;
-        promises[requestID] = { resolve, reject, type: 'getObject' };
-        postMessage({
-            type: 'getObject',
-            id,
-            requestID
+/** Global object that represents the active Simulo scene. */
+const Scene = {
+    /** Returns a `SimuloRemoteObject` that represents the object with the given ID. If no object exists, we return null, no error is thrown.
+     * 
+     * Example usage:
+     * ```ts
+     * var obj = await Scene.getObjectByID(0);
+     * console.log(await obj.getName()); // Probably prints "Ground"
+     * ```
+    */
+    async getObjectByID(id: number) {
+        var res = await new Promise((resolve: (value: any) => void, reject: (reason?: any) => void) => {
+            requestID++;
+            promises[requestID] = { resolve, reject, type: 'getObject' };
+            postMessage({
+                type: 'getObject',
+                id,
+                requestID
+            });
         });
-    });
-    // res is a boolean
-    var exists = res.value as boolean;
-    var cachedObjectID = res.cachedObjectID as number;
-    if (exists) {
-        var obj = new SimuloRemoteObject(cachedObjectID);
-        return obj;
-    }
-    else {
-        return null;
+        // res is a boolean
+        var exists = res.value as boolean;
+        var cachedObjectID = res.cachedObjectID as number;
+        if (exists) {
+            var obj = new SimuloRemoteObject(cachedObjectID);
+            return obj;
+        }
+        else {
+            return null;
+        }
     }
 }
 
 async function test() {
     console.log('getting obj')
-    var obj = (await getObjectByID(1)) as SimuloRemoteObject;
+    var obj = (await Scene.getObjectByID(1)) as SimuloRemoteObject;
     console.log('got it');
     console.log('name: ' + await obj.getName());
 } test();
