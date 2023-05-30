@@ -1,3 +1,4 @@
+import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon } from '../../../shared/src/SimuloShape';
 import style from './style.css';
 const viewerClass = 'simulo-viewer';
 
@@ -127,10 +128,7 @@ class SimuloViewer {
             window.requestAnimationFrame(this.loop);
         }
     }
-    /** Draw the current state of the world to the canvas or other drawing context. */
-    draw() {
 
-    }
     constructor(canvas: HTMLCanvasElement) {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
@@ -510,7 +508,8 @@ class SimuloViewer {
         this.ctx.closePath();
         return this.ctx;
     }
-
+    shapes: SimuloShape[] = [];
+    /** Draw the current state of the world to the canvas or other drawing context. */
     draw() {
         //this.canvas.width = window.innerWidth;
         //this.canvas.height = window.innerHeight;
@@ -536,119 +535,119 @@ class SimuloViewer {
         var cursor = this.getImage('/assets/textures/cursor.png');
 
         // fill
-        ctx.fillStyle = '#a1acfa';
+        this.ctx.fillStyle = '#a1acfa';
         // no border
-        ctx.strokeStyle = 'transparent';
-        // the entities are verts
-        for (var i = 0; i < this.entities.length; i++) {
-            var entity = this.entities[i];
+        this.ctx.strokeStyle = 'transparent';
+        // the shapes are verts
+        for (var i = 0; i < this.shapes.length; i++) {
+            var shape = this.shapes[i];
             var shapeSize = 1; // width of shape
 
-            ctx.fillStyle = entity.color;
-            if (entity.border) {
-                ctx.strokeStyle = entity.border;
-                ctx.lineWidth = entity.borderWidth as number / (entity.borderScaleWithZoom ? cameraZoom : 1);
+            this.ctx.fillStyle = shape.color;
+            if (shape.border) {
+                this.ctx.strokeStyle = shape.border;
+                this.ctx.lineWidth = shape.borderWidth as number / (shape.borderScaleWithZoom ? this.cameraZoom : 1);
             }
             else {
-                ctx.strokeStyle = 'transparent';
+                this.ctx.strokeStyle = 'transparent';
             }
-            if (entity.type === 'polygon') {
-                let entityPolygon = entity as SimuloPolygon;
-                if (!entityPolygon.points) {
-                    drawVertsAt(entityPolygon.x, entityPolygon.y, entityPolygon.vertices, entityPolygon.angle);
-                    entityPolygon.vertices.forEach(function (vert) {
+            if (shape.type === 'polygon') {
+                let shapePolygon = shape as SimuloPolygon;
+                if (!shapePolygon.points) {
+                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
+                    shapePolygon.vertices.forEach(function (vert) {
                         if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                         if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                     });
                 }
                 else {
-                    drawVertsAt(entityPolygon.x, entityPolygon.y, entityPolygon.points, entityPolygon.angle);
-                    entityPolygon.points.forEach(function (vert) {
+                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.points, shapePolygon.angle);
+                    shapePolygon.points.forEach(function (vert) {
                         if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                         if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                     });
                 }
             }
-            else if (entity.type === 'circle') {
-                let entityCircle = entity as SimuloCircle;
+            else if (shape.type === 'circle') {
+                let shapeCircle = shape as SimuloCircle;
                 // console.log('drawing circle');
-                drawCircleAt(entityCircle.x, entityCircle.y, entityCircle.radius as number, entityCircle.angle, entityCircle.circleCake);
+                this.drawCircleAt(shapeCircle.x, shapeCircle.y, shapeCircle.radius as number, shapeCircle.angle, shapeCircle.circleCake);
             }
-            else if (entity.type === 'edge') {
-                let entityEdge = entity as SimuloEdge;
+            else if (shape.type === 'edge') {
+                let shapeEdge = shape as SimuloEdge;
                 //console.log('drawing edge');
-                drawVertsNoFillAt(entityEdge.x, entityEdge.y, entityEdge.vertices, entityEdge.angle);
+                this.drawVertsNoFillAt(shapeEdge.x, shapeEdge.y, shapeEdge.vertices, shapeEdge.angle);
             }
             else {
-                //console.log('what is ' + entity.type);
+                //console.log('what is ' + shape.type);
             }
 
             shapeSize = Math.abs(shapeSize / 2.1);
 
-            if (entity.image) {
-                var image = getImage(entity.image);
+            if (shape.image) {
+                var image = this.getImage(shape.image);
                 if (image) {
-                    ctx.save();
-                    ctx.translate(entity.x, entity.y);
-                    ctx.rotate(entity.angle);
+                    this.ctx.save();
+                    this.ctx.translate(shape.x, shape.y);
+                    this.ctx.rotate(shape.angle);
                     // rotate 180deg
-                    ctx.rotate(Math.PI);
+                    this.ctx.rotate(Math.PI);
                     // width is determined based on shape size. height is determined based on image aspect ratio
-                    ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
-                    ctx.restore();
+                    this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                    this.ctx.restore();
                 }
             }
         }
 
         // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 3 / cameraZoom;
+        this.ctx.strokeStyle = 'white';
+        this.ctx.lineWidth = 3 / this.cameraZoom;
         for (var i = 0; i < springs.length; i++) {
             var spring = springs[i];
             if (spring.image) {
                 //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
-                drawStretchedImageLine(getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
+                this.drawStretchedImageLine(this.getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
             }
             else {
                 if (spring.line) {
-                    ctx.strokeStyle = spring.line.color;
-                    ctx.lineWidth = spring.line.width;
+                    this.ctx.strokeStyle = spring.line.color;
+                    this.ctx.lineWidth = spring.line.width;
                     if (spring.line.scale_with_zoom) {
-                        ctx.lineWidth /= cameraZoom;
+                        this.ctx.lineWidth /= this.cameraZoom;
                     }
-                    ctx.beginPath();
-                    ctx.moveTo(spring.p1[0], spring.p1[1]);
-                    ctx.lineTo(spring.p2[0], spring.p2[1]);
-                    ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(spring.p1[0], spring.p1[1]);
+                    this.ctx.lineTo(spring.p2[0], spring.p2[1]);
+                    this.ctx.stroke();
                 }
             }
         }
 
 
-        for (var id in players) {
+        for (var id in this.players) {
             //console.log('ID: ' + id);
-            var player = players[id];
-            if (id === client.id) {
+            var player = this.players[id];
+            if (id === this.client.id) {
                 // shit
                 continue;
             }
-            ctx.fillStyle = 'blue';
+            this.ctx.fillStyle = 'blue';
             //drawRect(player.x, player.y, 4, 4);
             // draw image getImage('/cursor.png')
-            ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
+            this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
 
             if (creatingSprings[id]) {
                 if (creatingSprings[id].image) {
                     //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                     console.log('img on spring')
-                    drawStretchedImageLine(getImage(creatingSprings[id].image as string), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
+                    this.drawStretchedImageLine(this.getImage(creatingSprings[id].image as string), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
                 }
                 else {
                     console.log('no img on spring')
-                    ctx.beginPath();
-                    ctx.moveTo(creatingSprings[id].start[0], creatingSprings[id].start[1]);
-                    ctx.lineTo(player.x, player.y);
-                    ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(creatingSprings[id].start[0], creatingSprings[id].start[1]);
+                    this.ctx.lineTo(player.x, player.y);
+                    this.ctx.stroke();
                 }
             }
             if (creatingObjects[id]) {
@@ -669,10 +668,10 @@ class SimuloViewer {
                     alpha = alpha / 2;
                     splitColor[3] = alpha + ')';
                     var newColor = splitColor.join(',');
-                    ctx.fillStyle = newColor;
+                    this.ctx.fillStyle = newColor;
 
                     // Draw the rectangle
-                    ctx.fillRect(topLeftX, topLeftY, width, height);
+                    this.ctx.fillRect(topLeftX, topLeftY, width, height);
                 }
                 else if (creatingObjects[id].shape === 'circle') {
                     // radius is math.max of differences in x and y
@@ -688,10 +687,10 @@ class SimuloViewer {
                     alpha = alpha / 2;
                     splitColor[3] = alpha + ')';
                     var newColor = splitColor.join(',');
-                    ctx.fillStyle = newColor;
+                    this.ctx.fillStyle = newColor;
 
                     // Draw the circle
-                    drawCircleAt(creatingObjects[id].x + radius, creatingObjects[id].y + radius, radius, 0, true);
+                    this.drawCircleAt(creatingObjects[id].x + radius, creatingObjects[id].y + radius, radius, 0, true);
                 }
             }
             else {
@@ -699,32 +698,32 @@ class SimuloViewer {
             }
         }
 
-        ctx.fillStyle = 'red';
+        this.ctx.fillStyle = 'red';
         var cursorSize = 1;
         var scaleWithZoom = true;
         if (scaleWithZoom) {
-            cursorSize = cursorSize * 40 / cameraZoom;
+            cursorSize = cursorSize * 40 / this.cameraZoom;
         }
-        if (!systemCursor) {
-            ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
+        if (!this.systemCursor) {
+            this.ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
         }
-        if (toolIcon) {
+        if (this.toolIcon) {
             console.log('drawing tool icon');
-            ctx.drawImage(getImage(toolIcon), mousePos.x + (((toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
+            this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
         }
         if (client.id) {
             if (creatingSprings[client.id]) {
                 if (creatingSprings[client.id].image) {
                     //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
                     console.log('img on spring')
-                    drawStretchedImageLine(getImage(creatingSprings[client.id].image as string), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.2);
+                    this.drawStretchedImageLine(this.getImage(creatingSprings[client.id].image as string), creatingSprings[client.id].start[0], creatingSprings[client.id].start[1], mousePos.x, mousePos.y, false, 0.2);
                 }
                 else {
                     console.log('no img on spring')
-                    ctx.beginPath();
-                    ctx.moveTo(creatingSprings[client.id].start[0], creatingSprings[client.id].start[1]);
-                    ctx.lineTo(mousePos.x, mousePos.y);
-                    ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(creatingSprings[client.id].start[0], creatingSprings[client.id].start[1]);
+                    this.ctx.lineTo(mousePos.x, mousePos.y);
+                    this.ctx.stroke();
                 }
             }
             if (creatingObjects[client.id]) {
@@ -747,20 +746,20 @@ class SimuloViewer {
                     splitColor[3] = alpha + ')';
                     var newColor = splitColor.join(',');
                     console.log('newColor: ' + newColor);
-                    ctx.fillStyle = newColor;
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 3.5 / cameraZoom;
+                    this.ctx.fillStyle = newColor;
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
 
                     // Draw the rectangle
                     //ctx.fillRect(topLeftX, topLeftY, width, height);
-                    ctx.fillRect(topLeftX, topLeftY, width, height);
-                    ctx.strokeRect(topLeftX, topLeftY, width, height);
+                    this.ctx.fillRect(topLeftX, topLeftY, width, height);
+                    this.ctx.strokeRect(topLeftX, topLeftY, width, height);
                     // text of width and height
-                    ctx.fillStyle = 'white';
-                    ctx.font = (20 / cameraZoom) + 'px Arial';
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = (20 / this.cameraZoom) + 'px Arial';
 
-                    ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
-                    ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
+                    this.ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
+                    this.ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
                 }
                 else if (creatingObjects[client.id].shape === 'circle') {
                     var dx = (mousePos.x - creatingObjects[client.id].x);
@@ -772,9 +771,9 @@ class SimuloViewer {
                     alpha = alpha / 2;
                     splitColor[3] = alpha + ')';
                     var newColor = splitColor.join(',');
-                    ctx.fillStyle = newColor;
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 3.5 / cameraZoom;
+                    this.ctx.fillStyle = newColor;
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
 
                     // if dx is negative
                     var posX = creatingObjects[client.id].x + radius;
@@ -796,9 +795,9 @@ class SimuloViewer {
                     alpha = alpha / 2;
                     splitColor[3] = alpha + ')';
                     var newColor = splitColor.join(',');
-                    ctx.fillStyle = newColor;
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 3.5 / cameraZoom;
+                    this.ctx.fillStyle = newColor;
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
 
                     console.log('creatingObjects[client.id]:', creatingObjects[client.id]);
 
@@ -817,14 +816,14 @@ class SimuloViewer {
                     });
 
                     // Draw the circle
-                    drawVertsAt(0, 0, pointsMapped, 0);
+                    this.drawVertsAt(0, 0, pointsMapped, 0);
                 }
             }
         }
 
         // draw text that says mouse pos in world space
-        ctx.fillStyle = 'white';
-        ctx.font = '0.2px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '0.2px Arial';
         // round to 1 decimal place
         var mousePosXRound = Math.round(mousePos.x * 10) / 10;
         var mousePosYRound = Math.round(mousePos.y * 10) / 10;
