@@ -61,7 +61,7 @@ class SimuloServerController {
     positionIterations: number = 2;
     springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
     creatingObjects: { [key: string]: SimuloCreatingObject } = {}; // will be renamed for clarity, but this is all the tool actions in progress. for example, a circle being drawn, selection box, spring being added, etc
-    creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null } } = {};
+    creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null, end: [x: number, y: number] } } = {};
     timeScaleMultiplier: number = 1;
     paused: boolean = false;
     theme: SimuloTheme;
@@ -144,6 +144,12 @@ class SimuloServerController {
                         polygon.vertices.push([formatted.data.x, formatted.data.y]);
                     }
                 }
+                this.creatingObjects[uuid].currentX = formatted.data.x;
+                this.creatingObjects[uuid].currentY = formatted.data.y;
+            }
+
+            if (this.creatingSprings[uuid]) {
+                this.creatingSprings[uuid].end = [formatted.data.x, formatted.data.y];
             }
 
             var springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
@@ -181,6 +187,8 @@ class SimuloServerController {
                     border: this.theme.newObjects.border,
                     borderWidth: this.theme.newObjects.borderWidth,
                     borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
+                    currentX: formatted.data.x,
+                    currentY: formatted.data.y
                 };
             }
             else if (this.tools[uuid] == "select") {
@@ -192,7 +200,9 @@ class SimuloServerController {
                     shape: "select",
                     border: null,
                     borderWidth: null,
-                    borderScaleWithZoom: false
+                    borderScaleWithZoom: false,
+                    currentX: formatted.data.x,
+                    currentY: formatted.data.y
                 };
             }
             else if (this.tools[uuid] == "addCircle") {
@@ -215,6 +225,8 @@ class SimuloServerController {
                     borderWidth: this.theme.newObjects.borderWidth,
                     borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
                     circleCake: this.theme.newObjects.circleCake,
+                    currentX: formatted.data.x,
+                    currentY: formatted.data.y
                 };
             } else if (this.tools[uuid] == "drag") {
                 // instead, start a spring
@@ -236,7 +248,7 @@ class SimuloServerController {
                 }
             }
             else if (this.tools[uuid] == 'add_spring') {
-                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage };
+                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage, end: [formatted.data.x, formatted.data.y] };
             }
             else if (this.tools[uuid] == "addPerson") {
                 // just run this.physicsServer.addPerson

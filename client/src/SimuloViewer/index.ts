@@ -1,4 +1,4 @@
-import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon } from '../../../shared/src/SimuloShape';
+import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
 import style from './style.css';
 const viewerClass = 'simulo-viewer';
 
@@ -443,6 +443,12 @@ class SimuloViewer {
         }
     }
 
+    lineBetweenPoints(x1: number, y1: number, x2: number, y2: number): { x: number, y: number, angle: number, length: number } {
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        return { x: x1, y: y1, angle: angle, length: length };
+    }
+
 
     drawRect(x: number, y: number, width: number, height: number) {
         this.ctx.fillRect(x, y, width, height);
@@ -623,90 +629,29 @@ class SimuloViewer {
             }
         }
 
-
-        for (var id in this.players) {
-            //console.log('ID: ' + id);
-            var player = this.players[id];
-            if (id === this.client.id) {
-                // shit
-                continue;
-            }
-            this.ctx.fillStyle = 'blue';
-            //drawRect(player.x, player.y, 4, 4);
-            // draw image getImage('/cursor.png')
-            this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
-
-            if (creatingSprings[id]) {
-                if (creatingSprings[id].image) {
-                    //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
-                    console.log('img on spring')
-                    this.drawStretchedImageLine(this.getImage(creatingSprings[id].image as string), creatingSprings[id].start[0], creatingSprings[id].start[1], player.x, player.y, false, 0.2);
+        /*
+                for (var id in this.players) {
+                    //console.log('ID: ' + id);
+                    var player = this.players[id];
+                    if (id === this.client.id) {
+                        // shit
+                        continue;
+                    }
+                    this.ctx.fillStyle = 'blue';
+                    //drawRect(player.x, player.y, 4, 4);
+                    // draw image getImage('/cursor.png')
+                    this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
+                }*/
+        /*
+                this.ctx.fillStyle = 'red';
+                var cursorSize = 1;
+                var scaleWithZoom = true;
+                if (scaleWithZoom) {
+                    cursorSize = cursorSize * 40 / this.cameraZoom;
                 }
-                else {
-                    console.log('no img on spring')
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(creatingSprings[id].start[0], creatingSprings[id].start[1]);
-                    this.ctx.lineTo(player.x, player.y);
-                    this.ctx.stroke();
-                }
-            }
-            if (creatingObjects[id]) {
-                if (creatingObjects[id].shape === 'rectangle' || creatingObjects[id].shape === 'select') { // selection box is a rectangle and has same properties for rendering
-                    // Calculate the difference between creatingObjects[id] x and y and the current player x and y
-                    const width = Math.abs(player.x - creatingObjects[id].x);
-                    const height = Math.abs(player.y - creatingObjects[id].y);
-
-                    // Determine the top-left corner of the rectangle
-                    const topLeftX = Math.min(player.x, creatingObjects[id].x);
-                    const topLeftY = Math.min(player.y, creatingObjects[id].y);
-
-                    // Set the fill style to transparent white
-                    //ctx.fillStyle = creatingObjects[id].color;
-                    // we have "rgba(R, G, B, A)". lets change A to be half of what it is
-                    var splitColor = creatingObjects[id].color.split(',');
-                    var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-                    alpha = alpha / 2;
-                    splitColor[3] = alpha + ')';
-                    var newColor = splitColor.join(',');
-                    this.ctx.fillStyle = newColor;
-
-                    // Draw the rectangle
-                    this.ctx.fillRect(topLeftX, topLeftY, width, height);
-                }
-                else if (creatingObjects[id].shape === 'circle') {
-                    // radius is math.max of differences in x and y
-                    var dx = (player.x - creatingObjects[id].x);
-                    var dy = (player.y - creatingObjects[id].y);
-                    var radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
-
-                    // Set the fill style to transparent white
-                    //ctx.fillStyle = creatingObjects[id].color;
-                    // we have "rgba(R, G, B, A)". lets change A to be half of what it is
-                    var splitColor = creatingObjects[id].color.split(',');
-                    var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-                    alpha = alpha / 2;
-                    splitColor[3] = alpha + ')';
-                    var newColor = splitColor.join(',');
-                    this.ctx.fillStyle = newColor;
-
-                    // Draw the circle
-                    this.drawCircleAt(creatingObjects[id].x + radius, creatingObjects[id].y + radius, radius, 0, true);
-                }
-            }
-            else {
-                console.log('no color');
-            }
-        }
-
-        this.ctx.fillStyle = 'red';
-        var cursorSize = 1;
-        var scaleWithZoom = true;
-        if (scaleWithZoom) {
-            cursorSize = cursorSize * 40 / this.cameraZoom;
-        }
-        if (!this.systemCursor) {
-            this.ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
-        }
+                if (!this.systemCursor) {
+                    this.ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
+                }*/
         if (this.toolIcon) {
             console.log('drawing tool icon');
             this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
@@ -728,95 +673,14 @@ class SimuloViewer {
             }
             if (creatingObjects[client.id]) {
                 if (creatingObjects[client.id].shape === 'rectangle' || creatingObjects[client.id].shape === 'select') {
-                    // Calculate the difference between creatingObjects[id] x and y and the current player x and y
-                    const width = Math.abs(mousePos.x - creatingObjects[client.id].x);
-                    const height = Math.abs(mousePos.y - creatingObjects[client.id].y);
 
-                    // Determine the top-left corner of the rectangle
-                    const topLeftX = Math.min(mousePos.x, creatingObjects[client.id].x);
-                    const topLeftY = Math.min(mousePos.y, creatingObjects[client.id].y);
-
-                    // Set the fill style to transparent white
-                    //ctx.fillStyle = creatingObjects[client.id].color;
-                    // empty fill
-                    var splitColor = creatingObjects[client.id].color.split(',');
-                    console.log('splitColor: ' + splitColor);
-                    var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-                    alpha = alpha / 2;
-                    splitColor[3] = alpha + ')';
-                    var newColor = splitColor.join(',');
-                    console.log('newColor: ' + newColor);
-                    this.ctx.fillStyle = newColor;
-                    this.ctx.strokeStyle = 'white';
-                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
-
-                    // Draw the rectangle
-                    //ctx.fillRect(topLeftX, topLeftY, width, height);
-                    this.ctx.fillRect(topLeftX, topLeftY, width, height);
-                    this.ctx.strokeRect(topLeftX, topLeftY, width, height);
-                    // text of width and height
-                    this.ctx.fillStyle = 'white';
-                    this.ctx.font = (20 / this.cameraZoom) + 'px Arial';
-
-                    this.ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
-                    this.ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);
                 }
                 else if (creatingObjects[client.id].shape === 'circle') {
-                    var dx = (mousePos.x - creatingObjects[client.id].x);
-                    var dy = (mousePos.y - creatingObjects[client.id].y);
-                    var radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
 
-                    var splitColor = creatingObjects[client.id].color.split(',');
-                    var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-                    alpha = alpha / 2;
-                    splitColor[3] = alpha + ')';
-                    var newColor = splitColor.join(',');
-                    this.ctx.fillStyle = newColor;
-                    this.ctx.strokeStyle = 'white';
-                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
-
-                    // if dx is negative
-                    var posX = creatingObjects[client.id].x + radius;
-                    var posY = creatingObjects[client.id].y + radius;
-                    if (dx < 0) {
-                        posX = creatingObjects[client.id].x - radius;
-                    }
-                    if (dy < 0) {
-                        posY = creatingObjects[client.id].y - radius;
-                    }
-
-                    // Draw the circle
-                    this.drawCircleAt(posX, posY, radius, 0, creatingObjects[client.id].circleCake);
                 }
                 // if polygon,just drawvertsat
-                else if (creatingObjects[client.id].shape === 'polygon') {
-                    var splitColor = creatingObjects[client.id].color.split(',');
-                    var alpha = parseFloat(splitColor[3].trim().slice(0, -1));
-                    alpha = alpha / 2;
-                    splitColor[3] = alpha + ')';
-                    var newColor = splitColor.join(',');
-                    this.ctx.fillStyle = newColor;
-                    this.ctx.strokeStyle = 'white';
-                    this.ctx.lineWidth = 3.5 / this.cameraZoom;
+                else if (this.creatingObjects[this.client.id].shape === 'polygon') {
 
-                    console.log('creatingObjects[client.id]:', creatingObjects[client.id]);
-
-                    var points = (creatingObjects[client.id] as SimuloCreatingPolygon).vertices;
-                    console.log('points:', points);
-                    //points.push(points[0]);
-
-                    var pointsMapped = points.map(function (point) {
-                        console.log('point:', point);
-                        // add a dot at the point
-                        shapes.push({
-                            x: point[0] - 0.05, y: point[1] - 0.05, radius: 0.1, rotation: 0, circleCake: false,
-                            type: 'circle', color: 'white', image: null
-                        });
-                        return { x: point[0], y: point[1] };
-                    });
-
-                    // Draw the circle
-                    this.drawVertsAt(0, 0, pointsMapped, 0);
                 }
             }
         }

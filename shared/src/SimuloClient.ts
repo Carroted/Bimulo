@@ -1,4 +1,5 @@
 interface SimuloClient {
+    id: string;
     connect(): void;
     on(type: string, callback: Function): void;
     off(type: string, callback: Function): void;

@@ -1,6 +1,8 @@
 interface SimuloCreatingObject {
     x: number;
     y: number;
+    currentX: number;
+    currentY: number;
     color: string;
     shape: "circle" | "rectangle" | "polygon" | "edge" | "square" | "select";
     border: string | null;

@@ -1,7 +1,7 @@
 interface SimuloShape {
     x: number;
     y: number;
-    type: "circle" | "polygon" | "edge";
+    type: "circle" | "polygon" | "edge" | "rectangle";
     radius?: number;
     angle: number;
     color: string;
@@ -22,10 +22,16 @@ interface SimuloPolygon extends SimuloShape {
     vertices: { x: number, y: number }[]; // vertices is per-fixture
 }
 
+interface SimuloRectangle extends SimuloShape {
+    type: "rectangle";
+    width: number;
+    height: number;
+}
+
 interface SimuloEdge extends SimuloShape {
     type: "edge";
     vertices: { x: number; y: number }[];
 }
 
 export default SimuloShape;
-export { SimuloCircle, SimuloPolygon, SimuloEdge, SimuloShape };
+export { SimuloCircle, SimuloPolygon, SimuloEdge, SimuloShape, SimuloRectangle };
