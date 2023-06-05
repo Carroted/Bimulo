@@ -184,7 +184,7 @@ var steps = [
                     if (!filePath.endsWith('.ts')) {
                         // make relative
                         var relativePath = path.relative(clientPath, filePath);
-                        files.push(relativePath);
+                        files.push('/' + relativePath);
                     }
                 }
             });

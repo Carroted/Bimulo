@@ -7,23 +7,12 @@ const cacheName = 'my-game-cache-v1';
 
 async function cacheEverything() {
     // first, fetch /fileList.txt
-    const fileList = await fetch('/fileList.txt').then((response) => response.text());
+    const fileList = await fetch('/filelist.txt').then((response) => response.text());
     var files = fileList.trim().split('\n');
     return files;
 }
 
 self.addEventListener('install', async (event) => {
-    var files = await cacheEverything();
-    event.waitUntil(
-        caches.open(cacheName)
-            .then((cache) => cache.addAll([
-                '/'
-            ].concat(files)))
-    );
-    console.log('Cached', files);
-});
-// on activate too
-self.addEventListener('activate', async (event) => {
     var files = await cacheEverything();
     event.waitUntil(
         caches.open(cacheName)
