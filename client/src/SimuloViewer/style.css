@@ -1,7 +1,12 @@
-canvas.simulo-viewer.fullscreen {
+/*canvas.simulo-viewer.fullscreen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+}*/
+
+canvas.simulo-viewer {
+    border: none;
+    outline: none;
 }

@@ -3,6 +3,7 @@ interface SimuloShape {
     y: number;
     type: "circle" | "polygon" | "edge" | "rectangle";
     radius?: number;
+    /** Measured in radians, angle to rotate the shape by */
     angle: number;
     color: string;
     border?: string | null;

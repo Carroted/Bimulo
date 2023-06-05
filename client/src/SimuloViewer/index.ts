@@ -1,5 +1,5 @@
 import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
-import style from './style.css';
+import style from './style.css' assert { type: "css" };
 const viewerClass = 'simulo-viewer';
 
 /** Gets the relevant location from a mouse or single touch event */
@@ -17,6 +17,11 @@ function getEventLocation(e: MouseEvent | TouchEvent) {
 }
 
 function rotateVerts(verts: { x: number, y: number }[], angle: number) {
+    // Whoah there! hold up, if (angle % 2pi) is 0, then we don't need to rotate anything!
+    if (angle % (2 * Math.PI) == 0) {
+        return verts; // This will slightly improve performance when rotating a lot of verts all the time, which we do every frame
+    }
+
     // rotate the vertices at the origin (0,0)
     var rotatedVertices: { x: number, y: number }[] = [];
     for (var i = 0; i < verts.length; i++) {
@@ -121,7 +126,7 @@ class SimuloViewer {
         this.running = false;
     }
     /** The loop that calls `draw()`, should not be called manually, just call `draw()` directly instead for that. */
-    loop() {
+    loop = () => {
         // For consistency so it always draws on loop call, we don't include the draw() call in the if statement.
         this.draw();
         if (this.running) {
@@ -150,14 +155,20 @@ class SimuloViewer {
         this.canvas.addEventListener('wheel', (e) => this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null));
 
         // look for a #simulo-viewer-style element, if it doesn't exist, create it
-        var styleElement = document.getElementById("simulo-viewer-style");
+        var styleElement: HTMLStyleElement | null = document.getElementById("simulo-viewer-style") as HTMLStyleElement | null;
         if (!styleElement) {
             var head = document.head || document.getRootNode().appendChild(document.createElement('head'));
             styleElement = document.createElement('style');
             styleElement.id = "simulo-viewer-style";
             head.appendChild(styleElement);
 
-            styleElement.appendChild(document.createTextNode(style));
+            //tyleElement.appendChild(document.createTextNode(style));
+            // style is now a CSSStyleSheet object, lets apply it
+            var string = "";
+            for (var i = 0; i < style.cssRules.length; i++) {
+                string += style.cssRules[i].cssText;
+            }
+            styleElement.innerHTML = string;
         }
 
         this.canvas.classList.add(viewerClass);
@@ -189,7 +200,7 @@ class SimuloViewer {
         }, false);
     }
 
-    onPointerMove(e: MouseEvent | TouchEvent) {
+    onPointerMove = (e: MouseEvent | TouchEvent) => {
         if (this.isDragging) {
             this.cameraOffset.x = getEventLocation(e).x - this.dragStart.x;
             this.cameraOffset.y = getEventLocation(e).y - this.dragStart.y;
@@ -197,6 +208,7 @@ class SimuloViewer {
 
         this.lastX = getEventLocation(e).x;
         this.lastY = getEventLocation(e).y;
+        console.log('set lastX to ' + this.lastX + ' and lastY to ' + this.lastY);
 
         this.lastMouseX = getEventLocation(e).x;
         this.lastMouseY = getEventLocation(e).y;
@@ -271,7 +283,10 @@ class SimuloViewer {
     onPointerDown(e: MouseEvent | TouchEvent) {
         var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
         if (e instanceof TouchEvent) {
-            this.emit("mouseDown");
+            this.emit("mouseDown", {
+                x: mousePos.x,
+                y: mousePos.y
+            });
             this.pointerDown = true;
         }
         else {
@@ -286,7 +301,10 @@ class SimuloViewer {
             // if its not those buttons, we will see how much cursor moves first
 
             if (e.button == 0) {
-                this.emit("mouseDown");
+                this.emit("mouseDown", {
+                    x: mousePos.x,
+                    y: mousePos.y
+                });
                 this.pointerDown = true;
             }
         }
@@ -296,13 +314,19 @@ class SimuloViewer {
         if (e instanceof TouchEvent) {
             this.pointerDown = false;
             var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-            this.emit("mouseUp");
+            this.emit("mouseUp", {
+                x: mousePos.x,
+                y: mousePos.y
+            });
         }
         else {
             if (e.button == 0) {
                 this.pointerDown = false;
                 var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-                this.emit("mouseUp");
+                this.emit("mouseUp", {
+                    x: mousePos.x,
+                    y: mousePos.y
+                });
             }
         }
         this.isDragging = false;
@@ -383,8 +407,16 @@ class SimuloViewer {
         }
     }
 
+    private oldWidth: number = 50;
+    private oldHeight: number = 50;
     /** Adds or removes `.fullscreen` class from the canvas element, which has CSS to make it fill the screen. */
     setFullscreen(fullscreen: boolean) {
+        // if its yes and wasnt before, save old width and height
+        if (fullscreen && !this.fullscreen) {
+            this.oldWidth = this.canvas.width;
+            this.oldHeight = this.canvas.height;
+        }
+
         if (fullscreen) {
             this.canvas.classList.add("fullscreen");
         }
@@ -517,10 +549,12 @@ class SimuloViewer {
     shapes: SimuloShape[] = [];
     /** Draw the current state of the world to the canvas or other drawing context. */
     draw() {
-        //this.canvas.width = window.innerWidth;
-        //this.canvas.height = window.innerHeight;
-
-
+        // if the classlist contains .fullscreen
+        if (this.canvas.classList.contains('fullscreen')) {
+            // set the canvas size to the window size
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        }
 
         // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
         this.ctx.setTransform(this.cameraZoom, 0, 0, this.cameraZoom, this.cameraOffset.x, this.cameraOffset.y);
@@ -548,7 +582,6 @@ class SimuloViewer {
         for (var i = 0; i < this.shapes.length; i++) {
             var shape = this.shapes[i];
             var shapeSize = 1; // width of shape
-
             this.ctx.fillStyle = shape.color;
             if (shape.border) {
                 this.ctx.strokeStyle = shape.border;
@@ -557,6 +590,7 @@ class SimuloViewer {
             else {
                 this.ctx.strokeStyle = 'transparent';
             }
+
             if (shape.type === 'polygon') {
                 let shapePolygon = shape as SimuloPolygon;
                 if (!shapePolygon.points) {
@@ -584,6 +618,18 @@ class SimuloViewer {
                 //console.log('drawing edge');
                 this.drawVertsNoFillAt(shapeEdge.x, shapeEdge.y, shapeEdge.vertices, shapeEdge.angle);
             }
+            else if (shape.type === 'rectangle') {
+                let shapeRectangle = shape as SimuloRectangle;
+                //console.log('drawing rectangle');
+                var verts = [
+                    { x: 0, y: 0 },
+                    { x: shapeRectangle.width, y: 0 },
+                    { x: shapeRectangle.width, y: shapeRectangle.height },
+                    { x: 0, y: shapeRectangle.height }
+                ];
+                this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
+                shapeSize = Math.abs(shapeRectangle.width / 2);
+            }
             else {
                 //console.log('what is ' + shape.type);
             }
@@ -604,30 +650,30 @@ class SimuloViewer {
                 }
             }
         }
-
-        // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
-        this.ctx.strokeStyle = 'white';
-        this.ctx.lineWidth = 3 / this.cameraZoom;
-        for (var i = 0; i < springs.length; i++) {
-            var spring = springs[i];
-            if (spring.image) {
-                //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
-                this.drawStretchedImageLine(this.getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
-            }
-            else {
-                if (spring.line) {
-                    this.ctx.strokeStyle = spring.line.color;
-                    this.ctx.lineWidth = spring.line.width;
-                    if (spring.line.scale_with_zoom) {
-                        this.ctx.lineWidth /= this.cameraZoom;
+        /*
+                // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
+                this.ctx.strokeStyle = 'white';
+                this.ctx.lineWidth = 3 / this.cameraZoom;
+                for (var i = 0; i < springs.length; i++) {
+                    var spring = springs[i];
+                    if (spring.image) {
+                        //drawStretchedImageLine(image, x1, y1, x2, y2, useHeight, otherAxisLength)
+                        this.drawStretchedImageLine(this.getImage(spring.image), spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], false, 0.2);
                     }
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(spring.p1[0], spring.p1[1]);
-                    this.ctx.lineTo(spring.p2[0], spring.p2[1]);
-                    this.ctx.stroke();
-                }
-            }
-        }
+                    else {
+                        if (spring.line) {
+                            this.ctx.strokeStyle = spring.line.color;
+                            this.ctx.lineWidth = spring.line.width;
+                            if (spring.line.scale_with_zoom) {
+                                this.ctx.lineWidth /= this.cameraZoom;
+                            }
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(spring.p1[0], spring.p1[1]);
+                            this.ctx.lineTo(spring.p2[0], spring.p2[1]);
+                            this.ctx.stroke();
+                        }
+                    }
+                }*/
 
         /*
                 for (var id in this.players) {
@@ -652,7 +698,7 @@ class SimuloViewer {
                 if (!this.systemCursor) {
                     this.ctx.drawImage(cursor, mousePos.x, mousePos.y, (0.7 * cursorSize), (cursor.height * ((0.7 * cursorSize) / cursor.width)));
                 }*/
-        if (this.toolIcon) {
+        /*if (this.toolIcon) {
             console.log('drawing tool icon');
             this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
         }
@@ -683,7 +729,7 @@ class SimuloViewer {
 
                 }
             }
-        }
+        }*/
 
         // draw text that says mouse pos in world space
         this.ctx.fillStyle = 'white';

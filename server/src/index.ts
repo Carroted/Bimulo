@@ -196,7 +196,7 @@ wss.on('connection', (ws) => {
 
 
 
-app.use(express.static("client"));
+app.use(express.static(__dirname + "/../../client"));
 
 // static serve node_modules/@tabler/icons/icons
 app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg"));

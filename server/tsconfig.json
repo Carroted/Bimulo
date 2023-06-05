@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "ES2022",
+    "target": "ES2021",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "../dist",
+    "rootDir": "../",
+    "strict": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

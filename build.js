@@ -69,25 +69,29 @@ var steps = [
     // run tsc
     async (stepInfo) => {
         console.log(stepInfo, 'Compiling TypeScript...');
-        return new Promise((resolve, reject) => {
-            const child = exec('tsc');
-            child.stdout.on('data', (data) => {
-                console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
-            });
-            child.stderr.on('data', (data) => {
-                console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
-            });
-            child.on('close', (code) => {
-                if (code !== 0) {
-                    reject(new Error(`TypeScript compiler exited with code ${code}`));
-                } else {
-                    resolve();
-                }
-            });
-        });
-
+        var srcDirs = ['client', 'server', 'shared'];
+        var promises = [];
+        for (var srcDir of srcDirs) {
+            promises.push(new Promise((resolve, reject) => {
+                const child = exec('tsc -p ' + srcDir, { cwd: __dirname });
+                child.stdout.on('data', (data) => {
+                    console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
+                });
+                child.stderr.on('data', (data) => {
+                    console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
+                });
+                child.on('close', (code) => {
+                    if (code !== 0) {
+                        reject(new Error(`TypeScript compiler exited with code ${code}`));
+                    } else {
+                        resolve();
+                    }
+                });
+            }));
+        }
+        await Promise.all(promises);
     },
-    // make dist/client folder if doesnt exist
+    /*// make dist/client folder if doesnt exist
     async (stepInfo) => {
         if (!fs.existsSync(path.join(__dirname, 'dist', 'client'))) {
             console.log(stepInfo, 'Creating dist/client folder...');
@@ -96,7 +100,7 @@ var steps = [
         else {
             console.log(stepInfo, 'dist/client folder already exists');
         }
-    },
+    },*/
     // generate distPackage
     async (stepInfo) => {
         console.log(stepInfo, 'Creating dist-package.json...');

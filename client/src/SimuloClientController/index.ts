@@ -2,7 +2,7 @@ import SimuloTheme from '../../../shared/src/SimuloTheme.js';
 import Box2DFactory from '../../../node_modules/box2d-wasm/dist/es/entry.js';
 import SimuloClient from '../../../shared/src/SimuloClient.js';
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.json";
+import themesJSON from "../../../shared/themes.json" assert { type: "json" };
 import SimuloViewer from '../SimuloViewer/index.js';
 
 function loadThemes() {
@@ -88,6 +88,10 @@ class SimuloClientController {
         } | null;
     }[] = [];
 
+    private toolIcon: string | null = null;
+    private toolIconSize: number | null = null;
+    private toolIconOffset: [x: number, y: number] | null = null;
+
     constructor(canvas: HTMLCanvasElement) {
         this.themes = loadThemes();
         this.theme = this.themes.default;
@@ -111,9 +115,7 @@ class SimuloClientController {
 
         // on click tool, set active tool
         const tools = document.querySelectorAll('.tool');
-        var toolIcon: string | null = null;
-        var toolIconSize: number | null = null;
-        var toolIconOffset: [x: number, y: number] | null = null;
+
         tools.forEach((toolElement) => {
             let tool = toolElement as HTMLElement;
             this.setUpClickSound(tool);
@@ -134,14 +136,14 @@ class SimuloClientController {
                         this.setTool(tool.dataset.tool);
                         // if theres data-img, set the icon to that
                         if (this.theme.toolIcons[tool.dataset.tool]) {
-                            toolIcon = this.theme.toolIcons[tool.dataset.tool];
-                            toolIconSize = this.theme.toolIconSize;
-                            toolIconOffset = this.theme.toolIconOffset;
+                            this.toolIcon = this.theme.toolIcons[tool.dataset.tool];
+                            this.toolIconSize = this.theme.toolIconSize;
+                            this.toolIconOffset = this.theme.toolIconOffset;
                         }
                         else {
-                            toolIcon = null;
-                            toolIconSize = null;
-                            toolIconOffset = null;
+                            this.toolIcon = null;
+                            this.toolIconSize = null;
+                            this.toolIconOffset = null;
                         }
                     }
                     // if data-action, handle
@@ -239,6 +241,7 @@ class SimuloClientController {
         });
 
         this.viewer = new SimuloViewer(canvas);
+        this.viewer.setFullscreen(true);
         this.viewer.on('mouseMove', (pos: { x: number, y: number }) => {
             this.player = {
                 x: pos.x,
@@ -248,6 +251,26 @@ class SimuloClientController {
             };
             this.mousePos = pos;
             this.client.emitData("player mouse", this.player);
+        });
+        this.viewer.on('mouseDown', (pos: { x: number, y: number }) => {
+            this.player = {
+                x: pos.x,
+                y: pos.y,
+                down: this.viewer.pointerDown,
+                name: this.player.name
+            };
+            this.mousePos = pos;
+            this.client.emitData("player mouse down", this.player);
+        });
+        this.viewer.on('mouseUp', (pos: { x: number, y: number }) => {
+            this.player = {
+                x: pos.x,
+                y: pos.y,
+                down: this.viewer.pointerDown,
+                name: this.player.name
+            };
+            this.mousePos = pos;
+            this.client.emitData("player mouse up", this.player);
         });
 
         this.viewer.systemCursor = this.theme.systemCursor;
@@ -294,6 +317,8 @@ class SimuloClientController {
                 }
 
                 var shapes: SimuloShape[] = [];
+                // push all the entities
+                shapes = shapes.concat(this.entities);
 
                 Object.keys(this.creatingObjects).forEach((key) => {
                     let creatingObject = this.creatingObjects[key];
@@ -407,8 +432,11 @@ class SimuloClientController {
                             borderWidth: 3.5,
                             borderScaleWithZoom: true
                         } as SimuloRectangle);
+
+                        console.log('rendered with topLeftX: ' + topLeftX + ' topLeftY: ' + topLeftY + ' width: ' + width + ' height: ' + height);
                     }
                 });
+
                 Object.keys(this.creatingSprings).forEach((key) => {
                     let creatingSpring = this.creatingSprings[key];
                     /* if (creatingSprings[client.id]) {
@@ -426,30 +454,66 @@ class SimuloClientController {
                 }
             }*/
                     if (creatingSpring.image) {
-                        let width = 0.2;
+                        let height = 0.2;
                         // stretch between the two points
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1]);
 
                         shapes.push({
-                            x, y, width, height: length, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                            border: null,
+                            borderWidth: null,
+                            borderScaleWithZoom: false
+                        } as SimuloRectangle);
+                    }
+                    else {
+                        // draw a line
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1]);
+                        shapes.push({
+                            x, y, width: length, height: 4 / this.viewer.cameraZoom, angle, type: 'rectangle', color: '#ffffff', image: null,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false
                         } as SimuloRectangle);
                     }
                 });
-                var cursorSize = 1;
+                // same for real springs, yo
+                this.springs.forEach((spring) => {
+                    if (spring.image) {
+                        let height = 0.2;
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+                        shapes.push({
+                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: spring.image,
+                            border: null,
+                            borderWidth: null,
+                            borderScaleWithZoom: false
+                        } as SimuloRectangle);
+                    }
+                    else {
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+                        shapes.push({
+                            x, y, width: length, height: 4 / this.viewer.cameraZoom, angle, type: 'rectangle', color: '#ffffff', image: null,
+                            border: null,
+                            borderWidth: null,
+                            borderScaleWithZoom: false
+                        } as SimuloRectangle);
+                    }
+                });
+
+                var cursorSize = 2;
                 var scaleWithZoom = true;
                 if (scaleWithZoom) {
                     cursorSize = cursorSize * 40 / this.viewer.cameraZoom;
                 }
+                var cursorWidth = 0.7 * cursorSize;
+                let cursorImg = this.viewer.getImage('/assets/textures/cursor.png');
+                var cursorHeight = cursorImg.height * ((0.7 * cursorSize) / cursorImg.width);
                 Object.keys(this.players).forEach((key) => {
                     if (key == this.client.id) return;
                     // this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
                     let player = this.players[key];
-                    let cursor = this.viewer.getImage('/assets/textures/cursor.png');
+
                     shapes.push({
-                        x: player.x, y: player.y, width: 0.7 * cursorSize, height: cursor.height * ((0.7 * cursorSize) / cursor.width), angle: 0, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
+                        x: player.x + (cursorWidth / 4), y: player.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
@@ -459,17 +523,23 @@ class SimuloClientController {
                 let cursor = this.viewer.getImage('/assets/textures/cursor.png');
                 if (!this.viewer.systemCursor) {
                     shapes.push({
-                        x: this.mousePos.x, y: this.mousePos.y, width: 0.7 * cursorSize, height: cursor.height * ((0.7 * cursorSize) / cursor.width), angle: 0, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
+                        x: this.mousePos.x + (cursorWidth / 4), y: this.mousePos.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
                 }
                 if (this.toolIcon) {
-                    console.log('drawing tool icon');
                     //this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
-
+                    shapes.push({
+                        x: this.mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), y: this.mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), width: (this.toolIconSize as number * cursorSize), height: (this.toolIconSize as number * cursorSize), angle: Math.PI, type: 'rectangle', color: '#00000000', image: this.toolIcon,
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false
+                    } as SimuloRectangle);
                 }
+
+                this.viewer.shapes = shapes;
             }
             if (body.type == 'player mouse') {
                 this.players[body.data.id] = {

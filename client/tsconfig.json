@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "module": "node16",
-    "target": "es2022",
-    "lib": ["es2022", "dom"],
+    "module": "esnext",
+    "target": "ES2021",
     "esModuleInterop": true,
     "sourceMap": true,
-    "outDir": "dist",
+    "outDir": "../dist",
     "rootDir": "../",
     "strict": true,
     "noImplicitAny": true,

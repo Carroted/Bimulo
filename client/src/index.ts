@@ -69,23 +69,23 @@ const scaleOffset = 0.009999999776482582;
 
 
 // make canvas bg black
-draw();
+//draw();
 
 // on resize, make canvas full screen
 
-
+/*
 function setName(name: string) {
     player.name = name;
     client.emitData('update player', player);
 }
+*/
 
 
 
 
 
 
-
-
+/*
 document.addEventListener('keydown', function (e) {
     keysDown[e.keyCode] = true;
     movementUpdate();
@@ -113,9 +113,9 @@ function movementUpdate() {
         y: player.y
     });
 }
+*/
 
-
-
+/*
 
 document.addEventListener('keyup', function (e) {
     delete keysDown[e.keyCode];
@@ -125,7 +125,7 @@ document.addEventListener('keyup', function (e) {
     } else if (e.keyCode === 39) {
         client.emitData("player stop", "right");
     }
-}, false);
+}, false);*/
 /*
         // hold right click to move camera
         document.addEventListener('mousedown', function (e) {
