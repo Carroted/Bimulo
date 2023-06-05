@@ -5,7 +5,7 @@ https://github.com/Microsoft/TypeScript/issues/11781
 
 const cacheName = 'my-game-cache-v1';
 
-function cacheEverything() {
+async function cacheEverything() {
     // first, fetch /fileList.txt
     const fileList = await fetch('/fileList.txt').then((response) => response.text());
     var files = fileList.trim().split('\n');
@@ -23,7 +23,7 @@ self.addEventListener('install', async (event) => {
     console.log('Cached', files);
 });
 // on activate too
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', async (event) => {
     var files = await cacheEverything();
     event.waitUntil(
         caches.open(cacheName)
