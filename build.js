@@ -170,8 +170,8 @@ var steps = [
         var clientPath = path.join(__dirname, 'dist', 'client');
         var walkSync = function (dir) {
             // get all files of the current directory & iterate over them
-            var files = fs.readdirSync(dir);
-            files.forEach(function (file) {
+            var dirFiles = fs.readdirSync(dir);
+            dirFiles.forEach(function (file) {
                 // construct whole file-path & retrieve file's stats
                 var filePath = path.join(dir, file);
                 var fileStat = fs.statSync(filePath);
@@ -182,7 +182,9 @@ var steps = [
                 else {
                     // add current file to fileList array
                     if (!filePath.endsWith('.ts')) {
-                        files.push(filePath);
+                        // make relative
+                        var relativePath = path.relative(clientPath, filePath);
+                        files.push(relativePath);
                     }
                 }
             });
