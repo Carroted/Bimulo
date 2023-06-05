@@ -10,7 +10,21 @@
   <link rel="stylesheet" href="/index.css">
   <!-- favicon is /media/icon.svg -->
   <link rel="icon" href="/media/icon_no_bg.svg" type="image/svg+xml">
-  <link rel="icon" href="/media/icon.png" type="image/png"> <!-- if svg doesn't work -->
+  <link rel="icon" href="/media/icon_no_bg.png" type="image/png"> <!-- if svg doesn't work -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f1130">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+      navigator.serviceWorker.register('/sw.js');
+      console.log('Registered service worker');
+    }
+    else {
+      console.log('Couldn\'t register service worker');
+    }
+  </script>
 </head>
 
 <body>
@@ -131,11 +145,29 @@
   <div class="update-menu">
     <div class="update-menu-top">
       <h2>Update available!</h2>
-      <div class="close">&times;</div>
+      <div class="close">
+        <svg data-src="/icons/close.svg"></svg>
+      </div>
     </div>
-    <p>Click the button below to update from <b>v0.0.0</b> to <b>v0.0.0</b>.</p>
-    <button class="update-menu-button">Update</button>
-    <button class="update-menu-button secondary">Dismiss</button>
+    <div class="comparison">
+      <span class="version">v0.0.0</span>
+      <svg data-src="/icons/arrow-right.svg"></svg>
+      <span class="version">v0.0.0</span>
+    </div>
+    <p>Your current scene will not be lost, but
+      multiplayer connections will be disconnected.</p>
+    <!-- changes -->
+    <details>
+      Added your mother
+      <summary>
+        View changes
+      </summary>
+    </details>
+    <div class="update-menu-bottom">
+      <button class="update-menu-button">Update</button>
+      <button class="update-menu-button secondary">Dismiss</button>
+      <button class="update-menu-button tertiary">Remind me later</button>
+    </div>
   </div>
 
   <script src="/src/index.js" type="module" defer></script>

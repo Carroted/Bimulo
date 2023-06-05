@@ -139,6 +139,14 @@ var steps = [
         fs.copyFileSync(path.join(__dirname, 'client', 'index.html'), path.join(__dirname, 'dist', 'client', 'index.html'));
     },
     async (stepInfo) => {
+        console.log(stepInfo, 'Copying client/manifest.json to dist/client...');
+        fs.copyFileSync(path.join(__dirname, 'client', 'manifest.json'), path.join(__dirname, 'dist', 'client', 'manifest.json'));
+    },
+    async (stepInfo) => {
+        console.log(stepInfo, 'Copying client/sw.js to dist/client...');
+        fs.copyFileSync(path.join(__dirname, 'client', 'sw.js'), path.join(__dirname, 'dist', 'client', 'sw.js'));
+    },
+    async (stepInfo) => {
         console.log(stepInfo, 'Copying media to dist/media...');
         copyFolderRecursiveSync(path.join(__dirname, 'media'), path.join(__dirname, 'dist', 'media'));
     },
@@ -154,6 +162,35 @@ var steps = [
     async (stepInfo) => {
         console.log(stepInfo, 'Copying shared/src/intersect.js to dist/shared/src...');
         fs.copyFileSync(path.join(__dirname, 'shared', 'src', 'intersect.js'), path.join(__dirname, 'dist', 'shared', 'src', 'intersect.js'));
+    },
+    // read all files in client and list them in dist/client/filelist.txt for serviceworker caching
+    async (stepInfo) => {
+        console.log(stepInfo, 'Creating dist/client/filelist.txt...');
+        var files = [];
+        var clientPath = path.join(__dirname, 'dist', 'client');
+        var walkSync = function (dir) {
+            // get all files of the current directory & iterate over them
+            var files = fs.readdirSync(dir);
+            files.forEach(function (file) {
+                // construct whole file-path & retrieve file's stats
+                var filePath = path.join(dir, file);
+                var fileStat = fs.statSync(filePath);
+                if (fileStat.isDirectory()) {
+                    // recursive call if it's a directory
+                    walkSync(filePath);
+                }
+                else {
+                    // add current file to fileList array
+                    if (!filePath.endsWith('.ts')) {
+                        files.push(filePath);
+                    }
+                }
+            });
+        };
+        // start recursion to fill fileList
+        walkSync(clientPath);
+        // create dist/client/filelist.txt file with fileList content
+        fs.writeFileSync(path.join(clientPath, 'filelist.txt'), files.join('\n'));
     },
     async (stepInfo) => {
         console.log(stepInfo, 'Creating log...');
