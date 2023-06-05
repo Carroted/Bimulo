@@ -247,7 +247,7 @@ class SimuloServerController {
                     this.springs.push(mouseJoint);
                 }
             }
-            else if (this.tools[uuid] == 'add_spring') {
+            else if (this.tools[uuid] == 'addSpring') {
                 this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage, end: [formatted.data.x, formatted.data.y] };
             }
             else if (this.tools[uuid] == "addPerson") {
