@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/index.css">
   <!-- favicon is /media/icon.svg -->
   <link rel="icon" href="/media/icon_no_bg.svg" type="image/svg+xml">
+  <link rel="icon" href="/media/icon.png" type="image/png"> <!-- if svg doesn't work -->
 </head>
 
 <body>
@@ -125,6 +126,16 @@
       <input type="text" class="message-input" placeholder="Message">
       <button type="submit" class="message-submit">Send</button>
     </form>
+  </div>
+
+  <div class="update-menu">
+    <div class="update-menu-top">
+      <h2>Update available!</h2>
+      <div class="close">&times;</div>
+    </div>
+    <p>Click the button below to update from <b>v0.0.0</b> to <b>v0.0.0</b>.</p>
+    <button class="update-menu-button">Update</button>
+    <button class="update-menu-button secondary">Dismiss</button>
   </div>
 
   <script src="/src/index.js" type="module" defer></script>

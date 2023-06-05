@@ -1,8 +1,25 @@
+/* semi-bold */
 @font-face {
   font-family: 'Urbanist';
   font-style: normal;
   font-weight: 400;
   src: url('/assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
+}
+
+/* bold */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 600;
+  src: url('/assets/fonts/Urbanist-Bold.woff2') format('woff2');
+}
+
+/* extra-bold */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 800;
+  src: url('/assets/fonts/Urbanist-ExtraBold.woff2') format('woff2');
 }
 
 .chat {
@@ -85,6 +102,58 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+.update-menu {
+  position: fixed;
+  right: 0.5rem;
+  top: 0.5rem;
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 1em;
+  z-index: 100;
+  border-radius: 1rem;
+  width: 21rem;
+}
+
+.update-menu-button {
+  background-color: #99e077;
+  border-radius: 10000rem;
+  padding: 0.5rem 1rem;
+  font-size: 1em;
+  color: #03081d;
+  font-family: "Urbanist", sans-serif;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  margin-right: 0.1rem;
+}
+
+.update-menu-button.secondary {
+  background-color: #8c67f2;
+}
+
+.update-menu-top {
+  display: flex;
+  /* stretch to fill, its the header and the close button */
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.update-menu-top h2 {
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+  color: #ffffffa0;
 }
 
 :root {
