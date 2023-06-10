@@ -60,7 +60,7 @@ class SimuloClientController {
     // TODO: Make these created by this script (loaded from an HTML file) so each ClientController can define its own UI
     timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
     timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
-    pausedToggle = document.getElementById('paused-toggle') as HTMLInputElement;
+    pauseButton = document.getElementById('pause-button') as HTMLElement;
 
     /** Entities to render. This is updated every time a world update from the server is received.
      * 
@@ -98,6 +98,21 @@ class SimuloClientController {
         this.serverController = new SimuloServerController(this.theme, null, true);
         this.client = this.serverController.localClients[0];
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
+
+        // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
+        fetch('/version').then(async (response) => {
+            if (response.ok) {
+                let versionInfo = document.getElementById('version-info');
+                if (versionInfo) {
+                    // the result is json, so parse it
+                    let version = await response.json();
+                    // we want month name, then day, then year. no time
+                    let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+                    versionInfo.innerText = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
+                }
+            }
+        }).catch(() => { });
+
 
         this.client.on('connect', () => { // Connect fires when the WebSocket connects
             console.log('WebSocket connection established');
@@ -166,7 +181,7 @@ class SimuloClientController {
                         document.querySelectorAll('.toolbar.secondary').forEach(toolbarElement => {
                             let toolbar = toolbarElement as HTMLElement;
                             if (toolbar.id == tool.dataset.menu) {
-                                toolbar.style.display = 'flex';
+                                toolbar.style.display = toolbar.classList.contains('tool-grid') ? 'grid' : 'flex';
                             }
                             else {
                                 toolbar.style.display = 'none';
@@ -232,12 +247,11 @@ class SimuloClientController {
             }
         });
 
-        // on change toggle
-        this.pausedToggle.addEventListener('change', (e) => {
-            if (e.target) {
-                let targetInput = e.target as HTMLInputElement;
-                this.setPaused(targetInput.checked);
-            }
+
+        this.pauseButton.addEventListener('click', () => {
+            // set checked class
+            this.pauseButton.classList.toggle('checked');
+            this.setPaused(this.pauseButton.classList.contains('checked'));
         });
 
         this.viewer = new SimuloViewer(canvas);
@@ -313,7 +327,12 @@ class SimuloClientController {
                 }
                 if (this.paused == null) {
                     this.paused = body.data.paused;
-                    this.pausedToggle.checked = this.paused as boolean;
+                    if (this.paused) {
+                        this.pauseButton.classList.add('checked');
+                    }
+                    else {
+                        this.pauseButton.classList.remove('checked');
+                    }
                 }
 
                 var shapes: SimuloShape[] = [];
@@ -563,8 +582,13 @@ class SimuloClientController {
             }
             if (body.type == 'set_paused') {
                 this.paused = body.data;
-                // set #paused-toggle
-                this.pausedToggle.checked = this.paused as boolean;
+                // set #pause-button
+                if (this.paused) {
+                    this.pauseButton.classList.add('checked');
+                }
+                else {
+                    this.pauseButton.classList.remove('checked');
+                }
             }
         }
     }

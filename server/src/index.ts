@@ -18,10 +18,9 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 import fs from "fs";
 
-// import package.json so we can get the version number
-const pkg = JSON.parse(fs.readFileSync(__dirname + '/../../package.json', 'utf8'));
+const versionInfo = JSON.parse(fs.readFileSync(__dirname + '/../../version.json', 'utf8'));
 
-console.log(chalk.bold.hex('#99e077')(`Simulo Server v${pkg.version}`));
+console.log(chalk.bold.hex('#99e077')(`Simulo Server v${versionInfo.version}`));
 
 console.log("Node.js server for Simulo with " + terminalLink('Express', 'https://npmjs.com/package/express', {
 	fallback: false
@@ -214,6 +213,9 @@ import SimuloServerController from "../../shared/src/SimuloServerController.js";
 
 // static serve the shared folder
 app.use("/shared", express.static(__dirname + "/../../shared"));
+app.get("/version", (req: any, res: any) => {
+	res.send(versionInfo);
+});
 
 // for anything under ../../*, redirect to /*
 app.get("../../:anything", (req: any, res: any) => {

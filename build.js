@@ -194,6 +194,15 @@ var steps = [
         // create dist/client/filelist.txt file with fileList content
         fs.writeFileSync(path.join(clientPath, 'filelist.txt'), files.join('\n'));
     },
+    // add the date to version.json
+    async (stepInfo) => {
+        console.log(stepInfo, 'Creating dist/version.json...');
+        var version = {
+            date: new Date().getTime(),
+            version: packageJson.version
+        };
+        fs.writeFileSync(path.join(__dirname, 'dist', 'version.json'), JSON.stringify(version, null, 4));
+    },
     async (stepInfo) => {
         console.log(stepInfo, 'Creating log...');
         var endTime = Date.now();

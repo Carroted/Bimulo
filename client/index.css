@@ -90,16 +90,8 @@
   box-sizing: border-box;
 }
 
-#game {
-  overflow: hidden;
-  cursor: none;
-  margin: 0;
-  padding: 0;
-}
 
-#game.cursor {
-  cursor: default;
-}
+
 
 html,
 :root,
@@ -125,6 +117,16 @@ body {
   z-index: 100;
   border-radius: 1rem;
   width: 24rem;
+  /* according to a super cool stackoverflower i now lost, this is the best way to force hardware acceleration. i found a pretty good performance boost with this with my backdrop-filter blur */
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
 }
 
 .update-menu-button {
@@ -288,6 +290,7 @@ details summary {
   z-index: 100;
   border-radius: 10000rem;
   height: 3.5rem;
+  /* according to a super cool stackoverflower i now lost, this is the best way to force hardware acceleration. i found a pretty good performance boost with this with my backdrop-filter blur */
   -webkit-backface-visibility: hidden;
   -webkit-perspective: 1000;
   -webkit-transform: translate3d(0, 0, 0);
@@ -308,6 +311,8 @@ details summary {
   height: 3rem;
 }
 
+
+
 .toolbar.secondary.grouped {
   height: auto;
   flex-direction: column;
@@ -316,21 +321,7 @@ details summary {
   padding-bottom: 0.8rem;
 }
 
-.tool-group-title {
-  font-size: 0.75em;
-  color: #e0ddff40;
-  flex-shrink: 0;
-  flex-grow: 0;
-  margin-left: 0.5rem;
-  width: 100%;
-}
 
-.tool-group {
-  display: flex;
-  flex-direction: row;
-  align-items: start;
-  width: 100%;
-}
 
 .toolbar.file {
   /* at top left */
@@ -407,6 +398,12 @@ details summary {
   margin: 0;
 }
 
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
 .toolbar svg {
   width: 100%;
   height: 100%;
@@ -416,6 +413,60 @@ details summary {
 .toolbar img {
   width: 100%;
   height: 100%;
+}
+
+.pause-button {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  margin: 0;
+}
+
+.pause-button .pause {
+  display: block;
+}
+
+.pause-button .play {
+  display: none;
+}
+
+
+.pause-button.checked .pause {
+  display: none;
+}
+
+.pause-button.checked .play {
+  display: block;
+}
+
+
+.pause-button svg {
+  width: 100%;
+  height: 100%;
+  fill: #ffffffd0;
+}
+
+.pause-button:hover svg {
+  width: 100%;
+  height: 100%;
+  fill: #fff;
+}
+
+.version-info {
+  position: fixed;
+  top: 0.5rem;
+  width: 100%;
+  pointer-events: none;
+  text-align: center;
+  font-size: 1em;
+  color: #ffffffff;
+  font-family: "Urbanist", sans-serif;
+}
+
+.pause-button:active svg {
+  width: 100%;
+  height: 100%;
+  fill: #ffffff20;
 }
 
 .toolbar .tool:hover svg {

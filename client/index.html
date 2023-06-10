@@ -29,7 +29,7 @@
 
 <body>
   <canvas width="300" height="200" id="game"></canvas>
-
+  <div class="version-info" id="version-info">Simulo Alpha</div>
   <div class="toolbar">
     <div class="tool active" data-menu="tools" id="menu-1-button">
       <svg data-src="/icons/wrench.svg"></svg>
@@ -51,61 +51,59 @@
     </div>
   </div>
 
-  <div class="toolbar secondary grouped" id="tools">
-    <div class="tool-group-title">Cursors</div>
-    <div class="tool-group">
-      <div class="tool active" data-tool="drag">
-        <svg data-src="/icons/cursor-default.svg"></svg>
-      </div>
-      <div class="tool" data-tool="select">
-        <svg data-src="/icons/select.svg"></svg>
-      </div>
-      <div class="tool fake" data-tool="move">
-        <svg data-src="/icons/cursor-move.svg"></svg>
-      </div>
-      <div class="tool fake" data-tool="scale">
-        <svg data-src="/icons/resize.svg"></svg>
-      </div>
-      <div class="tool fake" data-tool="rotate">
-        <svg data-src="/icons/rotate-3d-variant.svg"></svg>
-      </div>
-      <div class="tool fake" data-tool="knife">
-        <svg data-src="/icons/box-cutter.svg"></svg>
-      </div>
+  <div class="toolbar secondary grouped tool-grid" id="tools">
+    <div class="tool active" data-tool="drag">
+      <svg data-src="/icons/cursor-default.svg"></svg>
     </div>
-    <div class="tool-group-title">Shapes</div>
-    <div class="tool-group">
-      <div class="tool" data-tool="addRectangle">
-        <svg data-src="/icons/square.svg"></svg>
-      </div>
-      <div class="tool" data-tool="addCircle">
-        <svg data-src="/icons/circle.svg"></svg>
-      </div>
-      <!--<div class="tool" data-tool="addPerson">
+    <div class="tool" data-tool="select">
+      <svg data-src="/icons/select.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="move">
+      <svg data-src="/icons/cursor-move.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="scale">
+      <svg data-src="/icons/resize.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="rotate">
+      <svg data-src="/icons/rotate-3d-variant.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="knife">
+      <svg data-src="/icons/box-cutter.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addRectangle">
+      <svg data-src="/icons/square.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addCircle">
+      <svg data-src="/icons/circle.svg"></svg>
+    </div>
+    <!--<div class="tool" data-tool="addPerson">
       <svg data-src="/media/icon.svg"></svg>
     </div>-->
-      <div class="tool" data-tool="addPolygon">
-        <svg data-src="/icons/polygon.svg"></svg>
-      </div>
+    <div class="tool" data-tool="addPolygon">
+      <svg data-src="/icons/polygon.svg"></svg>
     </div>
-    <div class="tool-group-title">Joints</div>
-    <div class="tool-group">
-      <div class="tool" data-tool="addSpring">
-        <svg data-src="/icons/spring.svg"></svg>
-      </div>
-      <div class="tool" data-tool="addAxle">
-        <svg data-src="/icons/axle.svg"></svg>
-      </div>
-      <div class="tool" data-tool="addFixedJoint">
-        <svg data-src="/icons/bolt.svg"></svg>
-      </div>
+    <div class="tool" data-tool="addSpring">
+      <svg data-src="/icons/spring.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addAxle">
+      <svg data-src="/icons/axle.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addFixedJoint">
+      <svg data-src="/icons/bolt.svg"></svg>
     </div>
   </div>
   <div class="toolbar secondary" id="time-control" style="display: none;">
+    <div id="pause-button" class="pause-button">
+      <div class="pause">
+        <svg data-src="/icons/pause.svg"></svg>
+      </div>
+      <div class="play">
+        <svg data-src="/icons/play.svg"></svg>
+      </div>
+    </div>
     <!-- not whole numbers, float -->
     <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
     <input id="time-scale-input" type="number" min="0" max="3" value="1">
-    <input id="paused-toggle" type="checkbox">
   </div>
   <div class="toolbar secondary" id="objects" style="display: none;">coming soon</div>
 
@@ -142,7 +140,7 @@
     </form>
   </div>
 
-  <div class="update-menu">
+  <div class="update-menu" style="display: none;">
     <div class="update-menu-top">
       <h2>Update available!</h2>
       <div class="close">

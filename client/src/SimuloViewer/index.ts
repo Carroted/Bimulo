@@ -53,7 +53,10 @@ class SimuloViewer {
     isDragging = false;
     dragStart = { x: 0, y: 0 };
     dragStart2 = { x: 0, y: 0 };
+    /** Is the primary mouse or touch input down on the canvas? */
     pointerDown = false;
+    /** Tracks any mouse or touch input down on the canvas, even if it's not the primary input. */
+    mouseTouchDown = 0;
     initialPinchDistance: number | null = null;
     lastZoom = this.cameraZoom;
 
@@ -133,7 +136,6 @@ class SimuloViewer {
             window.requestAnimationFrame(this.loop);
         }
     }
-
     constructor(canvas: HTMLCanvasElement) {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
@@ -147,12 +149,70 @@ class SimuloViewer {
         this.lastMouseY = this.lastY;
 
         this.canvas.addEventListener('touchstart', (e) => {
+            this.mouseTouchDown++;
             this.touchStartElement = e.target as HTMLElement;
         });
-        this.canvas.addEventListener('touchend', (e) => this.handleTouch(e, this.onPointerUp));
-        this.canvas.addEventListener('mousemove', this.onPointerMove);
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouch(e, this.onPointerMove));
-        this.canvas.addEventListener('wheel', (e) => this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null));
+        /*this.canvas.addEventListener('touchend', (e) => {
+            if (this.fullscreen) { return; } // we will handle on document element instead
+            this.handleTouch(e, this.onPointerUp)
+        });*/
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (this.mouseTouchDown > 0) { return; } // we will handle on document element instead
+            this.onPointerMove(e);
+        });
+        /*this.canvas.addEventListener('touchmove', (e) => {
+            if (this.fullscreen) { return; } // we will handle on document element instead
+            this.handleTouch(e, this.onPointerMove);
+        });*/
+        this.canvas.addEventListener('wheel', (e) => {
+            this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null);
+        });
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.mouseTouchDown++;
+            this.onPointerDown(e);
+            // stop propagation to prevent text selection
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
+        /*this.canvas.addEventListener('mouseup', (e) => {
+            this.onPointerUp(e);
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });*/
+
+        this.canvas.addEventListener('touchstart', (e) => {
+            this.handleTouch(e, this.onPointerDown);
+            e.stopPropagation();
+            e.preventDefault();
+            return false;
+        });
+        var documentElement = this.canvas.ownerDocument; // we could do .documentElement, but document.addEventListener is more common practice, i just named it documentElement to avoid conflict with the document variable
+        documentElement.addEventListener('touchend', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.mouseTouchDown--;
+            this.handleTouch(e, this.onPointerUp);
+            // on all of these we will allow propagation so UI works EXCEPT scroll
+        });
+        documentElement.addEventListener('touchmove', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.handleTouch(e, this.onPointerMove);
+        });
+        documentElement.addEventListener('mousemove', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.onPointerMove(e);
+        });
+        documentElement.addEventListener('mouseup', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.mouseTouchDown--;
+            this.onPointerUp(e);
+        });
+
+
+        window.addEventListener('resize', () => {
+            this.draw();
+        }, false);
 
         // look for a #simulo-viewer-style element, if it doesn't exist, create it
         var styleElement: HTMLStyleElement | null = document.getElementById("simulo-viewer-style") as HTMLStyleElement | null;
@@ -174,30 +234,6 @@ class SimuloViewer {
         this.canvas.classList.add(viewerClass);
 
 
-        this.canvas.addEventListener('mousedown', (e) => {
-            this.onPointerDown(e);
-            // stop propagation to prevent text selection
-            e.stopPropagation();
-            e.preventDefault();
-            return false;
-        });
-        this.canvas.addEventListener('mouseup', (e) => {
-            this.onPointerUp(e);
-            e.stopPropagation();
-            e.preventDefault();
-            return false;
-        });
-
-        this.canvas.addEventListener('touchstart', (e) => {
-            this.handleTouch(e, this.onPointerDown);
-            e.stopPropagation();
-            e.preventDefault();
-            return false;
-        });
-
-        window.addEventListener('resize', () => {
-            this.draw();
-        }, false);
     }
 
     onPointerMove = (e: MouseEvent | TouchEvent) => {
@@ -428,7 +464,6 @@ class SimuloViewer {
     get fullscreen(): boolean {
         return this.canvas.classList.contains("fullscreen");
     }
-
     /** Adds or removes `.cursor` class from the canvas element, which has CSS to make it show the system cursor or hide it. */
     get systemCursor(): boolean {
         return this.canvas.classList.contains('cursor');
