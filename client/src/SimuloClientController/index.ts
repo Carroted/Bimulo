@@ -52,7 +52,8 @@ class SimuloClientController {
         x: 0,
         y: 0,
         name: 'Anonymous',
-        down: false
+        down: false,
+        zoom: 1,
     };
 
     viewer: SimuloViewer;
@@ -74,6 +75,7 @@ class SimuloClientController {
             start: [x: number, y: number];
             image: string | null;
             end: [x: number, y: number];
+            width: number;
         };
     } = {};
     private players: { [key: string]: { x: number, y: number } } = {};
@@ -83,18 +85,69 @@ class SimuloClientController {
         image: string | null;
         line: {
             color: string;
-            width: number;
             scale_with_zoom: boolean;
         } | null;
+        width: number;
     }[] = [];
 
     private toolIcon: string | null = null;
     private toolIconSize: number | null = null;
     private toolIconOffset: [x: number, y: number] | null = null;
 
+    sendServiceWorkerMessage(message: any) {
+        // This wraps the message posting/response in a promise, which will
+        // resolve if the response doesn't contain an error, and reject with
+        // the error if it does. If you'd prefer, it's possible to call
+        // controller.postMessage() and set up the onmessage handler
+        // independently of a promise, but this is a convenient wrapper.
+        return new Promise(function (resolve, reject) {
+            var messageChannel = new MessageChannel();
+            messageChannel.port1.onmessage = function (event) {
+                if (event.data.error) {
+                    reject(event.data.error);
+                } else {
+                    resolve(event.data);
+                }
+            };
+            // This sends the message data as well as transferring
+            // messageChannel.port2 to the service worker.
+            // The service worker can then use the transferred port to reply
+            // via postMessage(), which will in turn trigger the onmessage
+            // handler on messageChannel.port1.
+            // See
+            // https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
+            if (!navigator.serviceWorker.controller) {
+                reject(new Error('No service worker controller'));
+                return;
+            }
+            navigator.serviceWorker.controller.postMessage(message, [messageChannel.port2]);
+        });
+    }
+    async update() {
+        if ('serviceWorker' in navigator) {
+            if (navigator.serviceWorker.controller) {
+                console.log('Telling worker to update')
+                await this.sendServiceWorkerMessage({
+                    type: 'update'
+                });
+                console.log('Worker told to update, refreshing page')
+                // refresh the page
+                window.location.reload(); // TODO: once saving is added, we need to temporarily save the world, then after the page reloads, load the world again so nothing is lost
+            }
+            else {
+                // error out
+                throw new Error('Service worker not supported or not yet registered');
+            }
+        }
+        else {
+            // error out
+            throw new Error('Service worker not supported or not yet registered');
+        }
+    }
+
     constructor(canvas: HTMLCanvasElement) {
         this.themes = loadThemes();
-        this.theme = this.themes.default;
+        this.theme = this.themes.nostalgia;
         this.serverController = new SimuloServerController(this.theme, null, true);
         this.client = this.serverController.localClients[0];
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
@@ -255,13 +308,15 @@ class SimuloClientController {
         });
 
         this.viewer = new SimuloViewer(canvas);
+        this.player.zoom = this.viewer.cameraZoom;
         this.viewer.setFullscreen(true);
         this.viewer.on('mouseMove', (pos: { x: number, y: number }) => {
             this.player = {
                 x: pos.x,
                 y: pos.y,
                 down: this.viewer.pointerDown,
-                name: this.player.name
+                name: this.player.name,
+                zoom: this.viewer.cameraZoom
             };
             this.mousePos = pos;
             this.client.emitData("player mouse", this.player);
@@ -271,7 +326,8 @@ class SimuloClientController {
                 x: pos.x,
                 y: pos.y,
                 down: this.viewer.pointerDown,
-                name: this.player.name
+                name: this.player.name,
+                zoom: this.viewer.cameraZoom
             };
             this.mousePos = pos;
             this.client.emitData("player mouse down", this.player);
@@ -281,7 +337,8 @@ class SimuloClientController {
                 x: pos.x,
                 y: pos.y,
                 down: this.viewer.pointerDown,
-                name: this.player.name
+                name: this.player.name,
+                zoom: this.viewer.cameraZoom
             };
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
@@ -473,22 +530,24 @@ class SimuloClientController {
                 }
             }*/
                     if (creatingSpring.image) {
-                        let height = 0.2;
+                        let height = creatingSpring.width;
                         // stretch between the two points
-                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1]);
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
 
                         shapes.push({
                             x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
                             border: null,
                             borderWidth: null,
-                            borderScaleWithZoom: false
+                            borderScaleWithZoom: false,
+                            stretchImage: true
                         } as SimuloRectangle);
                     }
                     else {
                         // draw a line
+                        var height = creatingSpring.width;
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1]);
                         shapes.push({
-                            x, y, width: length, height: 4 / this.viewer.cameraZoom, angle, type: 'rectangle', color: '#ffffff', image: null,
+                            x, y, width: length, height: creatingSpring.width, type: 'rectangle', color: '#ffffff', image: null,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false
@@ -498,19 +557,24 @@ class SimuloClientController {
                 // same for real springs, yo
                 this.springs.forEach((spring) => {
                     if (spring.image) {
-                        let height = 0.2;
-                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+                        let height = spring.width;
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], true);
                         shapes.push({
                             x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: spring.image,
                             border: null,
                             borderWidth: null,
-                            borderScaleWithZoom: false
+                            borderScaleWithZoom: false,
+                            stretchImage: true
                         } as SimuloRectangle);
                     }
                     else {
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+                        var height = spring.width;
+                        if (spring.line && spring.line.scale_with_zoom) {
+                            height = height / this.viewer.cameraZoom;
+                        }
                         shapes.push({
-                            x, y, width: length, height: 4 / this.viewer.cameraZoom, angle, type: 'rectangle', color: '#ffffff', image: null,
+                            x, y, width: length, height: height, angle, type: 'rectangle', color: '#ffffff', image: null,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false

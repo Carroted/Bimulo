@@ -10,6 +10,8 @@ interface SimuloShape {
     borderWidth?: number | null;
     borderScaleWithZoom?: boolean;
     image?: string | null;
+    /** If this is false, the image will have aspect ratio preserved. If this is true, the image will be stretched to fit the shape. */
+    stretchImage?: boolean;
 }
 
 interface SimuloCircle extends SimuloShape {

@@ -35,7 +35,7 @@
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
-    "toolIconOffset": [0.55, 0.75]
+    "toolIconOffset": [0.42, 0.55]
   },
   "nostalgia": {
     "background": "#738cff",

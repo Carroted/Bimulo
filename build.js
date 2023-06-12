@@ -168,7 +168,7 @@ var steps = [
         console.log(stepInfo, 'Creating dist/client/filelist.txt...');
         var files = [];
         var clientPath = path.join(__dirname, 'dist', 'client');
-        var walkSync = function (dir) {
+        var walkSync = function (dir, prepend) {
             // get all files of the current directory & iterate over them
             var dirFiles = fs.readdirSync(dir);
             dirFiles.forEach(function (file) {
@@ -177,20 +177,29 @@ var steps = [
                 var fileStat = fs.statSync(filePath);
                 if (fileStat.isDirectory()) {
                     // recursive call if it's a directory
-                    walkSync(filePath);
+                    walkSync(path.join(dir, file), prepend + file + '/');
                 }
                 else {
                     // add current file to fileList array
                     if (!filePath.endsWith('.ts')) {
                         // make relative
-                        var relativePath = path.relative(clientPath, filePath);
-                        files.push('/' + relativePath);
+                        var relativePath = path.relative(dir, filePath);
+                        files.push(prepend + relativePath);
                     }
                 }
             });
         };
         // start recursion to fill fileList
-        walkSync(clientPath);
+        walkSync(clientPath, '/');
+        var sharedPath = path.join(__dirname, 'dist', 'shared');
+        walkSync(sharedPath, '/shared/');
+        var mediaPath = path.join(__dirname, 'dist', 'media');
+        walkSync(mediaPath, '/media/');
+        var box2DPath = path.join(__dirname, 'dist', 'node_modules', 'box2d-wasm', 'dist');
+        walkSync(box2DPath, '/node_modules/box2d-wasm/dist/');
+        // remove /sw.js (its a bit silly to cache the service worker itself, how would it get itself from the cache if its not active to do so? and it seems to cause error too)
+        files = files.filter(function (file) { return file !== '/sw.js'; });
+        files.push('/');
         // create dist/client/filelist.txt file with fileList content
         fs.writeFileSync(path.join(clientPath, 'filelist.txt'), files.join('\n'));
     },

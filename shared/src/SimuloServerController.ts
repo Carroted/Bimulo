@@ -39,7 +39,8 @@ interface SpringData {
     p1: [number, number];
     p2: [number, number];
     image?: string | null;
-    line: { color: string, width: number, scale_with_zoom: boolean } | null;
+    line: { color: string, scale_with_zoom: boolean } | null;
+    width: number;
 }
 
 import { SimuloCreatingObject, SimuloCreatingPolygon } from "./SimuloCreatingObject.js";
@@ -61,7 +62,7 @@ class SimuloServerController {
     positionIterations: number = 2;
     springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
     creatingObjects: { [key: string]: SimuloCreatingObject } = {}; // will be renamed for clarity, but this is all the tool actions in progress. for example, a circle being drawn, selection box, spring being added, etc
-    creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null, end: [x: number, y: number] } } = {};
+    creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null, end: [x: number, y: number], width: number } } = {};
     timeScaleMultiplier: number = 1;
     paused: boolean = false;
     theme: SimuloTheme;
@@ -126,7 +127,8 @@ class SimuloServerController {
                     p1: [formatted.data.x, formatted.data.y],
                     p2: [spring.anchor[0], spring.anchor[1]],
                     image: spring.image,
-                    line: spring.line
+                    line: spring.line,
+                    width: spring.width
                 });
             });
 
@@ -241,14 +243,15 @@ class SimuloServerController {
                         [formatted.data.x, formatted.data.y],
                         30,
                         0,
-                        1000000 * selectedBody.mass
+                        1000000 * selectedBody.mass,
+                        40,
                     );
 
                     this.springs.push(mouseJoint);
                 }
             }
             else if (this.tools[uuid] == 'addSpring') {
-                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage, end: [formatted.data.x, formatted.data.y] };
+                this.creatingSprings[uuid] = { start: [formatted.data.x, formatted.data.y], image: this.theme.newObjects.springImage, end: [formatted.data.x, formatted.data.y], width: 50 / formatted.data.zoom };
             }
             else if (this.tools[uuid] == "addPerson") {
                 // just run this.physicsServer.addPerson
@@ -322,7 +325,8 @@ class SimuloServerController {
                                 Math.pow(this.creatingSprings[uuid].start[0] - formatted.data.x, 2) +
                                 Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)
                             ),
-                            0
+                            0,
+                            4 / formatted.data.zoom
                         );
                     }
                     else {
@@ -338,7 +342,8 @@ class SimuloServerController {
                                 Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)
                             ),
                             0,
-                            this.creatingSprings[uuid].image as string
+                            this.creatingSprings[uuid].width as number,
+                            this.creatingSprings[uuid].image as string,
                         );
                     }
                 }

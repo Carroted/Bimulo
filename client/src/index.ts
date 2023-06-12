@@ -3,7 +3,9 @@
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
 import SimuloClientController from './SimuloClientController/index.js';
-new SimuloClientController(document.getElementById('game') as HTMLCanvasElement); // We don't need to store it as we have no need to access it later.
+var clientController = new SimuloClientController(document.getElementById('game') as HTMLCanvasElement); // We don't need to store it as we have no need to access it later.
+// @ts-ignore
+window.clientController = clientController; // so we can access it from the console
 
 var host = false;
 // get query string for host (?host=true, ?host=false or none for false)
