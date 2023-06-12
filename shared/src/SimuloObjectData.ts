@@ -1,7 +1,7 @@
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
 
 interface SimuloObjectData extends Box2D.b2BodyUserData {
-    id: number | null; // TODO: make this not nullable once its all setup
+    id: number;
     /**
      * Path to a sound file for collisions. Relative to /assets/sounds/
     */

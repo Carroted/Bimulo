@@ -58,15 +58,24 @@ function createPolygonShape(tuples: [x: number, y: number][]) { // This isn't in
 
 class SimuloObject {
     private _physicsServer: SimuloPhysicsServer;
-    get id(): number | null {
+    wakeUp() {
+        this._body.SetAwake(true);
+    }
+    get id(): number {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         return objectData.id;
     }
-    get position(): [x: number, y: number] {
-        return [this._body.GetPosition().get_x(), this._body.GetPosition().get_y()];
+    get position(): { x: number, y: number } {
+        return { x: this._body.GetPosition().get_x(), y: this._body.GetPosition().get_y() };
     }
-    set position([x, y]: [x: number, y: number]) {
+    set position({ x, y }: { x: number, y: number }) {
         this._body.SetTransform(new box2D.b2Vec2(x, y), this._body.GetAngle());
+    }
+    get velocity(): { x: number, y: number } {
+        return { x: this._body.GetLinearVelocity().get_x(), y: this._body.GetLinearVelocity().get_y() };
+    }
+    set velocity({ x, y }: { x: number, y: number }) {
+        this._body.SetLinearVelocity(new box2D.b2Vec2(x, y));
     }
     get rotation(): number {
         return this._body.GetAngle();
@@ -245,6 +254,10 @@ function createSandboxedInstance(targetClass: any): any {
 class SimuloJoint {
     _physicsServer: SimuloPhysicsServer;
     _joint: Box2D.b2Joint;
+    get id(): number {
+        let jointData = this._joint.GetUserData() as SimuloJointData;
+        return jointData.id;
+    }
     constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         this._joint = joint;
         this._physicsServer = physicsServer;
@@ -379,6 +392,7 @@ class SimuloPhysicsServer {
     ground: Box2D.b2Body;
     // object. key is ID, value is SimuloObject
     bodies: { [key: string]: SimuloObject } = {};
+    currentID: number = 0; // used to assign IDs to objects
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -444,11 +458,9 @@ class SimuloPhysicsServer {
         circleCake ?: boolean;
         image: string | null;
         */
+        bodyData.id = this.currentID++;
         for (var key in data) {
-            if (key == 'id') {
-                bodyData.id = data[key];
-            }
-            else if (key == 'sound') {
+            if (key == 'sound') {
                 bodyData.sound = data[key];
             }
             else if (key == 'color') {
@@ -523,6 +535,7 @@ class SimuloPhysicsServer {
         else {
             jointData.line = null;
         }
+        jointData.id = this.currentID++;
     }
     addPerson(offset: [x: number, y: number]) {
         var personBodyPoints: [x: number, y: number][] = [
@@ -556,7 +569,7 @@ class SimuloPhysicsServer {
             borderWidth: null,
             borderScaleWithZoom: false,
             image: "/assets/textures/body.png",
-            sound: "ground.wav"
+            sound: "ground.wav",
         } as SimuloObjectData, false);
 
         var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * personScale)], 0, 1, 0.5, 0, {
@@ -612,12 +625,10 @@ class SimuloPhysicsServer {
         fd.set_restitution(restitution);
         body.CreateFixture(fd);
         var bodyData = body.GetUserData() as SimuloObjectData;
+        bodyData.id = this.currentID++;
         // for each key in data, set bodyData[key] to data[key]
         for (var key in data) {
-            if (key == 'id') {
-                bodyData.id = data[key];
-            }
-            else if (key == 'sound') {
+            if (key == 'sound') {
                 bodyData.sound = data[key];
             }
             else if (key == 'color') {
@@ -675,6 +686,7 @@ class SimuloPhysicsServer {
         var mouseJoint = this.world.CreateJoint(mouseJointDef);
         // add jointdata
         var jointData = mouseJoint.GetUserData() as SimuloJointData;
+        jointData.id = this.currentID++;
         jointData.line = {
             color: "#ffffff",
             scale_with_zoom: true
@@ -694,6 +706,8 @@ class SimuloPhysicsServer {
 
         const bd_ground = new box2D.b2BodyDef();
         const ground = world.CreateBody(bd_ground);
+        var groundData = ground.GetUserData() as SimuloObjectData;
+        groundData.id = this.currentID++;
         this.ground = ground;
 
         this.world = world;
@@ -775,6 +789,7 @@ class SimuloPhysicsServer {
         floorData.borderScaleWithZoom =
             theme.ground.borderScaleWithZoom;
         floorData.sound = "ground.wav";
+        floorData.id = this.currentID++;
 
         this.addPerson([0, 0]);
     }
@@ -831,6 +846,44 @@ class SimuloPhysicsServer {
         }
         return null;
     }
+    getTouchingObjects(object: SimuloObject) {
+        var selectedBodies: Box2D.b2Body[] = [];
+        var node = this.world.GetBodyList();
+        while (box2D.getPointer(node)) {
+            var b = node;
+            node = node.GetNext();
+
+            var data = b.GetUserData() as SimuloObjectData;
+            if (data.id === object.id) {
+                continue;
+            }
+
+            var contactList = b.GetContactList();
+            while (box2D.getPointer(contactList)) {
+                var contact = contactList;
+                contactList = contactList.get_next();
+
+                var contactData = contact.get_contact();
+                var fixtureA = contactData.GetFixtureA();
+                var fixtureB = contactData.GetFixtureB();
+                if (fixtureA.GetBody() === object._body || fixtureB.GetBody() === object._body) {
+                    selectedBodies.push(b);
+                    break;
+                }
+            }
+        }
+
+        var selectedObjects = selectedBodies.map((b) => {
+            return new SimuloObject(this, b);
+        });
+        selectedObjects = selectedObjects.filter((obj, index, self) =>
+            index === self.findIndex((t) => (
+                t.id === obj.id
+            ))
+        );
+        return selectedObjects;
+    }
+
     getObjectsInRect(pointA: [x: number, y: number], pointB: [x: number, y: number]) {
         var posA = new box2D.b2Vec2(pointA[0], pointA[1]);
         var posB = new box2D.b2Vec2(pointB[0], pointB[1]);
@@ -872,45 +925,23 @@ class SimuloPhysicsServer {
 
         // now we have a rough selection. however, on rotated boxes and on polygons, the selection is not perfect. lets testpoint on the fixtures
         var selectedObjects: SimuloObject[] = [];
-        // lets use intersect function. it takes {x: number, y:number}[]s
+        /*// lets use intersect function. it takes {x: number, y:number}[]s
         var rect = [
             { x: posA.get_x(), y: posA.get_y() },
             { x: posB.get_x(), y: posA.get_y() },
             { x: posB.get_x(), y: posB.get_y() },
             { x: posA.get_x(), y: posB.get_y() },
-        ];
-        selectedBodies.forEach((b) => {
-            var fl = b.GetFixtureList();
-            if (!fl) {
-                return;
-            }
-            while (box2D.getPointer(fl)) {
-                var shape = fl.GetShape();
-                var shapeType = shape.GetType();
-                if (shapeType == box2D.b2Shape.e_circle) {
-                    // coming soon, polygon-only for now
-                } else if (shapeType == box2D.b2Shape.e_polygon) {
-                    var points: { x: number; y: number }[] = [];
-                    var polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
-                    var vertexCount = polygonShape.get_m_count();
-                    for (let i = 0; i < vertexCount; i++) {
-                        const vertex = polygonShape.get_m_vertices(i);
-                        points.push({
-                            x: vertex.x,
-                            y: vertex.y,
-                        });
-                    }
-                    // rotate points with rotateVerts func
-                    var angle = b.GetAngle();
-                    points = rotateVerts(points, angle);
-                    if (intersect(rect, points)) {
-                        selectedObjects.push(new SimuloObject(this, b));
-                        break;
-                    }
-                }
-                fl = fl.GetNext();
-            }
+        ];*/ // the extra filter didnt work yet, the AABB is sufficient for alpha
+        selectedObjects = selectedBodies.map((b) => {
+            return new SimuloObject(this, b);
         });
+        // remove duplicate .id
+        selectedObjects = selectedObjects.filter((obj, index, self) =>
+            index === self.findIndex((t) => (
+                t.id === obj.id
+            ))
+        );
+
         return selectedObjects;
     }
 
@@ -974,6 +1005,7 @@ class SimuloPhysicsServer {
                         borderScaleWithZoom: bodyData.borderScaleWithZoom,
                         circleCake: bodyData.circleCake,
                         image: bodyData.image,
+                        id: bodyData.id,
                     } as SimuloCircle);
                 } else if (shapeType == box2D.b2Shape.e_polygon) {
                     const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
@@ -1003,6 +1035,7 @@ class SimuloPhysicsServer {
                                 return { x: p[0], y: p[1] };
                             }),
                             image: bodyData.image,
+                            id: bodyData.id,
                         } as SimuloPolygon);
                     }
                     else {
@@ -1017,6 +1050,7 @@ class SimuloPhysicsServer {
                             borderWidth: bodyData.borderWidth,
                             borderScaleWithZoom: bodyData.borderScaleWithZoom,
                             image: bodyData.image,
+                            id: bodyData.id,
                         } as SimuloPolygon);
                     }
                 } else if (shapeType == box2D.b2Shape.e_edge) {
@@ -1044,6 +1078,7 @@ class SimuloPhysicsServer {
                         borderWidth: bodyData.borderWidth,
                         borderScaleWithZoom: bodyData.borderScaleWithZoom,
                         image: bodyData.image,
+                        id: bodyData.id,
                     } as SimuloEdge);
                 } else {
                     //console.log("unknown shape type");
@@ -1117,6 +1152,9 @@ class SimuloPhysicsServer {
                 });
             }
         }
+
+        // log all shape ids
+        console.log(`shape ids:`, shapes.map((s) => s.id));
 
         var thisStep: SimuloStep = {
             shapes: shapes,

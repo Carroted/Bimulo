@@ -636,44 +636,21 @@ class SimuloViewer {
             if (shape.type === 'polygon') {
                 let shapePolygon = shape as SimuloPolygon;
                 if (!shapePolygon.points) {
-                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
                     shapePolygon.vertices.forEach(function (vert) {
                         if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                         if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                     });
                 }
                 else {
-                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.points, shapePolygon.angle);
                     shapePolygon.points.forEach(function (vert) {
                         if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
                         if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
                     });
                 }
             }
-            else if (shape.type === 'circle') {
-                let shapeCircle = shape as SimuloCircle;
-                // console.log('drawing circle');
-                this.drawCircleAt(shapeCircle.x, shapeCircle.y, shapeCircle.radius as number, shapeCircle.angle, shapeCircle.circleCake);
-            }
-            else if (shape.type === 'edge') {
-                let shapeEdge = shape as SimuloEdge;
-                //console.log('drawing edge');
-                this.drawVertsNoFillAt(shapeEdge.x, shapeEdge.y, shapeEdge.vertices, shapeEdge.angle);
-            }
             else if (shape.type === 'rectangle') {
                 let shapeRectangle = shape as SimuloRectangle;
-                //console.log('drawing rectangle');
-                var verts = [
-                    { x: 0, y: 0 },
-                    { x: shapeRectangle.width, y: 0 },
-                    { x: shapeRectangle.width, y: shapeRectangle.height },
-                    { x: 0, y: shapeRectangle.height }
-                ];
-                this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
                 shapeSize = Math.abs(shapeRectangle.width / 2);
-            }
-            else {
-                //console.log('what is ' + shape.type);
             }
 
             shapeSize = Math.abs(shapeSize / 2.1);
@@ -702,6 +679,37 @@ class SimuloViewer {
                     }
                     this.ctx.restore();
                 }
+            }
+
+            if (shape.type === 'polygon') {
+                let shapePolygon = shape as SimuloPolygon;
+                if (!shapePolygon.points) {
+                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
+                }
+                else {
+                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.points, shapePolygon.angle);
+                }
+            }
+            else if (shape.type === 'circle') {
+                let shapeCircle = shape as SimuloCircle;
+                // console.log('drawing circle');
+                this.drawCircleAt(shapeCircle.x, shapeCircle.y, shapeCircle.radius as number, shapeCircle.angle, shapeCircle.circleCake);
+            }
+            else if (shape.type === 'edge') {
+                let shapeEdge = shape as SimuloEdge;
+                //console.log('drawing edge');
+                this.drawVertsNoFillAt(shapeEdge.x, shapeEdge.y, shapeEdge.vertices, shapeEdge.angle);
+            }
+            else if (shape.type === 'rectangle') {
+                let shapeRectangle = shape as SimuloRectangle;
+                //console.log('drawing rectangle');
+                var verts = [
+                    { x: 0, y: 0 },
+                    { x: shapeRectangle.width, y: 0 },
+                    { x: shapeRectangle.width, y: shapeRectangle.height },
+                    { x: 0, y: shapeRectangle.height }
+                ];
+                this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
             }
         }
         /*

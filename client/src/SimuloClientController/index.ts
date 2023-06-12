@@ -70,6 +70,9 @@ class SimuloClientController {
     private creatingObjects: {
         [key: string]: SimuloCreatingObject;
     } = {};
+    private selectedObjects: {
+        [key: string]: string[];
+    } = {};
     private creatingSprings: {
         [key: string]: {
             start: [x: number, y: number];
@@ -147,7 +150,7 @@ class SimuloClientController {
 
     constructor(canvas: HTMLCanvasElement) {
         this.themes = loadThemes();
-        this.theme = this.themes.nostalgia;
+        this.theme = this.themes.default;
         this.serverController = new SimuloServerController(this.theme, null, true);
         this.client = this.serverController.localClients[0];
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
@@ -374,6 +377,7 @@ class SimuloClientController {
                 this.entities = body.data.shapes;
                 this.creatingObjects = body.data.creating_objects;
                 this.creatingSprings = body.data.creating_springs;
+                this.selectedObjects = body.data.selected_objects;
                 // change :root background to body.data.background
                 document.documentElement.style.background = body.data.background;
                 this.springs = body.data.springs;
@@ -394,7 +398,18 @@ class SimuloClientController {
 
                 var shapes: SimuloShape[] = [];
                 // push all the entities
-                shapes = shapes.concat(this.entities);
+                //shapes = shapes.concat(this.entities);
+                this.entities.forEach((entity) => {
+                    Object.keys(this.selectedObjects).forEach((key) => {
+                        let selectedObjectArray = this.selectedObjects[key];
+                        if (selectedObjectArray.includes(entity.id.toString())) {
+                            entity.border = 'white';
+                            entity.borderWidth = 3.5;
+                            entity.borderScaleWithZoom = true;
+                        }
+                    });
+                    shapes.push(entity);
+                });
 
                 Object.keys(this.creatingObjects).forEach((key) => {
                     let creatingObject = this.creatingObjects[key];
@@ -470,7 +485,7 @@ class SimuloClientController {
                             borderScaleWithZoom: true
                         } as SimuloCircle);
                     }
-                    else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select') {
+                    else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select' && !creatingObject.moving) {
                         // Calculate the difference between creatingObjects[id] x and y and the current player x and y
                         const width = Math.abs(creatingObject.currentX - creatingObject.x);
                         const height = Math.abs(creatingObject.currentY - creatingObject.y);
@@ -499,7 +514,7 @@ class SimuloClientController {
                         // text of width and height
                         this.ctx.fillStyle = 'white';
                         this.ctx.font = (20 / this.cameraZoom) + 'px Arial';
-
+ 
                         this.ctx.fillText(width.toFixed(1), topLeftX + width / 2, topLeftY - 0.1);
                         this.ctx.fillText(height.toFixed(1), topLeftX - 0.1, topLeftY + height / 2);*/
                         shapes.push({
@@ -574,7 +589,7 @@ class SimuloClientController {
                             height = height / this.viewer.cameraZoom;
                         }
                         shapes.push({
-                            x, y, width: length, height: height, angle, type: 'rectangle', color: '#ffffff', image: null,
+                            x, y, width: length, height: height, angle, type: 'rectangle', color: spring.line ? spring.line.color : '#ffffff', image: null,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false

@@ -9,6 +9,9 @@ interface SimuloCreatingObject {
     borderWidth: number | null;
     borderScaleWithZoom: boolean;
     circleCake?: boolean; // for circles
+    moving?: boolean; // for select tool
+    wasStatic?: { [key: number]: boolean }; // for select tool
+    initialVelocity?: { x: number, y: number }; // for select tool
 }
 
 // extension of creatingobject called creatingpolygon
