@@ -404,6 +404,26 @@ details summary {
   grid-template-rows: repeat(2, 1fr);
 }
 
+.object-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.object {
+  background: #03081dc0;
+  border-radius: 0.1rem;
+  padding: 0.5rem;
+}
+
+.object img {
+  width: 90%;
+  height: 90%;
+  margin: 0 auto;
+  display: block;
+  object-fit: contain;
+}
+
 .toolbar svg {
   width: 100%;
   height: 100%;

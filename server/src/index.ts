@@ -59,9 +59,9 @@ var themes: { [key: string]: SimuloTheme } = {
 		},
 		toolIcons: {
 			"drag": null,
-			"addRectangle": "/assets/textures/add_rectangle.png",
-			"addCircle": "/assets/textures/add_circle.png",
-			"addPerson": "/media/icon_square.png"
+			"addRectangle": "assets/textures/add_rectangle.png",
+			"addCircle": "assets/textures/add_circle.png",
+			"addPerson": "media/icon_square.png"
 		},
 		systemCursor: false,
 		toolIconSize: 0.5,
@@ -90,13 +90,13 @@ var themes: { [key: string]: SimuloTheme } = {
 			borderWidth: 1,
 			borderScaleWithZoom: true,
 			circleCake: true,
-			springImage: "/assets/textures/spring.png",
+			springImage: "assets/textures/spring.png",
 		},
 		toolIcons: {
-			"drag": "/assets/textures/tools/drag.png",
-			"addRectangle": "/assets/textures/tools/box.png",
-			"addCircle": "/assets/textures/tools/circle.png",
-			"addPerson": "/media/icon_square.png"
+			"drag": "assets/textures/tools/drag.png",
+			"addRectangle": "assets/textures/tools/box.png",
+			"addCircle": "assets/textures/tools/circle.png",
+			"addPerson": "media/icon_square.png"
 		},
 		systemCursor: true,
 		toolIconSize: 0.7,

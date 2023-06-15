@@ -21,17 +21,17 @@ export default {
       "borderWidth": null,
       "borderScaleWithZoom": false,
       "circleCake": false,
-      "springImage": "/assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png"
     },
     "toolIcons": {
       "drag": null,
-      "addRectangle": "/assets/textures/add_rectangle.png",
-      "addCircle": "/assets/textures/add_circle.png",
-      "addPerson": "/media/icon_square.png",
-      "addPolygon": "/assets/textures/add_polygon.png",
-      "addSpring": "/assets/textures/add_spring.png",
-      "addAxle": "/assets/textures/add_axle.png",
-      "addFixedJoint": "/assets/textures/add_fixed_joint.png"
+      "addRectangle": "assets/textures/add_rectangle.png",
+      "addCircle": "assets/textures/add_circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/add_polygon.png",
+      "addSpring": "assets/textures/add_spring.png",
+      "addAxle": "assets/textures/add_axle.png",
+      "addFixedJoint": "assets/textures/add_fixed_joint.png"
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
@@ -60,17 +60,17 @@ export default {
       "borderWidth": 1,
       "borderScaleWithZoom": true,
       "circleCake": true,
-      "springImage": "/assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png"
     },
     "toolIcons": {
-      "drag": "/assets/textures/tools/drag.png",
-      "addRectangle": "/assets/textures/tools/box.png",
-      "addCircle": "/assets/textures/tools/circle.png",
-      "addPerson": "/media/icon_square.png",
-      "addPolygon": "/assets/textures/tools/polygon.png",
-      "addSpring": "/assets/textures/tools/spring.png",
-      "addAxle": "/assets/textures/tools/hinge.png",
-      "addFixedJoint": "/assets/textures/tools/fixjoint.png"
+      "drag": "assets/textures/tools/drag.png",
+      "addRectangle": "assets/textures/tools/box.png",
+      "addCircle": "assets/textures/tools/circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/tools/polygon.png",
+      "addSpring": "assets/textures/tools/spring.png",
+      "addAxle": "assets/textures/tools/hinge.png",
+      "addFixedJoint": "assets/textures/tools/fixjoint.png"
     },
     "systemCursor": true,
     "toolIconSize": 0.7,

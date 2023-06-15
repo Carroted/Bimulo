@@ -1,17 +1,38 @@
 import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
-import style from './style.css' assert { type: "css" };
+const style = `/*canvas.simulo-viewer.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}*/
+
+/* Default CSS for viewer, some of which is used for features like \`systemCursor\`, and some of which is just for looks */
+canvas.simulo-viewer {
+    border: none;
+    outline: none;
+    /* This is overridden by the cursor class below, which is applied when \`systemCursor\` is true in SimuloViewer */
+    cursor: none;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+canvas.simulo-viewer.cursor {
+    cursor: default;
+}`;
 const viewerClass = 'simulo-viewer';
 
 /** Gets the relevant location from a mouse or single touch event */
 function getEventLocation(e: MouseEvent | TouchEvent) {
     // check if its a touch event
-    if (e instanceof TouchEvent) {
+    if (window.TouchEvent && e instanceof TouchEvent) {
         if (e.touches && e.touches.length == 1) {
             return { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
     }
-    else if (e.clientX && e.clientY) {
-        return { x: e.clientX, y: e.clientY };
+    else if ((e as MouseEvent).clientX && (e as MouseEvent).clientY) {
+        return { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
     }
     return { x: 0, y: 0 };
 }
@@ -222,13 +243,7 @@ class SimuloViewer {
             styleElement.id = "simulo-viewer-style";
             head.appendChild(styleElement);
 
-            //tyleElement.appendChild(document.createTextNode(style));
-            // style is now a CSSStyleSheet object, lets apply it
-            var string = "";
-            for (var i = 0; i < style.cssRules.length; i++) {
-                string += style.cssRules[i].cssText;
-            }
-            styleElement.innerHTML = string;
+            styleElement.innerHTML = style;
         }
 
         this.canvas.classList.add(viewerClass);
@@ -317,7 +332,7 @@ class SimuloViewer {
 
     onPointerDown(e: MouseEvent | TouchEvent) {
         var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.emit("mouseDown", {
                 x: mousePos.x,
                 y: mousePos.y
@@ -325,7 +340,7 @@ class SimuloViewer {
             this.pointerDown = true;
         }
         else {
-            if (e.button == 2 || e.button && 3) {
+            if ((e as MouseEvent).button == 2 || (e as MouseEvent).button && 3) {
                 this.isDragging = true;
                 this.dragStart.x = getEventLocation(e).x - this.cameraOffset.x;
                 this.dragStart.y = getEventLocation(e).y - this.cameraOffset.y;
@@ -335,7 +350,7 @@ class SimuloViewer {
             }
             // if its not those buttons, we will see how much cursor moves first
 
-            if (e.button == 0) {
+            if ((e as MouseEvent).button == 0) {
                 this.emit("mouseDown", {
                     x: mousePos.x,
                     y: mousePos.y
@@ -346,7 +361,7 @@ class SimuloViewer {
     }
 
     onPointerUp(e: MouseEvent | TouchEvent) {
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.pointerDown = false;
             var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
             this.emit("mouseUp", {
@@ -355,7 +370,7 @@ class SimuloViewer {
             });
         }
         else {
-            if (e.button == 0) {
+            if ((e as MouseEvent).button == 0) {
                 this.pointerDown = false;
                 var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
                 this.emit("mouseUp", {
@@ -665,16 +680,26 @@ class SimuloViewer {
                     this.ctx.rotate(Math.PI);
                     // width is determined based on shape size. height is determined based on image aspect ratio
                     if (!shape.stretchImage) {
-                        this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                        try {
+                            this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
                     }
                     else {
-                        // instead we use the rect height for height of the image. if its not a rectangle, shapesize
-                        if (shape.type === 'rectangle') {
-                            let shapeRectangle = shape as SimuloRectangle;
-                            this.ctx.drawImage(image, -shapeSize, -shapeSize * (shapeRectangle.height / shapeRectangle.width), shapeSize * 2, shapeSize * 2 * (shapeRectangle.height / shapeRectangle.width));
+                        try {
+                            // instead we use the rect height for height of the image. if its not a rectangle, shapesize
+                            if (shape.type === 'rectangle') {
+                                let shapeRectangle = shape as SimuloRectangle;
+                                this.ctx.drawImage(image, -shapeSize, -shapeSize * (shapeRectangle.height / shapeRectangle.width), shapeSize * 2, shapeSize * 2 * (shapeRectangle.height / shapeRectangle.width));
+                            }
+                            else {
+                                this.ctx.drawImage(image, -shapeSize, -shapeSize, shapeSize * 2, shapeSize * 2);
+                            }
                         }
-                        else {
-                            this.ctx.drawImage(image, -shapeSize, -shapeSize, shapeSize * 2, shapeSize * 2);
+                        catch (e) {
+                            console.error(e);
                         }
                     }
                     this.ctx.restore();

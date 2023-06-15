@@ -1,5 +1,8 @@
 // Like build.js, since this isn't supposed to be in `dist`, it's not a TypeScript file to build and is just a plain JS file. It works cross-platform.
 
+// deploy.js emulates the server's routes in a static way, so that the client can be served from GitHub Pages.
+// This leads to a lot of duplicate assets and code, and it'll always be better to run the provided server instead, but this is a good alternative for when static hosting is the only option.
+
 import fs from 'fs';
 import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
@@ -20,6 +23,7 @@ function capitalizeFirstLetter(string) {
 }
 
 var buildInfo = chalk.bold('Deploying ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n');
+console.log(buildInfo);
 
 var steps = [
     async (stepInfo) => {
@@ -28,6 +32,11 @@ var steps = [
             console.log(chalk.redBright('No build found! Please run `npm run build` first.'));
             process.exit(1);
         }
+    },
+    // add an empty .nojekyll file to dist so that node_modules is served properly
+    async (stepInfo) => {
+        console.log(stepInfo, 'Adding .nojekyll file...');
+        fs.writeFileSync(path.join(__dirname, 'dist', '.nojekyll'), 'Please don\'t jekyll me.');
     },
     // copy dist/node_modules to dist/client
     async (stepInfo) => {
@@ -52,18 +61,35 @@ var steps = [
     // copy node_modules/@mdi/svg/svg to dist/client/icons
     async (stepInfo) => {
         console.log(stepInfo, 'Copying icons...');
-        copyFolderRecursiveSync(path.join(__dirname, 'dist', 'node_modules', '@mdi', 'svg', 'svg'), path.join(__dirname, 'dist', 'client', 'icons'));
+        var nmIcons = path.join(__dirname, 'dist', 'node_modules', '@mdi', 'svg', 'svg');
+        var clientIcons = path.join(__dirname, 'dist', 'client', 'icons');
+        // first, lets scan clientIcons and delete everything from there in nmIcons
+        var files = fs.readdirSync(clientIcons);
+        files.forEach(function (file) {
+            // there arent dirs, we can just unlink
+            if (fs.existsSync(path.join(nmIcons, file))) {
+                fs.unlinkSync(path.join(nmIcons, file));
+            }
+        });
+        copyFolderRecursiveSync(nmIcons, clientIcons);
     },
     // deploy to gh-pages
     async (stepInfo) => {
         console.log(stepInfo, 'Deploying to GitHub Pages...');
-        ghpages.publish(path.join(__dirname, 'dist', 'client'), {
-            branch: 'gh-pages'
-        }, function (err) {
-            if (err) {
-                console.log(chalk.redBright('Error deploying to GitHub Pages: ' + err));
-                process.exit(1);
-            }
+        await new Promise((resolve, reject) => {
+            ghpages.publish(path.join(__dirname, 'dist'), {
+                branch: 'gh-pages',
+                dotfiles: true,
+            }, function (err) {
+                if (err) {
+                    console.log(chalk.redBright('Error deploying to GitHub Pages: ' + err));
+                    reject(err);
+                    process.exit(1);
+                }
+                else {
+                    resolve();
+                }
+            });
         });
     }
 ];
@@ -96,4 +122,4 @@ for (var i = 0; i < steps.length; i++) {
 }
 
 
-console.log(chalk.greenBright.bold('\nDeployed successfully!'));
+console.log(chalk.greenBright.bold('\nDeployed successfully!') + '\nNote: While changes have been sent to GitHub, it takes up to 10 minutes for them to be visible.');

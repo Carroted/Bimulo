@@ -151,8 +151,24 @@ var steps = [
         copyFolderRecursiveSync(path.join(__dirname, 'media'), path.join(__dirname, 'dist', 'media'));
     },
     async (stepInfo) => {
-        console.log(stepInfo, 'Copying node_modules to dist/node_modules...');
-        copyFolderRecursiveSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'));
+        console.log(stepInfo, 'Installing node_modules...');
+        // install node_modules in dist
+        await new Promise((resolve, reject) => {
+            const child = exec('npm install --production', { cwd: path.join(__dirname, 'dist') });
+            child.stdout.on('data', (data) => {
+                console.log(indentLines(data.toString(), 4));
+            });
+            child.stderr.on('data', (data) => {
+                console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
+            });
+            child.on('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(`npm install exited with code ${code}`));
+                } else {
+                    resolve();
+                }
+            });
+        });
     },
     async (stepInfo) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
