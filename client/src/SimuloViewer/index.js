@@ -1,4 +1,25 @@
-import style from './style.css' assert { type: "css" };
+const style = `/*canvas.simulo-viewer.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}*/
+
+/* Default CSS for viewer, some of which is used for features like \`systemCursor\`, and some of which is just for looks */
+canvas.simulo-viewer {
+    border: none;
+    outline: none;
+    /* This is overridden by the cursor class below, which is applied when \`systemCursor\` is true in SimuloViewer */
+    cursor: none;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+canvas.simulo-viewer.cursor {
+    cursor: default;
+}`;
 const viewerClass = 'simulo-viewer';
 /** Gets the relevant location from a mouse or single touch event */
 function getEventLocation(e) {
@@ -164,13 +185,7 @@ class SimuloViewer {
             styleElement = document.createElement('style');
             styleElement.id = "simulo-viewer-style";
             head.appendChild(styleElement);
-            //tyleElement.appendChild(document.createTextNode(style));
-            // style is now a CSSStyleSheet object, lets apply it
-            var string = "";
-            for (var i = 0; i < style.cssRules.length; i++) {
-                string += style.cssRules[i].cssText;
-            }
-            styleElement.innerHTML = string;
+            styleElement.innerHTML = style;
         }
         this.canvas.classList.add(viewerClass);
     }

@@ -80,7 +80,6 @@ src/SimuloNetworkClient/index.js.map
 src/SimuloNetworkClient/socket.io.esm.min.js
 src/SimuloViewer/index.js
 src/SimuloViewer/index.js.map
-src/SimuloViewer/style.css
 src/index.js
 src/index.js.map
 shared/src/Example.js
