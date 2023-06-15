@@ -24,7 +24,7 @@ const viewerClass = 'simulo-viewer';
 /** Gets the relevant location from a mouse or single touch event */
 function getEventLocation(e) {
     // check if its a touch event
-    if (e instanceof TouchEvent) {
+    if (window.TouchEvent && e instanceof TouchEvent) {
         if (e.touches && e.touches.length == 1) {
             return { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
@@ -302,7 +302,7 @@ class SimuloViewer {
     }
     onPointerDown(e) {
         var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.emit("mouseDown", {
                 x: mousePos.x,
                 y: mousePos.y
@@ -328,7 +328,7 @@ class SimuloViewer {
         }
     }
     onPointerUp(e) {
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.pointerDown = false;
             var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
             this.emit("mouseUp", {

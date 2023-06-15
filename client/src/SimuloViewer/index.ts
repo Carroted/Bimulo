@@ -26,13 +26,13 @@ const viewerClass = 'simulo-viewer';
 /** Gets the relevant location from a mouse or single touch event */
 function getEventLocation(e: MouseEvent | TouchEvent) {
     // check if its a touch event
-    if (e instanceof TouchEvent) {
+    if (window.TouchEvent && e instanceof TouchEvent) {
         if (e.touches && e.touches.length == 1) {
             return { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
     }
-    else if (e.clientX && e.clientY) {
-        return { x: e.clientX, y: e.clientY };
+    else if ((e as MouseEvent).clientX && (e as MouseEvent).clientY) {
+        return { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
     }
     return { x: 0, y: 0 };
 }
@@ -332,7 +332,7 @@ class SimuloViewer {
 
     onPointerDown(e: MouseEvent | TouchEvent) {
         var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.emit("mouseDown", {
                 x: mousePos.x,
                 y: mousePos.y
@@ -340,7 +340,7 @@ class SimuloViewer {
             this.pointerDown = true;
         }
         else {
-            if (e.button == 2 || e.button && 3) {
+            if ((e as MouseEvent).button == 2 || (e as MouseEvent).button && 3) {
                 this.isDragging = true;
                 this.dragStart.x = getEventLocation(e).x - this.cameraOffset.x;
                 this.dragStart.y = getEventLocation(e).y - this.cameraOffset.y;
@@ -350,7 +350,7 @@ class SimuloViewer {
             }
             // if its not those buttons, we will see how much cursor moves first
 
-            if (e.button == 0) {
+            if ((e as MouseEvent).button == 0) {
                 this.emit("mouseDown", {
                     x: mousePos.x,
                     y: mousePos.y
@@ -361,7 +361,7 @@ class SimuloViewer {
     }
 
     onPointerUp(e: MouseEvent | TouchEvent) {
-        if (e instanceof TouchEvent) {
+        if (window.TouchEvent && e instanceof TouchEvent) {
             this.pointerDown = false;
             var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
             this.emit("mouseUp", {
@@ -370,7 +370,7 @@ class SimuloViewer {
             });
         }
         else {
-            if (e.button == 0) {
+            if ((e as MouseEvent).button == 0) {
                 this.pointerDown = false;
                 var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
                 this.emit("mouseUp", {
