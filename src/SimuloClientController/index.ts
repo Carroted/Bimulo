@@ -2,7 +2,7 @@ import SimuloTheme from '../../../shared/src/SimuloTheme.js';
 import Box2DFactory from '../../../node_modules/box2d-wasm/dist/es/entry.js';
 import SimuloClient from '../../../shared/src/SimuloClient.js';
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.json" assert { type: "json" };
+import themesJSON from "../../../shared/themes.js";
 import SimuloViewer from '../SimuloViewer/index.js';
 
 function loadThemes() {

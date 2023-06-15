@@ -1,5 +1,5 @@
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.json" assert { type: "json" };
+import themesJSON from "../../../shared/themes.js";
 import SimuloViewer from '../SimuloViewer/index.js';
 function loadThemes() {
     var themesJSONAny = themesJSON;

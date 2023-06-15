@@ -114,7 +114,8 @@ shared/src/utils.js
 shared/src/utils.js.map
 shared/src/worker.js
 shared/src/worker.js.map
-shared/themes.json
+shared/themes.js
+shared/themes.js.map
 media/icon.png
 media/icon.svg
 media/icon_192.png

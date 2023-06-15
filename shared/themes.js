@@ -1,4 +1,4 @@
-{
+export default {
     "default": {
         "background": "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
         "ground": {
@@ -76,4 +76,5 @@
         "toolIconSize": 0.7,
         "toolIconOffset": [0.3, 0.4]
     }
-}
+};
+//# sourceMappingURL=themes.js.map
