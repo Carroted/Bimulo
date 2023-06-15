@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Simulo Alpha</title>
+  <meta name="description" content="Multiplayer 2D physics app">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/index.css">
+  <!-- favicon is /media/icon.svg -->
+  <link rel="icon" href="/media/icon_no_bg.svg" type="image/svg+xml">
+  <link rel="icon" href="/media/icon_no_bg.png" type="image/png"> <!-- if svg doesn't work -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f1130">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+      navigator.serviceWorker.register('/sw.js');
+      console.log('Registered service worker');
+    }
+    else {
+      console.log('Couldn\'t register service worker');
+    }
+  </script>
+</head>
+
+<body>
+  <canvas width="300" height="200" id="game"></canvas>
+  <div class="version-info" id="version-info">Simulo Alpha</div>
+  <div class="toolbar">
+    <div class="tool active" data-menu="tools" id="menu-1-button">
+      <svg data-src="/icons/wrench.svg"></svg>
+    </div>
+    <div class="tool" data-menu="objects" id="menu-2-button">
+      <svg data-src="/icons/cube.svg"></svg>
+    </div>
+    <div class="tool" data-menu="time-control" id="menu-3-button">
+      <svg data-src="/icons/clock.svg"></svg>
+    </div>
+    <div class="tool fake" id="menu-4-button">
+      <svg data-src="/icons/security.svg"></svg>
+    </div>
+    <div class="tool" id="menu-5-button">
+      <svg data-src="/icons/earth.svg"></svg>
+    </div>
+    <div class="tool fake" id="menu-6-button">
+      <svg data-src="/icons/account-multiple.svg"></svg>
+    </div>
+  </div>
+
+  <div class="toolbar secondary grouped tool-grid" id="tools">
+    <div class="tool active" data-tool="drag">
+      <svg data-src="/icons/cursor-default.svg"></svg>
+    </div>
+    <div class="tool" data-tool="select">
+      <svg data-src="/icons/select.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="move">
+      <svg data-src="/icons/cursor-move.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="scale">
+      <svg data-src="/icons/resize.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="rotate">
+      <svg data-src="/icons/rotate-3d-variant.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="knife">
+      <svg data-src="/icons/box-cutter.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addRectangle">
+      <svg data-src="/icons/square.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addCircle">
+      <svg data-src="/icons/circle.svg"></svg>
+    </div>
+    <!--<div class="tool" data-tool="addPerson">
+      <svg data-src="/media/icon.svg"></svg>
+    </div>-->
+    <div class="tool" data-tool="addPolygon">
+      <svg data-src="/icons/polygon.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addSpring">
+      <svg data-src="/icons/spring.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addAxle">
+      <svg data-src="/icons/axle.svg"></svg>
+    </div>
+    <div class="tool" data-tool="addFixedJoint">
+      <svg data-src="/icons/bolt.svg"></svg>
+    </div>
+  </div>
+  <div class="toolbar secondary" id="time-control" style="display: none;">
+    <div id="pause-button" class="pause-button">
+      <div class="pause">
+        <svg data-src="/icons/pause.svg"></svg>
+      </div>
+      <div class="play">
+        <svg data-src="/icons/play.svg"></svg>
+      </div>
+    </div>
+    <!-- not whole numbers, float -->
+    <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
+    <input id="time-scale-input" type="number" min="0" max="3" value="1">
+  </div>
+  <div class="toolbar secondary" id="objects" style="display: none;">Objects!!!!
+    <div class="object-grid">
+      <div class="object">
+        <img src="/assets/textures/person.png">
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar file">
+    <div class="file-menu" data-file="file">File</div>
+    <div class="file-menu" data-file="settings">Settings</div>
+  </div>
+
+  <div class="file-menu-content" id="file">
+    Coming soon! Check Settings for now.
+  </div>
+
+  <div class="file-menu-content" id="settings">
+    Coming soon! Check File for now.
+  </div>
+
+  <div class="chat" style="display: none;">
+    <div class="messages">
+      <div class="message">
+        <div class="message-time">
+          3 AM
+        </div>
+        <div class="message-avatar">
+
+        </div>
+        <div class="message-content">
+          Hello? World? Where are you?
+        </div>
+      </div>
+    </div>
+    <form class="message-bar">
+      <input type="text" class="message-input" placeholder="Message">
+      <button type="submit" class="message-submit">Send</button>
+    </form>
+  </div>
+
+  <div class="update-menu" style="display: none;">
+    <div class="update-menu-top">
+      <h2>Update available!</h2>
+      <div class="close">
+        <svg data-src="/icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="comparison">
+      <span class="version">v0.0.0</span>
+      <svg data-src="/icons/arrow-right.svg"></svg>
+      <span class="version">v0.0.0</span>
+    </div>
+    <p>Your current scene will not be lost, but
+      multiplayer connections will be disconnected.</p>
+    <!-- changes -->
+    <details>
+      Added your mother
+      <summary>
+        View changes
+      </summary>
+    </details>
+    <div class="update-menu-bottom">
+      <button class="update-menu-button">Update</button>
+      <button class="update-menu-button secondary">Dismiss</button>
+      <button class="update-menu-button tertiary">Remind me later</button>
+    </div>
+  </div>
+
+  <script src="/src/index.js" type="module" defer></script>
+
+
+
+</body>
+
+</html>
