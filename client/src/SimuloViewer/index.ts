@@ -680,16 +680,26 @@ class SimuloViewer {
                     this.ctx.rotate(Math.PI);
                     // width is determined based on shape size. height is determined based on image aspect ratio
                     if (!shape.stretchImage) {
-                        this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                        try {
+                            this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
+                        }
+                        catch (e) {
+                            console.error(e);
+                        }
                     }
                     else {
-                        // instead we use the rect height for height of the image. if its not a rectangle, shapesize
-                        if (shape.type === 'rectangle') {
-                            let shapeRectangle = shape as SimuloRectangle;
-                            this.ctx.drawImage(image, -shapeSize, -shapeSize * (shapeRectangle.height / shapeRectangle.width), shapeSize * 2, shapeSize * 2 * (shapeRectangle.height / shapeRectangle.width));
+                        try {
+                            // instead we use the rect height for height of the image. if its not a rectangle, shapesize
+                            if (shape.type === 'rectangle') {
+                                let shapeRectangle = shape as SimuloRectangle;
+                                this.ctx.drawImage(image, -shapeSize, -shapeSize * (shapeRectangle.height / shapeRectangle.width), shapeSize * 2, shapeSize * 2 * (shapeRectangle.height / shapeRectangle.width));
+                            }
+                            else {
+                                this.ctx.drawImage(image, -shapeSize, -shapeSize, shapeSize * 2, shapeSize * 2);
+                            }
                         }
-                        else {
-                            this.ctx.drawImage(image, -shapeSize, -shapeSize, shapeSize * 2, shapeSize * 2);
+                        catch (e) {
+                            console.error(e);
                         }
                     }
                     this.ctx.restore();
