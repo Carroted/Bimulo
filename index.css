@@ -3,7 +3,7 @@
   font-family: 'Urbanist';
   font-style: normal;
   font-weight: 400;
-  src: url('/assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
+  src: url('assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
 }
 
 *::selection {
@@ -16,7 +16,7 @@
   font-family: 'Urbanist';
   font-style: normal;
   font-weight: 600;
-  src: url('/assets/fonts/Urbanist-Bold.woff2') format('woff2');
+  src: url('assets/fonts/Urbanist-Bold.woff2') format('woff2');
 }
 
 /* extra-bold */
@@ -24,7 +24,7 @@
   font-family: 'Urbanist';
   font-style: normal;
   font-weight: 800;
-  src: url('/assets/fonts/Urbanist-ExtraBold.woff2') format('woff2');
+  src: url('assets/fonts/Urbanist-ExtraBold.woff2') format('woff2');
 }
 
 .chat {

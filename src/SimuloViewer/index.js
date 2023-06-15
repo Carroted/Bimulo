@@ -543,7 +543,7 @@ class SimuloViewer {
         // draw map
         //ctx.drawImage(canvasMap, 0, 0);
         var mousePos = this.transformPoint(this.lastX, this.lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
-        var cursor = this.getImage('/assets/textures/cursor.png');
+        var cursor = this.getImage('assets/textures/cursor.png');
         // fill
         this.ctx.fillStyle = '#a1acfa';
         // no border
@@ -674,7 +674,7 @@ class SimuloViewer {
                     }
                     this.ctx.fillStyle = 'blue';
                     //drawRect(player.x, player.y, 4, 4);
-                    // draw image getImage('/cursor.png')
+                    // draw image getImage('cursor.png')
                     this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
                 }*/
         /*

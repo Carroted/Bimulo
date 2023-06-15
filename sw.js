@@ -11,7 +11,7 @@ self.addEventListener('activate', async (event) => {
 
 async function cacheEverything() {
     // first, fetch /fileList.txt
-    const fileList = await fetch('/filelist.txt').then((response) => response.text());
+    const fileList = await fetch('filelist.txt').then((response) => response.text());
     var files = fileList.trim().split('\n');
     return files;
 }
@@ -22,7 +22,7 @@ self.addEventListener('install', async (event) => {
         event.waitUntil(
             caches.open(cacheName)
                 .then((cache) => cache.addAll([
-                    '/'
+                    '/Simulo'
                 ].concat(files)))
         );
         console.log('Cached ' + files.length + ' files');*/
@@ -92,7 +92,7 @@ async function update() {
     var files = await cacheEverything();
     await caches.open(cacheName)
         .then((cache) => cache.addAll([
-            '/'
+            '/Simulo'
         ].concat(files)));
     console.log('Update complete!');
 }
