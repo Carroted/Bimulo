@@ -199,7 +199,10 @@ var steps = [
         walkSync(box2DPath, '/node_modules/box2d-wasm/dist/');
         // remove /sw.js (its a bit silly to cache the service worker itself, how would it get itself from the cache if its not active to do so? and it seems to cause error too)
         files = files.filter(function (file) { return file !== '/sw.js'; });
+        files.push('/Simulo');
         files.push('/');
+        // remove / from the start of each one
+        files = files.map(function (file) { return file.substring(1); });
         // create dist/client/filelist.txt file with fileList content
         fs.writeFileSync(path.join(clientPath, 'filelist.txt'), files.join('\n'));
     },

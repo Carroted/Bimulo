@@ -4,7 +4,8 @@
   "main": "dist/server/src/index.js",
   "scripts": {
     "start": "node dist/server/src/index.js",
-    "build": "node build.js"
+    "build": "node build.js",
+	"deploy": "node deploy.js"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
@@ -25,7 +26,8 @@
   },
   "devDependencies": {
     "@types/earcut": "^2.1.1",
-    "@types/express": "^4.17.17"
+    "@types/express": "^4.17.17",
+    "gh-pages": "^5.0.0"
   },
   "type": "module"
 }

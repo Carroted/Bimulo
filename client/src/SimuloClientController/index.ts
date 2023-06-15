@@ -2,7 +2,7 @@ import SimuloTheme from '../../../shared/src/SimuloTheme.js';
 import Box2DFactory from '../../../node_modules/box2d-wasm/dist/es/entry.js';
 import SimuloClient from '../../../shared/src/SimuloClient.js';
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.json" assert { type: "json" };
+import themesJSON from "../../../shared/themes.js";
 import SimuloViewer from '../SimuloViewer/index.js';
 
 function loadThemes() {
@@ -156,7 +156,7 @@ class SimuloClientController {
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
         // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
-        fetch('/version').then(async (response) => {
+        fetch('version').then(async (response) => {
             if (response.ok) {
                 let versionInfo = document.getElementById('version-info');
                 if (versionInfo) {
@@ -603,7 +603,7 @@ class SimuloClientController {
                     cursorSize = cursorSize * 40 / this.viewer.cameraZoom;
                 }
                 var cursorWidth = 0.7 * cursorSize;
-                let cursorImg = this.viewer.getImage('/assets/textures/cursor.png');
+                let cursorImg = this.viewer.getImage('assets/textures/cursor.png');
                 var cursorHeight = cursorImg.height * ((0.7 * cursorSize) / cursorImg.width);
                 Object.keys(this.players).forEach((key) => {
                     if (key == this.client.id) return;
@@ -611,17 +611,17 @@ class SimuloClientController {
                     let player = this.players[key];
 
                     shapes.push({
-                        x: player.x + (cursorWidth / 4), y: player.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
+                        x: player.x + (cursorWidth / 4), y: player.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
                 });
                 // draw our own cursor
-                let cursor = this.viewer.getImage('/assets/textures/cursor.png');
+                let cursor = this.viewer.getImage('assets/textures/cursor.png');
                 if (!this.viewer.systemCursor) {
                     shapes.push({
-                        x: this.mousePos.x + (cursorWidth / 4), y: this.mousePos.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: '/assets/textures/cursor.png',
+                        x: this.mousePos.x + (cursorWidth / 4), y: this.mousePos.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
@@ -648,7 +648,7 @@ class SimuloClientController {
             }
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
-                var audio = new Audio('/assets/sounds/' + body.data.sound);
+                var audio = new Audio('assets/sounds/' + body.data.sound);
                 audio.volume = body.data.volume;
                 // pitch from 0.5 to 1.5
                 audio.playbackRate = body.data.pitch;
@@ -678,7 +678,7 @@ class SimuloClientController {
             if (element.classList.contains('active')) {
                 return;
             }
-            var audio = new Audio(element.classList.contains('fake') ? '/assets/sounds/deny.wav' : '/assets/sounds/button_down.wav');
+            var audio = new Audio(element.classList.contains('fake') ? 'assets/sounds/deny.wav' : 'assets/sounds/button_down.wav');
             audio.volume = element.classList.contains('fake') ? 0.3 : 0.02;
             audio.playbackRate = element.classList.contains('fake') ? 1 : 5;
             audio.play();
@@ -691,7 +691,7 @@ class SimuloClientController {
             if (element.classList.contains('fake')) {
                 return;
             }
-            var audio = new Audio('/assets/sounds/button_up.wav');
+            var audio = new Audio('assets/sounds/button_up.wav');
             audio.volume = 0.02;
             // pitch up
             audio.playbackRate = element.classList.contains('fake') ? 1 : 5;

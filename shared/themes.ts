@@ -1,4 +1,4 @@
-{
+export default {
   "default": {
     "background": "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
     "ground": {

@@ -13,7 +13,7 @@ try {
 }
 /*
 
-const Box2DFactoryFactory = import(isNode ? "box2d-wasm" : "/box2d-wasm/entry.js");
+const Box2DFactoryFactory = import(isNode ? "box2d-wasm" : "box2d-wasm/entry.js");
 var ok = await Box2DFactoryFactory;
 const Box2DFactory = ok.default;
 const box2D = await Box2DFactory();
@@ -568,7 +568,7 @@ class SimuloPhysicsServer {
             border: null,
             borderWidth: null,
             borderScaleWithZoom: false,
-            image: "/assets/textures/body.png",
+            image: "assets/textures/body.png",
             sound: "ground.wav",
         } as SimuloObjectData, false);
 
@@ -588,7 +588,7 @@ class SimuloPhysicsServer {
             var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0);
         }
         else*/ {
-            // add image (last param) as /assets/textures/spring.png
+            // add image (last param) as assets/textures/spring.png
             var spring = this.addSpring(
                 [0, (3.26 * personScale)],
                 [0, ((1.88 - 3.26) * personScale)],
@@ -596,7 +596,7 @@ class SimuloPhysicsServer {
                 head,
                 20 * personScale,
                 0.005 * personScale,
-                0, 0/*, "/assets/textures/spring.png"*/
+                0, 0/*, "assets/textures/spring.png"*/
             );
         }
     }
@@ -1152,9 +1152,6 @@ class SimuloPhysicsServer {
                 });
             }
         }
-
-        // log all shape ids
-        console.log(`shape ids:`, shapes.map((s) => s.id));
 
         var thisStep: SimuloStep = {
             shapes: shapes,
