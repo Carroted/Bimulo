@@ -77,6 +77,12 @@ class SimuloObject {
     set velocity({ x, y }: { x: number, y: number }) {
         this._body.SetLinearVelocity(new box2D.b2Vec2(x, y));
     }
+    get angularVelocity(): number {
+        return this._body.GetAngularVelocity();
+    }
+    set angularVelocity(angularVelocity: number) {
+        this._body.SetAngularVelocity(angularVelocity);
+    }
     get rotation(): number {
         return this._body.GetAngle();
     }
@@ -381,6 +387,27 @@ function translateVerts(vertices: { x: number, y: number }[], xOffset: number, y
     return vertices.map((vertex) => {
         return { x: vertex.x + xOffset, y: vertex.y + yOffset };
     });
+}
+
+interface SimuloSavedObject {
+    id: number;
+    position: { x: number, y: number };
+    rotation: number;
+    velocity: { x: number, y: number };
+    angularVelocity: number;
+    density: number;
+    friction: number;
+    restitution: number;
+    border: string | null;
+    borderWidth: number | null;
+    borderScaleWithZoom: boolean;
+    circleCake: boolean;
+    image: string | null;
+    sound: string | null;
+    color: string;
+    isStatic: boolean;
+    mass: number;
+    // TODO: when scripting is added, add script here and have it call save() on script and push the return value here if it isnt circular
 }
 
 
@@ -833,6 +860,234 @@ class SimuloPhysicsServer {
             return new SimuloObject(this, b);
         });
     }
+    getAllObjects() {
+        var bodies: Box2D.b2Body[] = [];
+        var node = this.world.GetBodyList();
+        while (box2D.getPointer(node)) {
+            var b = node;
+            node = node.GetNext();
+
+            var position = b.GetPosition();
+
+            var fl = b.GetFixtureList();
+            if (!fl) {
+                continue;
+            }
+            while (box2D.getPointer(fl)) {
+                var shape = fl.GetShape();
+                bodies.push(b);
+                fl = fl.GetNext();
+            }
+        }
+        return bodies.map((b) => {
+            return new SimuloObject(this, b);
+        });
+    }
+    /*class SimuloObject {
+    private _physicsServer: SimuloPhysicsServer;
+    wakeUp() {
+        this._body.SetAwake(true);
+    }
+    get id(): number {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.id;
+    }
+    get position(): { x: number, y: number } {
+        return { x: this._body.GetPosition().get_x(), y: this._body.GetPosition().get_y() };
+    }
+    set position({ x, y }: { x: number, y: number }) {
+        this._body.SetTransform(new box2D.b2Vec2(x, y), this._body.GetAngle());
+    }
+    get velocity(): { x: number, y: number } {
+        return { x: this._body.GetLinearVelocity().get_x(), y: this._body.GetLinearVelocity().get_y() };
+    }
+    set velocity({ x, y }: { x: number, y: number }) {
+        this._body.SetLinearVelocity(new box2D.b2Vec2(x, y));
+    }
+    get angularVelocity(): number {
+        return this._body.GetAngularVelocity();
+    }
+    set angularVelocity(angularVelocity: number) {
+        this._body.SetAngularVelocity(angularVelocity);
+    }
+    get rotation(): number {
+        return this._body.GetAngle();
+    }
+    set rotation(angle: number) {
+        this._body.SetTransform(this._body.GetPosition(), angle);
+    }
+    get density(): number {
+        return this._body.GetFixtureList().GetDensity();
+    }
+    set density(density: number) {
+        this._body.GetFixtureList().SetDensity(density);
+        this._body.ResetMassData();
+    }
+    get friction(): number {
+        return this._body.GetFixtureList().GetFriction();
+    }
+    set friction(friction: number) {
+        this._body.GetFixtureList().SetFriction(friction);
+    }
+    get restitution(): number {
+        return this._body.GetFixtureList().GetRestitution();
+    }
+    set restitution(restitution: number) {
+        this._body.GetFixtureList().SetRestitution(restitution);
+    }
+    get border(): string | null {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.border;
+    }
+    set border(border: string | null) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.border = border;
+    }
+    get borderWidth(): number | null {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.borderWidth;
+    }
+    set borderWidth(borderWidth: number | null) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.borderWidth = borderWidth;
+    }
+    get borderScaleWithZoom(): boolean {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.borderScaleWithZoom;
+    }
+    set borderScaleWithZoom(borderScaleWithZoom: boolean) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.borderScaleWithZoom = borderScaleWithZoom;
+    }
+    get circleCake(): boolean {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        // if undefined return false
+        if (objectData.circleCake == undefined) {
+            return false;
+        }
+        return objectData.circleCake;
+    }
+    set circleCake(circleCake: boolean) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.circleCake = circleCake;
+    }
+    get image(): string | null {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.image;
+    }
+    set image(image: string | null) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.image = image;
+    }
+    get collision_sound(): string | null {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.sound;
+    }
+    set collision_sound(sound: string | null) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.sound = sound;
+    }
+    get color(): string {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.color;
+    }
+    set color(color: string) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.color = color;
+    }
+    get isStatic(): boolean {
+        return this._body.GetType() == box2D.b2_staticBody;
+    }
+    set isStatic(isStatic: boolean) {
+        if (isStatic) {
+            this._body.SetType(box2D.b2_staticBody);
+        } else {
+            this._body.SetType(box2D.b2_dynamicBody);
+        }
+    }
+    get mass(): number {
+        return this._body.GetMass();
+    }
+
+    // when set any of the above, itll update the box2d body, which we'll define now:
+    _body: Box2D.b2Body; // this is not meant to be accessed in scripting, only in the physics server. however, we cant really make it private and it shouldnt cause any issues
+
+    constructor(physicsServer: SimuloPhysicsServer, body: Box2D.b2Body) {
+        this._body = body;
+        this._physicsServer = physicsServer;
+    }
+    addForce([x, y]: [x: number, y: number]) {
+        this._body.ApplyForce(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
+    }
+    addImpulse([x, y]: [x: number, y: number]) {
+        this._body.ApplyLinearImpulse(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
+    }
+    addTorque(torque: number) {
+        this._body.ApplyTorque(torque, true);
+    }
+    addAngularImpulse(impulse: number) {
+        this._body.ApplyAngularImpulse(impulse, true);
+    }
+    destroy() {
+        this._body.GetWorld().DestroyBody(this._body);
+        // No longer real
+    }
+}*/
+
+    /** Saves a collection of `SimuloObject`s and `Joint`s to a `SimuloSavedObject`s and `SimuloSavedJoint`s you can restore with `load()` */
+    save(stuff: (SimuloObject | SimuloJoint)[]): (SimuloSavedObject | SimuloSavedJoint)[] {
+        var savedStuff: (SimuloSavedObject | SimuloSavedJoint)[] = stuff.map((o) => {
+            if (o instanceof SimuloObject) {
+                return {
+                    id: o.id,
+                    position: o.position,
+                    rotation: o.rotation,
+                    velocity: o.velocity,
+                    angularVelocity: o.angularVelocity,
+                    density: o.density,
+                    friction: o.friction,
+                    restitution: o.restitution,
+                    border: o.border,
+                    borderWidth: o.borderWidth,
+                    borderScaleWithZoom: o.borderScaleWithZoom,
+                    circleCake: o.circleCake,
+                    image: o.image,
+                    sound: o.collision_sound,
+                    color: o.color,
+                    isStatic: o.isStatic,
+                    mass: o.mass,
+                };
+            }
+            else if (o instanceof SimuloJoint) {
+                // bah lmao
+            }
+        });
+    }
+    /** Spawns in some `SimuloObject`s and `Joint`s from a `(SimuloObject | SimuloJoint)[]` you saved with `save()`, doesn't replace anything, just adds to the world */
+    load(stuff: (SimuloObject | SimuloJoint)[]) {
+        // we just spawn them in, no need to delete anything, server who called load will handle that
+        objects.forEach((o) => {
+            var body = this.world.CreateBody(new box2D.b2BodyDef());
+            var object = new SimuloObject(this, body);
+            object.position = o.position;
+            object.rotation = o.rotation;
+            object.velocity = o.velocity;
+            object.angularVelocity = o.angularVelocity;
+            object.density = o.density;
+            object.friction = o.friction;
+            object.restitution = o.restitution;
+            object.border = o.border;
+            object.borderWidth = o.borderWidth;
+            object.borderScaleWithZoom = o.borderScaleWithZoom;
+            object.circleCake = o.circleCake;
+            object.image = o.image;
+            object.collision_sound = o.sound;
+            object.color = o.color;
+            object.isStatic = o.isStatic;
+        });
+    }
+
+
     getObjectByID(id: number) {
         var node = this.world.GetBodyList();
         while (box2D.getPointer(node)) {

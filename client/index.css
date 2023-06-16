@@ -408,21 +408,9 @@ details summary {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(2, 1fr);
+  width: 100%;
 }
 
-.object {
-  background: #03081dc0;
-  border-radius: 0.1rem;
-  padding: 0.5rem;
-}
-
-.object img {
-  width: 90%;
-  height: 90%;
-  margin: 0 auto;
-  display: block;
-  object-fit: contain;
-}
 
 .toolbar svg {
   width: 100%;
@@ -507,4 +495,62 @@ details summary {
 .toolbar .tool.fake svg {
   color: #e0ddff0a;
   fill: #e0ddff0a;
+}
+
+.object {
+  background: #03081dc0;
+  border-radius: 0.5rem;
+  padding: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: background 0.1s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.object:hover {
+  background: #ffffff20;
+}
+
+.object img {
+  width: 70%;
+  height: 70%;
+  margin: 0;
+  display: block;
+  object-fit: contain;
+  transition: width 0.1s ease-in-out, height 0.1s ease-in-out, opacity 0.1s ease-in-out;
+  /* stop dragging it */
+  pointer-events: none;
+  user-select: none;
+}
+
+.object:hover img {
+  width: 77%;
+  height: 77%;
+}
+
+.object:active {
+  background: #ffffff00;
+}
+
+.object:active img {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.toolbar.object-grid-bar {
+  height: auto;
+  display: flex;
+  /* make it rows */
+  flex-direction: column;
+  /* align left */
+  justify-content: flex-start;
+  align-items: flex-start;
+  border-radius: 1.2rem;
+  user-select: none;
 }
