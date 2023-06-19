@@ -423,6 +423,32 @@ details summary {
   height: 100%;
 }
 
+#pause-overlay {
+  position: fixed;
+  top: 3rem;
+  left: 0.5rem;
+  z-index: 100;
+  fill: #ffffffff;
+  display: none;
+  pointer-events: none;
+  width: 14rem;
+  color: #ffffff60;
+  font-family: "Urbanist", sans-serif;
+  /* align to top left */
+  display: none;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+#pause-overlay svg {
+  width: 4rem;
+  height: 4rem;
+  fill: #ffffffff;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
 .pause-button {
   width: 2.6rem;
   height: 2.6rem;
@@ -498,7 +524,7 @@ details summary {
 }
 
 .object {
-  background: #03081dc0;
+  background: #03081d60;
   border-radius: 0.5rem;
   padding: 0;
   width: 4.5rem;
@@ -513,7 +539,7 @@ details summary {
 }
 
 .object:hover {
-  background: #ffffff20;
+  background: #ffffff30;
 }
 
 .object img {

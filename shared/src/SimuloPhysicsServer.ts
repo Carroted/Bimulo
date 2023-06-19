@@ -152,11 +152,11 @@ class SimuloObject {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         objectData.image = image;
     }
-    get collision_sound(): string | null {
+    get collisionSound(): string | null {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         return objectData.sound;
     }
-    set collision_sound(sound: string | null) {
+    set collisionSound(sound: string | null) {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         objectData.sound = sound;
     }
@@ -590,7 +590,7 @@ class SimuloPhysicsServer {
             return [point[0] * personScale, point[1] * personScale];
         });
 
-        var body = this.addPolygon(personBodyPoints as [x: number, y: number][], [offset[0], offset[1]], 0, 1, 0.5, 0, {
+        var body = this.addPolygon(personBodyPoints as [x: number, y: number][], [offset[0], offset[1]], Math.PI, 1, 0.5, 0, {
             color: "#00000000",
             border: null,
             borderWidth: null,
@@ -599,7 +599,7 @@ class SimuloPhysicsServer {
             sound: "ground.wav",
         } as SimuloObjectData, false);
 
-        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * personScale)], 0, 1, 0.5, 0, {
+        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * -personScale)], 0, 1, 0.5, 0, {
             color: "#99e077",
             border: null,
             borderWidth: null,
@@ -608,7 +608,7 @@ class SimuloPhysicsServer {
             sound: "ground.wav"
         } as SimuloObjectData, false);
 
-        var axle = this.addAxle([0, (0.32 * personScale)], [0, ((1.88 - 0.32) * personScale)], body, head);
+        var axle = this.addAxle([0, (0.32 * personScale)], [0, ((1.88 - 0.32) * -personScale)], body, head);
         // arguments (in order): anchorA, anchorB, bodyA, bodyB
 
         /*if (Math.random() < 0.5) {
@@ -618,7 +618,7 @@ class SimuloPhysicsServer {
             // add image (last param) as assets/textures/spring.png
             var spring = this.addSpring(
                 [0, (3.26 * personScale)],
-                [0, ((1.88 - 3.26) * personScale)],
+                [0, ((1.88 - 3.26) * -personScale)],
                 body,
                 head,
                 20 * personScale,
@@ -1035,7 +1035,7 @@ class SimuloPhysicsServer {
 }*/
 
     /** Saves a collection of `SimuloObject`s and `Joint`s to a `SimuloSavedObject`s and `SimuloSavedJoint`s you can restore with `load()` */
-    save(stuff: (SimuloObject | SimuloJoint)[]): (SimuloSavedObject | SimuloSavedJoint)[] {
+    /*save(stuff: (SimuloObject | SimuloJoint)[]): (SimuloSavedObject | SimuloSavedJoint)[] {
         var savedStuff: (SimuloSavedObject | SimuloSavedJoint)[] = stuff.map((o) => {
             if (o instanceof SimuloObject) {
                 return {
@@ -1052,7 +1052,7 @@ class SimuloPhysicsServer {
                     borderScaleWithZoom: o.borderScaleWithZoom,
                     circleCake: o.circleCake,
                     image: o.image,
-                    sound: o.collision_sound,
+                    sound: o.collisionSound,
                     color: o.color,
                     isStatic: o.isStatic,
                     mass: o.mass,
@@ -1063,29 +1063,19 @@ class SimuloPhysicsServer {
             }
         });
     }
-    /** Spawns in some `SimuloObject`s and `Joint`s from a `(SimuloObject | SimuloJoint)[]` you saved with `save()`, doesn't replace anything, just adds to the world */
-    load(stuff: (SimuloObject | SimuloJoint)[]) {
-        // we just spawn them in, no need to delete anything, server who called load will handle that
-        objects.forEach((o) => {
-            var body = this.world.CreateBody(new box2D.b2BodyDef());
-            var object = new SimuloObject(this, body);
-            object.position = o.position;
-            object.rotation = o.rotation;
-            object.velocity = o.velocity;
-            object.angularVelocity = o.angularVelocity;
-            object.density = o.density;
-            object.friction = o.friction;
-            object.restitution = o.restitution;
-            object.border = o.border;
-            object.borderWidth = o.borderWidth;
-            object.borderScaleWithZoom = o.borderScaleWithZoom;
-            object.circleCake = o.circleCake;
-            object.image = o.image;
-            object.collision_sound = o.sound;
-            object.color = o.color;
-            object.isStatic = o.isStatic;
+    /** Spawns in some `SimuloObject`s and `Joint`s from a `(SimuloSavedObject | SimuloSavedJoint)[]` you saved with `save()`, doesn't replace anything, just adds to the world */
+    /*load(stuff: (SimuloSavedObject | SimuloSavedJoint)[]) {
+        stuff.forEach((o) => {
+            if (o.type == "SimuloSavedObject") {
+                var bodyDef = new box2D.b2BodyDef();
+                bodyDef.set_type(o.isStatic ? box2D.b2_staticBody : box2D.b2_dynamicBody);
+                bodyDef.set_position(new box2D.b2Vec2(o.position[0], o.position[1]));
+                bodyDef.set_angle(o.rotation);
+                var body = this.world.CreateBody(bodyDef);
+                var shape = new box2D.b2CircleShape();
+            }
         });
-    }
+    }*/
 
 
     getObjectByID(id: number) {

@@ -31,7 +31,8 @@ export default {
       "addPolygon": "assets/textures/add_polygon.png",
       "addSpring": "assets/textures/add_spring.png",
       "addAxle": "assets/textures/add_axle.png",
-      "addFixedJoint": "assets/textures/add_fixed_joint.png"
+      "addFixedJoint": "assets/textures/add_fixed_joint.png",
+      "select": "assets/textures/select.png",
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
@@ -70,7 +71,8 @@ export default {
       "addPolygon": "assets/textures/tools/polygon.png",
       "addSpring": "assets/textures/tools/spring.png",
       "addAxle": "assets/textures/tools/hinge.png",
-      "addFixedJoint": "assets/textures/tools/fixjoint.png"
+      "addFixedJoint": "assets/textures/tools/fixjoint.png",
+      "select": "assets/textures/tools/move.png",
     },
     "systemCursor": true,
     "toolIconSize": 0.7,

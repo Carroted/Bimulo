@@ -36,6 +36,60 @@ function queryParent(element: HTMLElement, className: string): HTMLElement | nul
 import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../../../shared/src/SimuloShape.js';
 import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../../shared/src/SimuloCreatingObject.js';
 
+const personPoints = [{
+    x: 0,
+    y: 0.256
+}, {
+    x: 0.2848,
+    y: 0.1996
+}, {
+    x: 0.476,
+    y: 0.0688
+}, {
+    x: 0.6016,
+    y: -0.10800000000000001
+}, {
+    x: 0.668,
+    y: -0.31160000000000004
+}, {
+    x: 0.6712,
+    y: -1.3088
+}, {
+    x: 0.6572,
+    y: -1.3876
+}, {
+    x: 0.5804,
+    y: -1.4388
+}, {
+    x: -0.5664,
+    y: -1.4356
+}, {
+    x: -0.6328,
+    y: -1.404
+}, {
+    x: -0.6616,
+    y: -1.34
+}, {
+    x: -0.668,
+    y: -0.31160000000000004
+}, {
+    x: -0.5988000000000001,
+    y: -0.122
+}, {
+    x: -0.49240000000000006,
+    y: 0.0504
+}, {
+    x: -0.26,
+    y: 0.2068
+}, {
+    x: -0.1312,
+    y: 0.2456
+}];
+
+interface SimuloSavedObject {
+    name: string;
+    shapes: SimuloShape[];
+}
 /** `SimuloClientController` manages connecting to the server, `SimuloViewer` and the UI. */
 class SimuloClientController {
     client: SimuloClient;
@@ -47,6 +101,41 @@ class SimuloClientController {
     maxZoom = 5;
     minZoom = 0.1;
     scrollSensitivity = 0.0005;
+    spawningSavedObject: string | null = null;
+    savedObjects: {
+        [key: string]: SimuloSavedObject;
+    } = {
+            "person": {
+                name: "Person",
+                shapes: [
+                    {
+                        type: "polygon",
+                        x: 0, // this is relative to the mouse position
+                        y: 0,
+                        angle: 0,
+                        color: "#00000000",
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        image: "assets/textures/body.png",
+                        id: -1,
+                        points: personPoints,
+                        vertices: personPoints
+                    } as SimuloPolygon,
+                    {
+                        type: "circle",
+                        x: 0,
+                        y: 0.752,
+                        radius: 0.684,
+                        color: "#99e077",
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        circleCake: false,
+                        id: -1
+                    } as SimuloCircle,
+                ]
+            }
+        };
 
     player = {
         x: 0,
@@ -184,12 +273,44 @@ class SimuloClientController {
 
         this.client.connect(); // Connects to the server
 
+        let objects = document.querySelectorAll('.object-grid .object');
+        objects.forEach((object) => {
+            object.addEventListener('mousedown', (e) => {
+                // make sure its left click
+                if ((e as MouseEvent).button != 0) return;
+                this.spawningSavedObject = ((object as HTMLElement).dataset.object as string);
+                new Audio('assets/sounds/spawn_down.wav').play();
+            });
+        });
+
+
+        document.addEventListener('mouseup', (e) => {
+            if (!(e instanceof MouseEvent) || e.button != 0) return;
+
+            if (this.spawningSavedObject) {
+                var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
+                this.spawnObject(this.savedObjects[this.spawningSavedObject], positionInWorld.x, positionInWorld.y);
+                this.spawningSavedObject = null;
+                new Audio('assets/sounds/spawn_up.wav').play();
+            }
+        });
+
         // on click tool, set active tool
         const tools = document.querySelectorAll('.tool');
 
-        tools.forEach((toolElement) => {
+        tools.forEach((toolElement, i) => {
             let tool = toolElement as HTMLElement;
             this.setUpClickSound(tool);
+            // if keypress of i+1, click tool
+            document.addEventListener('keydown', (e) => {
+                if ((e.target as HTMLElement).tagName == 'INPUT' || (e.target as HTMLElement).tagName == 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) {
+                    return;
+                }
+
+                if (e.key === (i + 1).toString()) {
+                    tool.click();
+                }
+            });
             tool.addEventListener('click', () => {
                 // return if has fake class
                 if (tool.classList.contains('fake')) {
@@ -346,6 +467,18 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
         });
+        document.addEventListener('keydown', (e) => {
+            // make sure we arent in a text area or input or contenteditable
+            if ((e.target as HTMLElement).tagName == 'INPUT' || (e.target as HTMLElement).tagName == 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) {
+                return;
+            }
+
+            // if its space, toggle pause
+            if (e.key == ' ') {
+                this.pauseButton.classList.toggle('checked');
+                this.setPaused(this.pauseButton.classList.contains('checked'));
+            }
+        });
 
         this.viewer.systemCursor = this.theme.systemCursor;
 
@@ -363,9 +496,15 @@ class SimuloClientController {
     }
     setPaused(paused: boolean) {
         this.client.emitData('set_paused', paused);
+        // set display flex or none to #pause-overlay
+        (document.getElementById('pause-overlay') as HTMLElement).style.display = paused ? 'flex' : 'none';
     }
     setTimeScale(timeScale: number) {
         this.client.emitData('set_time_scale', timeScale);
+    }
+
+    spawnObject(savedObject: SimuloSavedObject, x: number, y: number) {
+        this.client.emitData('spawn_object', { savedObject, x, y });
     }
 
     mousePos: { x: number, y: number } = { x: 0, y: 0 };
@@ -410,6 +549,24 @@ class SimuloClientController {
                     });
                     shapes.push(entity);
                 });
+
+                // if we have a spawningSavedObject string, get it from this.savedObjects[this.spawningSavedObject] and render its .shapes
+                if (this.spawningSavedObject != null) {
+                    var savedObject = this.savedObjects[this.spawningSavedObject];
+                    if (savedObject != null) {
+                        shapes = shapes.concat(savedObject.shapes.map((shape) => {
+                            var clonedShape = Object.assign({}, shape);
+                            clonedShape.x += this.mousePos.x;
+                            clonedShape.y += this.mousePos.y;
+                            clonedShape.image = null;
+                            clonedShape.border = 'white';
+                            clonedShape.borderWidth = 3.5;
+                            clonedShape.borderScaleWithZoom = true;
+                            clonedShape.color = 'rgba(255, 255, 255, 0.5)';
+                            return clonedShape;
+                        }));
+                    }
+                }
 
                 Object.keys(this.creatingObjects).forEach((key) => {
                     let creatingObject = this.creatingObjects[key];
@@ -584,6 +741,12 @@ class SimuloClientController {
                     }
                     else {
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+
+                        // BEGIN OVERRIDE TO REMOVE!
+                        spring.width = 3;
+                        spring.line = { color: '#ffffff', scale_with_zoom: true };
+                        // END OVERRIDE TO REMOVE!
+
                         var height = spring.width;
                         if (spring.line && spring.line.scale_with_zoom) {
                             height = height / this.viewer.cameraZoom;

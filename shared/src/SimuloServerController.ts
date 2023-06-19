@@ -677,7 +677,16 @@ class SimuloServerController {
         } else if (formatted.type == "set_tool") {
             console.log("set tool to", formatted.data);
             this.tools[uuid] = formatted.data;
-        } else if (formatted.type == "set_time_scale") {
+        }
+        else if (formatted.type == "spawn_object") {
+            console.log("spawn object", formatted.data);
+            // regardless of what anyone thinks, call addPerson
+            this.physicsServer.addPerson([
+                formatted.data.x,
+                formatted.data.y
+            ]);
+        }
+        else if (formatted.type == "set_time_scale") {
             this.timeScaleMultiplier = formatted.data;
             this.sendAll("set_time_scale", this.timeScaleMultiplier);
         } else if (formatted.type == "set_paused") {

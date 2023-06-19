@@ -28,8 +28,12 @@
 </head>
 
 <body>
-  <canvas width="300" height="200" id="game"></canvas>
+  <canvas width="300" height="200" id="game" tabindex="1"></canvas>
   <div class="version-info" id="version-info">Simulo Alpha</div>
+  <div id="pause-overlay">
+    <svg data-src="icons/pause.svg"></svg>
+    Note: the select/move tool and the drag tool are currently unstable when paused!
+  </div>
   <div class="toolbar">
     <div class="tool active" data-menu="tools" id="menu-1-button">
       <svg data-src="icons/wrench.svg"></svg>
@@ -56,9 +60,6 @@
       <svg data-src="icons/cursor-default.svg"></svg>
     </div>
     <div class="tool" data-tool="select">
-      <svg data-src="icons/select.svg"></svg>
-    </div>
-    <div class="tool fake" data-tool="move">
       <svg data-src="icons/cursor-move.svg"></svg>
     </div>
     <div class="tool fake" data-tool="scale">
@@ -66,6 +67,9 @@
     </div>
     <div class="tool fake" data-tool="rotate">
       <svg data-src="icons/rotate-3d-variant.svg"></svg>
+    </div>
+    <div class="tool fake" data-tool="texture">
+      <svg data-src="icons/texture.svg"></svg>
     </div>
     <div class="tool fake" data-tool="knife">
       <svg data-src="icons/box-cutter.svg"></svg>
@@ -107,7 +111,7 @@
   </div>
   <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;">Objects!!!!
     <div class="object-grid">
-      <div class="object">
+      <div class="object" data-object="person">
         <img src="assets/textures/person.png">
       </div>
     </div>
