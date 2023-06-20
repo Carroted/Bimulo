@@ -1,4 +1,4 @@
-# ![Simulo](https://cdn.discordapp.com/attachments/930251495688003624/1120527107810934835/joe3.png)
+# ![Simulo](https://cdn.discordapp.com/attachments/930244062156558348/1120536366028165180/banner.png)
 
 Simulo is a web-based TypeScript 2D physics sandbox and game engine with scripting support and soon multiplayer. It uses Box2D for physics and currently Canvas for rendering, though WebGL support is planned.
 
