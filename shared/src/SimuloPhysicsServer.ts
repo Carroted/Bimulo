@@ -109,6 +109,15 @@ class SimuloObject {
             throw new Error("Unknown shape type");
         }
     }
+    get radius(): number | undefined {
+        // if type is circle, return radius from box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius()
+        if (this.type === SimuloObjectType.CIRCLE) {
+            return box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius();
+        }
+        else {
+            return undefined;
+        }
+    }
     /*set points(points: [x: number, y: number][] | undefined) {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         objectData.points = points;
@@ -450,6 +459,7 @@ interface SimuloSavedObject {
     joints: SimuloSavedJoint[];
     points: [x: number, y: number][] | undefined;
     type: SimuloObjectType;
+    radius: number | undefined;
     // TODO: when scripting is added, add script here and have it call save() on script and push the return value here if it isnt circular
 }
 
@@ -1105,6 +1115,7 @@ class SimuloPhysicsServer {
                 mass: o.mass,
                 joints: [], // todo: make it real (and pure)
                 points: o.points,
+                radius: o.radius,
             };
         });
         return savedStuff;
@@ -1114,7 +1125,20 @@ class SimuloPhysicsServer {
         stuff.forEach((o) => {
             // if its a polygon, use addPolygon
             if (o.type === SimuloObjectType.POLYGON) {
-                this.addPolygon(o.points as [x: number, y: number][], o.position, o.rotation, o.density, o.friction, o.restitution, {
+                this.addPolygon(o.points as [x: number, y: number][], [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                    border: o.border,
+                    borderWidth: o.borderWidth,
+                    borderScaleWithZoom: o.borderScaleWithZoom,
+                    circleCake: o.circleCake,
+                    image: o.image,
+                    sound: o.sound,
+                    color: o.color
+                }, o.isStatic);
+                return;
+            }
+            // if its a circle, use addCircle
+            if (o.type === SimuloObjectType.CIRCLE) {
+                this.addCircle(o.radius as number, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
                     border: o.border,
                     borderWidth: o.borderWidth,
                     borderScaleWithZoom: o.borderScaleWithZoom,
