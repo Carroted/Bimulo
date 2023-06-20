@@ -253,7 +253,7 @@ class SimuloClientController {
                     let version = await response.json();
                     // we want month name, then day, then year. no time
                     let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
-                    versionInfo.innerText = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
+                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
                 }
             }
         }).catch(() => { });

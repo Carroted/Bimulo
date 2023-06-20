@@ -34,6 +34,91 @@
     <svg data-src="icons/pause.svg"></svg>
     Note: the select/move tool and the drag tool are currently unstable when paused!
   </div>
+  <div class="popup-container">
+    <div class="starting-popup">
+      <div class="popup-top">
+        <img src="media/logo.svg" alt="Simulo logo">
+        <h3>Welcome back</h3>
+      </div>
+      <h4>Reminder:</h4>
+      <ul>
+        <li>This Alpha version is not stable enough to build anything serious with, treat it only as a demo of the
+          Simulo
+          game
+          engine.</li>
+        <li>Using Firefox is NOT recommended, as it is very slow with this kind of intensive Canvas game, we recommend a
+          Chromium
+          browser.
+          <ul>
+            <li>Don't report lag in Firefox! The game runs up to 50x slower in Firefox and there's nothing we can do
+              about
+              it.</li>
+            <li>Chromium browsers include Chrome, Brave, Edge, Opera and many more.</li>
+          </ul>
+        </li>
+      </ul>
+      <button onclick="dismiss();">Dismiss</button>
+      <script>
+        // on click anywhere, dismiss
+        function dismiss(e) {
+          // make sure it wasnt on start popup
+          if (e && e.target.closest('.starting-popup')) return;
+          // set opacity to 0 and pointer-events to none
+          document.querySelector('.starting-popup').style.opacity = 0;
+          document.querySelector('.starting-popup').style.pointerEvents = 'none';
+          document.removeEventListener('click', dismiss);
+        }
+        document.addEventListener('click', dismiss);
+      </script>
+    </div>
+  </div>
+  <div id="toasts">
+    <div class="toast">
+      <div class="icon" style="fill: #99e077;">
+        <svg data-src="icons/arrow-right.svg"></svg>
+      </div>
+      <span><b>Joe</b> joined the room.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast">
+      <div class="icon">
+        <svg data-src="icons/information.svg"></svg>
+      </div>
+      <span>This is an example toast.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast error">
+      <div class="icon">
+        <svg data-src="icons/alert-circle.svg"></svg>
+      </div>
+      <span>This is an example error.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast success">
+      <div class="icon">
+        <svg data-src="icons/check-circle.svg"></svg>
+      </div>
+      <span>This is an example success.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast warning">
+      <div class="icon">
+        <svg data-src="icons/alert.svg"></svg>
+      </div>
+      <span>This is an example warning.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+  </div>
   <div class="toolbar">
     <div class="tool active" data-menu="tools" id="menu-1-button">
       <svg data-src="icons/wrench.svg"></svg>
