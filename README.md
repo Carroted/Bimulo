@@ -4,8 +4,6 @@ Simulo is a web-based TypeScript 2D physics sandbox and game engine with scripti
 
 ## Table of Contents
 
-- [](#)
-  - [Table of Contents](#table-of-contents)
 - [Developer Guide](#developer-guide)
   - [Introduction](#introduction)
   - [Getting Started](#getting-started)
