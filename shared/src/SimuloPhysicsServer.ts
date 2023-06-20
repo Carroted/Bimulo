@@ -56,6 +56,12 @@ function createPolygonShape(tuples: [x: number, y: number][]) { // This isn't in
     return shape;
 }
 
+enum SimuloObjectType {
+    POLYGON = "POLYGON",
+    CIRCLE = "CIRCLE",
+    EDGE = "EDGE"
+}
+
 class SimuloObject {
     private _physicsServer: SimuloPhysicsServer;
     wakeUp() {
@@ -83,6 +89,40 @@ class SimuloObject {
     set angularVelocity(angularVelocity: number) {
         this._body.SetAngularVelocity(angularVelocity);
     }
+    get points(): [x: number, y: number][] | undefined {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.points;
+    }
+    get type(): SimuloObjectType {
+        // we get it from box2d
+        let shape = this._body.GetFixtureList().GetShape();
+        if (shape instanceof box2D.b2PolygonShape) {
+            return SimuloObjectType.POLYGON;
+        }
+        else if (shape instanceof box2D.b2CircleShape) {
+            return SimuloObjectType.CIRCLE;
+        }
+        else if (shape instanceof box2D.b2EdgeShape) {
+            return SimuloObjectType.EDGE;
+        }
+        else {
+            throw new Error("Unknown shape type");
+        }
+    }
+    /*set points(points: [x: number, y: number][] | undefined) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.points = points;
+        if (points) {
+            let shape = createPolygonShape(points);
+            // destroy all fixtures
+            let fixture = this._body.GetFixtureList();
+            while (Box2D.getPointer(fixture)) {
+                let nextFixture = fixture.GetNext();
+                this._body.DestroyFixture(fixture);
+                fixture = nextFixture;
+            }
+            */
+
     get rotation(): number {
         return this._body.GetAngle();
     }
@@ -407,7 +447,14 @@ interface SimuloSavedObject {
     color: string;
     isStatic: boolean;
     mass: number;
+    joints: SimuloSavedJoint[];
+    points: [x: number, y: number][] | undefined;
+    type: SimuloObjectType;
     // TODO: when scripting is added, add script here and have it call save() on script and push the return value here if it isnt circular
+}
+
+interface SimuloSavedJoint {
+
 }
 
 
@@ -599,7 +646,7 @@ class SimuloPhysicsServer {
             sound: "ground.wav",
         } as SimuloObjectData, false);
 
-        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * -personScale)], 0, 1, 0.5, 0, {
+        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * -personScale)], Math.PI, 1, 0.5, 0, {
             color: "#99e077",
             border: null,
             borderWidth: null,
@@ -1034,48 +1081,52 @@ class SimuloPhysicsServer {
     }
 }*/
 
-    /** Saves a collection of `SimuloObject`s and `Joint`s to a `SimuloSavedObject`s and `SimuloSavedJoint`s you can restore with `load()` */
-    /*save(stuff: (SimuloObject | SimuloJoint)[]): (SimuloSavedObject | SimuloSavedJoint)[] {
-        var savedStuff: (SimuloSavedObject | SimuloSavedJoint)[] = stuff.map((o) => {
-            if (o instanceof SimuloObject) {
-                return {
-                    id: o.id,
-                    position: o.position,
-                    rotation: o.rotation,
-                    velocity: o.velocity,
-                    angularVelocity: o.angularVelocity,
-                    density: o.density,
-                    friction: o.friction,
-                    restitution: o.restitution,
+    /** Saves a collection of `SimuloObject`s to a `SimuloSavedObject`s you can restore with `load()` */
+    save(stuff: SimuloObject[]): SimuloSavedObject[] {
+        var savedStuff: SimuloSavedObject[] = stuff.map((o) => {
+            return {
+                id: o.id,
+                type: o.type,
+                position: o.position,
+                rotation: o.rotation,
+                velocity: o.velocity,
+                angularVelocity: o.angularVelocity,
+                density: o.density,
+                friction: o.friction,
+                restitution: o.restitution,
+                border: o.border,
+                borderWidth: o.borderWidth,
+                borderScaleWithZoom: o.borderScaleWithZoom,
+                circleCake: o.circleCake,
+                image: o.image,
+                sound: o.collisionSound,
+                color: o.color,
+                isStatic: o.isStatic,
+                mass: o.mass,
+                joints: [], // todo: make it real (and pure)
+                points: o.points,
+            };
+        });
+        return savedStuff;
+    }
+    /** Spawns in some `SimuloObject`s from a `SimuloSavedObject[]` you saved with `save()`, doesn't replace anything, just adds to the world */
+    load(stuff: SimuloSavedObject[]) {
+        stuff.forEach((o) => {
+            // if its a polygon, use addPolygon
+            if (o.type === SimuloObjectType.POLYGON) {
+                this.addPolygon(o.points as [x: number, y: number][], o.position, o.rotation, o.density, o.friction, o.restitution, {
                     border: o.border,
                     borderWidth: o.borderWidth,
                     borderScaleWithZoom: o.borderScaleWithZoom,
                     circleCake: o.circleCake,
                     image: o.image,
-                    sound: o.collisionSound,
-                    color: o.color,
-                    isStatic: o.isStatic,
-                    mass: o.mass,
-                };
-            }
-            else if (o instanceof SimuloJoint) {
-                // bah lmao
+                    sound: o.sound,
+                    color: o.color
+                }, o.isStatic);
+                return;
             }
         });
     }
-    /** Spawns in some `SimuloObject`s and `Joint`s from a `(SimuloSavedObject | SimuloSavedJoint)[]` you saved with `save()`, doesn't replace anything, just adds to the world */
-    /*load(stuff: (SimuloSavedObject | SimuloSavedJoint)[]) {
-        stuff.forEach((o) => {
-            if (o.type == "SimuloSavedObject") {
-                var bodyDef = new box2D.b2BodyDef();
-                bodyDef.set_type(o.isStatic ? box2D.b2_staticBody : box2D.b2_dynamicBody);
-                bodyDef.set_position(new box2D.b2Vec2(o.position[0], o.position[1]));
-                bodyDef.set_angle(o.rotation);
-                var body = this.world.CreateBody(bodyDef);
-                var shape = new box2D.b2CircleShape();
-            }
-        });
-    }*/
 
 
     getObjectByID(id: number) {

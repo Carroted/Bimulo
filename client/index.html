@@ -56,8 +56,10 @@
             <li>Chromium browsers include Chrome, Brave, Edge, Opera and many more.</li>
           </ul>
         </li>
+        <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
+          toolbars. If a toolbar is disabled, you won't be able to open it.</li>
       </ul>
-      <button onclick="dismiss();">Dismiss</button>
+      <button class="button" onclick="dismiss();">Dismiss</button>
       <script>
         // on click anywhere, dismiss
         function dismiss(e) {
@@ -72,7 +74,7 @@
       </script>
     </div>
   </div>
-  <div id="toasts">
+  <div id="toasts"><!--
     <div class="toast">
       <div class="icon" style="fill: #99e077;">
         <svg data-src="icons/arrow-right.svg"></svg>
@@ -117,7 +119,7 @@
       <div class="close">
         <svg data-src="icons/close.svg"></svg>
       </div>
-    </div>
+    </div>-->
   </div>
   <div class="toolbar">
     <div class="tool active" data-menu="tools" id="menu-1-button">
@@ -194,7 +196,7 @@
     <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
     <input id="time-scale-input" type="number" min="0" max="3" value="1">
   </div>
-  <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;">Objects!!!!
+  <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;"><span>Objects</span>
     <div class="object-grid">
       <div class="object" data-object="person">
         <img src="assets/textures/person.png">
@@ -203,17 +205,25 @@
   </div>
 
   <div class="toolbar file">
-    <div class="file-menu" data-file="file">File</div>
-    <div class="file-menu" data-file="settings">Settings</div>
+    <div class="file-menu" data-file="file">File<div class="file-menu-content" id="file">
+        <ul>
+          <li class="button">Joe</li>
+          <li class="button">Joe</li>
+        </ul>
+      </div>
+    </div>
+    <div class="file-menu" data-file="settings">Settings<div class="file-menu-content" id="settings">
+        <ul>
+          <li class="button">Joe</li>
+          <li class="button">Joe</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  <div class="file-menu-content" id="file">
-    Coming soon! Check Settings for now.
-  </div>
 
-  <div class="file-menu-content" id="settings">
-    Coming soon! Check File for now.
-  </div>
+
+
 
   <div class="chat" style="display: none;">
     <div class="messages">

@@ -340,6 +340,7 @@ details summary {
   user-select: none;
   cursor: default;
   color: #e0ddff40;
+  position: relative;
 }
 
 .file-menu:hover {
@@ -361,10 +362,10 @@ details summary {
   background: #03081dc0;
   color: #ffffff50;
   font-family: "Urbanist", sans-serif;
-  font-size: 1.2em;
+  font-size: 1em;
   padding: 0 0.7em;
   z-index: 100;
-  border-radius: 10000rem;
+  border-radius: 1rem;
   -webkit-backface-visibility: hidden;
   -webkit-perspective: 1000;
   -webkit-transform: translate3d(0, 0, 0);
@@ -374,11 +375,42 @@ details summary {
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
   backdrop-filter: blur(35px);
-  top: 3rem;
-  left: 0.5rem;
+  top: 2rem;
+  left: 0;
   display: none;
   position: absolute;
+  user-select: none;
+  width: 8rem;
 }
+
+.file-menu-content ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-menu-content li {
+  padding: 0.2rem 1rem;
+  margin: 0;
+}
+
+.button {
+  border-radius: 10000rem;
+  user-select: none;
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  background: #03081d60;
+  transition: background 0.1s ease-in-out;
+}
+
+.button:hover {
+  background: #ffffff30;
+}
+
+.button:active {
+  background: #ffffff80;
+}
+
 
 .file-menu-content.active {
   display: block;
@@ -409,6 +441,8 @@ details summary {
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(2, 1fr);
   width: 100%;
+  grid-gap: 0.25rem;
+  margin-bottom: 0.7em;
 }
 
 
@@ -570,23 +604,10 @@ details summary {
 
 .starting-popup button {
   float: right;
-  border-radius: 1000rem;
   border: none;
   outline: none;
-  color: #ffffff;
-  font-family: "Urbanist", sans-serif;
   font-size: 1em;
   padding: 0.8rem 4rem;
-  background: #03081d60;
-  transition: background 0.1s ease-in-out;
-}
-
-.starting-popup button:hover {
-  background: #ffffff30;
-}
-
-.starting-popup button:active {
-  background: #ffffff80;
 }
 
 #toasts {
@@ -765,4 +786,9 @@ details summary {
   align-items: flex-start;
   border-radius: 1rem;
   user-select: none;
+}
+
+.object-grid-bar span {
+  margin: 0.5rem 0;
+  color: #ffffffff;
 }

@@ -112,7 +112,7 @@ class SimuloClientController {
                         type: "polygon",
                         x: 0, // this is relative to the mouse position
                         y: 0,
-                        angle: 0,
+                        angle: Math.PI,
                         color: "#00000000",
                         borderWidth: null,
                         borderScaleWithZoom: false,
@@ -124,14 +124,15 @@ class SimuloClientController {
                     {
                         type: "circle",
                         x: 0,
-                        y: 0.752,
+                        y: -0.752,
                         radius: 0.684,
                         color: "#99e077",
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false,
                         circleCake: false,
-                        id: -1
+                        id: -1,
+                        angle: Math.PI
                     } as SimuloCircle,
                 ]
             }
@@ -283,6 +284,50 @@ class SimuloClientController {
             });
         });
 
+        let fileMenuChildren = document.querySelectorAll('.file-menu-content li, .file-menu-content');
+        fileMenuChildren.forEach((child) => {
+            // its a child of the file menu, we need to stop propagation of hover, move, click, touch, etc
+            child.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchcancel', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mousemove', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseenter', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseleave', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseover', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseout', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('pointerover', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('pointerout', (e) => {
+                e.stopPropagation();
+            });
+        });
+
 
         document.addEventListener('mouseup', (e) => {
             if (!(e instanceof MouseEvent) || e.button != 0) return;
@@ -374,7 +419,12 @@ class SimuloClientController {
         fileMenus.forEach(fileMenuElement => {
             let fileMenu = fileMenuElement as HTMLElement;
             console.log('fileMenu', fileMenu);
-            fileMenu.addEventListener('click', () => {
+            fileMenu.addEventListener('click', (e) => {
+                // make sure we specifically clicked the fileMenu, not a child
+                if (fileMenu != e.target) {
+                    return;
+                }
+
                 console.log('fileMenu clicked');
                 // if data-file, show the .file-menu-content with that id
                 if (fileMenu.dataset.file) {
