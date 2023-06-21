@@ -1,4 +1,6 @@
 interface SimuloTheme {
+    displayName: string;
+    description: string;
     background: string;
     ground: {
         color: string;
@@ -27,6 +29,12 @@ interface SimuloTheme {
     systemCursor: boolean;
     toolIconSize: number
     toolIconOffset: [x: number, y: number];
+    person: {
+        color: string;
+        border: string | null;
+        borderWidth: number | null;
+        borderScaleWithZoom: boolean;
+    }
 };
 
 export default SimuloTheme;

@@ -49,6 +49,8 @@ import SimuloShape, { SimuloPolygon } from "./SimuloShape.js";
 import { SimuloCircle } from "./SimuloShape.js";
 import { SimuloRectangle } from "./SimuloShape.js";
 
+import themes from "../themes.js";
+
 function getDistance(point1: [x: number, y: number], point2: [x: number, y: number]): number {
     const xDiff = point2[0] - point1[0];
     const yDiff = point2[1] - point1[1];
@@ -672,8 +674,27 @@ class SimuloServerController {
                 this.previousStep.selected_objects = this.selectedObjects;
             }
         } else if (formatted.type == "set_theme") {
-            //this.theme = themes[formatted.data];
-            // TODO: check for themes and set
+            this.theme = themes[formatted.data];
+            var floor = this.physicsServer.getObjectByID(1);
+            if (floor) {
+                floor.color = this.theme.ground.color;
+                floor.border = this.theme.ground.border;
+                floor.borderWidth = this.theme.ground.borderWidth;
+                floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
+            }
+            // get 2 and 3 and set those to person.color and person.border and all that
+            var personBody = this.physicsServer.getObjectByID(2);
+            var personHead = this.physicsServer.getObjectByID(3);
+            var personParts = [personBody, personHead];
+            personParts.forEach((part) => {
+                if (part) {
+                    part.color = this.theme.person.color;
+                    part.border = this.theme.person.border;
+                    part.borderWidth = this.theme.person.borderWidth;
+                    part.borderScaleWithZoom = this.theme.person.borderScaleWithZoom;
+                }
+            });
+            this.sendAll("set_theme", this.theme);
         } else if (formatted.type == "set_tool") {
             console.log("set tool to", formatted.data);
             this.tools[uuid] = formatted.data;

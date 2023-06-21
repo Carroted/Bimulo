@@ -59,19 +59,7 @@
         <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
           toolbars. If a toolbar is disabled, you won't be able to open it.</li>
       </ul>
-      <button class="button" onclick="dismiss();">Dismiss</button>
-      <script>
-        // on click anywhere, dismiss
-        function dismiss(e) {
-          // make sure it wasnt on start popup
-          if (e && e.target.closest('.starting-popup')) return;
-          // set opacity to 0 and pointer-events to none
-          document.querySelector('.starting-popup').style.opacity = 0;
-          document.querySelector('.starting-popup').style.pointerEvents = 'none';
-          document.removeEventListener('click', dismiss);
-        }
-        document.addEventListener('click', dismiss);
-      </script>
+      <div class="themes"></div>
     </div>
   </div>
   <div id="toasts"><!--

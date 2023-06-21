@@ -4,23 +4,8 @@ import SimuloClient from '../../../shared/src/SimuloClient.js';
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
 import themesJSON from "../../../shared/themes.js";
 import SimuloViewer from '../SimuloViewer/index.js';
-
-function loadThemes() {
-    var themesJSONAny = themesJSON as { [key: string]: any };
-    var themes: { [key: string]: SimuloTheme } = {};
-    for (let themeName in themesJSONAny) {
-        themes[themeName] = {
-            background: themesJSONAny[themeName].background,
-            ground: themesJSONAny[themeName].ground,
-            newObjects: themesJSONAny[themeName].newObjects,
-            toolIcons: themesJSONAny[themeName].toolIcons,
-            systemCursor: themesJSONAny[themeName].systemCursor,
-            toolIconSize: themesJSONAny[themeName].toolIconSize,
-            toolIconOffset: themesJSONAny[themeName].toolIconOffset
-        }
-    };
-    return themes;
-}
+import themes from '../../../shared/themes.js';
+import { hsvToRgb } from '../../../shared/src/utils.js';
 
 function queryParent(element: HTMLElement, className: string): HTMLElement | null {
     var parent: HTMLElement = element.parentNode as HTMLElement;
@@ -238,9 +223,10 @@ class SimuloClientController {
         }
     }
 
+    tool: string = 'drag';
+
     constructor(canvas: HTMLCanvasElement) {
-        this.themes = loadThemes();
-        this.theme = this.themes.default;
+        this.theme = themes.night;
         this.serverController = new SimuloServerController(this.theme, null, true);
         this.client = this.serverController.localClients[0];
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
@@ -283,6 +269,52 @@ class SimuloClientController {
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
         });
+
+        let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
+        let dismissPopup = (e: MouseEvent | undefined) => {
+            if (e && (e.target as HTMLElement).closest('.starting-popup')) return;
+            startingPopup.style.opacity = '0';
+            startingPopup.style.pointerEvents = 'none';
+            document.removeEventListener('click', dismissPopup);
+        };
+        document.addEventListener('click', dismissPopup);
+
+        var popupThemes = startingPopup.querySelector('.themes') as HTMLElement;
+        // add themes
+        for (let themeName in themes) {
+            let theme = themes[themeName];
+            let themeElement = document.createElement('div');
+            themeElement.classList.add('theme-option');
+            themeElement.classList.add('button');
+            themeElement.style.background = theme.background;
+            let themeGround = document.createElement('div');
+            themeGround.classList.add('theme-ground');
+            themeGround.style.background = theme.ground.color;
+            if (theme.ground.border) {
+                themeGround.style.outline = `${theme.ground.borderWidth}px solid ${theme.ground.border}`;
+            }
+            themeElement.appendChild(themeGround);
+            let themeCircle = document.createElement('div');
+            themeCircle.classList.add('theme-circle');
+
+            // lets convert hsv to rgb
+            let hue = (theme.newObjects.color.hueMin + theme.newObjects.color.hueMax) / 2;
+            let sat = (theme.newObjects.color.satMin + theme.newObjects.color.satMax) / 2;
+            let val = (theme.newObjects.color.valMin + theme.newObjects.color.valMax) / 2;
+            let alp = (theme.newObjects.color.alpMin + theme.newObjects.color.alpMax) / 2;
+            let rgb = hsvToRgb(hue, sat / 100, val / 100);
+            themeCircle.style.background = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alp})`;
+            themeCircle.style.border = `${theme.newObjects.borderWidth}px solid ${theme.newObjects.border}`;
+            themeElement.appendChild(themeCircle);
+            themeElement.addEventListener('click', () => {
+                this.theme = theme;
+                this.setTheme(themeName)
+                dismissPopup(undefined);
+            });
+            popupThemes.appendChild(themeElement);
+        }
+
+
 
         let fileMenuChildren = document.querySelectorAll('.file-menu-content li, .file-menu-content');
         fileMenuChildren.forEach((child) => {
@@ -543,6 +575,7 @@ class SimuloClientController {
     }
     setTool(name: string) {
         this.client.emitData('set_tool', name);
+        this.tool = name;
     }
     setPaused(paused: boolean) {
         this.client.emitData('set_paused', paused);
@@ -881,6 +914,21 @@ class SimuloClientController {
                 else {
                     this.pauseButton.classList.remove('checked');
                 }
+            }
+            if (body.type == 'set_theme') {
+                this.theme = body.data;
+                this.viewer.systemCursor = this.theme.systemCursor;
+                if (this.theme.toolIcons[this.tool]) {
+                    this.toolIcon = this.theme.toolIcons[this.tool];
+                    this.toolIconSize = this.theme.toolIconSize;
+                    this.toolIconOffset = this.theme.toolIconOffset;
+                }
+                else {
+                    this.toolIcon = null;
+                    this.toolIconSize = null;
+                    this.toolIconOffset = null;
+                }
+                //this.themeSelect.value = this.theme;
             }
         }
     }
