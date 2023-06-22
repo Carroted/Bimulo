@@ -643,7 +643,7 @@ class SimuloClientController {
             if (Math.random() < 0.00003) {
                 this.showToast('I can hear their screams', ToastType.INFO);
             }
-        }, 1000);
+        }, 300);
     }
     setTheme(name: string) {
         this.client.emitData('set_theme', name);
@@ -1045,6 +1045,7 @@ class SimuloClientController {
                 this.viewer.shapes = shapes;
             }
             if (body.type == 'world_update_failed') {
+                console.log('Failed to update the world! Try changing the simulation speed.');
                 this.showToast('Failed to update the world! Try changing the simulation speed.', ToastType.ERROR);
             }
             if (body.type == 'player mouse') {

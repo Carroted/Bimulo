@@ -100,7 +100,9 @@ class SimuloServerController {
         }
         var step = this.physicsServer.step(delta * this.timeScale * this.timeScaleMultiplier, this.velocityIterations, this.positionIterations);
         if (!step) {
+            console.log("step failed");
             this.sendAll("world_update_failed", null);
+            return;
         }
         step = step;
         var springs1 = step.springs;
