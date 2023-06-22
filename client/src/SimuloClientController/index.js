@@ -885,10 +885,6 @@ class SimuloClientController {
                     }
                     else {
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
-                        // BEGIN OVERRIDE TO REMOVE!
-                        spring.width = 3;
-                        spring.line = { color: '#ffffff', scale_with_zoom: true };
-                        // END OVERRIDE TO REMOVE!
                         var height = spring.width;
                         if (spring.line && spring.line.scale_with_zoom) {
                             height = height / this.viewer.cameraZoom;
