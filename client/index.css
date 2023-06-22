@@ -340,6 +340,7 @@ details summary {
   user-select: none;
   cursor: default;
   color: #e0ddff40;
+  position: relative;
 }
 
 .file-menu:hover {
@@ -361,10 +362,10 @@ details summary {
   background: #03081dc0;
   color: #ffffff50;
   font-family: "Urbanist", sans-serif;
-  font-size: 1.2em;
+  font-size: 1em;
   padding: 0 0.7em;
   z-index: 100;
-  border-radius: 10000rem;
+  border-radius: 1rem;
   -webkit-backface-visibility: hidden;
   -webkit-perspective: 1000;
   -webkit-transform: translate3d(0, 0, 0);
@@ -374,11 +375,42 @@ details summary {
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
   backdrop-filter: blur(35px);
-  top: 3rem;
-  left: 0.5rem;
+  top: 2rem;
+  left: 0;
   display: none;
   position: absolute;
+  user-select: none;
+  width: 8rem;
 }
+
+.file-menu-content ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-menu-content li {
+  padding: 0.2rem 1rem;
+  margin: 0;
+}
+
+.button {
+  border-radius: 10000rem;
+  user-select: none;
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  background: #03081d60;
+  transition: background 0.1s ease-in-out;
+}
+
+.button:hover {
+  background: #ffffff30;
+}
+
+.button:active {
+  background: #ffffff80;
+}
+
 
 .file-menu-content.active {
   display: block;
@@ -404,6 +436,16 @@ details summary {
   grid-template-rows: repeat(2, 1fr);
 }
 
+.object-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  width: 100%;
+  grid-gap: 0.25rem;
+  margin-bottom: 0.7em;
+}
+
+
 .toolbar svg {
   width: 100%;
   height: 100%;
@@ -413,6 +455,32 @@ details summary {
 .toolbar img {
   width: 100%;
   height: 100%;
+}
+
+#pause-overlay {
+  position: fixed;
+  top: 3rem;
+  left: 0.5rem;
+  z-index: 100;
+  fill: #ffffffff;
+  display: none;
+  pointer-events: none;
+  width: 14rem;
+  color: #ffffff60;
+  font-family: "Urbanist", sans-serif;
+  /* align to top left */
+  display: none;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+#pause-overlay svg {
+  width: 4rem;
+  height: 4rem;
+  fill: #ffffffff;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .pause-button {
@@ -463,6 +531,267 @@ details summary {
   font-family: "Urbanist", sans-serif;
 }
 
+.popup-container {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starting-popup {
+  /* in middle of screen */
+  pointer-events: all;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin: 0.2rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  background: #03081dc0;
+  width: 50em;
+  transition: opacity 0.1s ease-in-out;
+  padding-bottom: 1.5rem;
+}
+
+.starting-popup li {
+  margin-bottom: 0.5rem;
+}
+
+.starting-popup ul {
+  margin-top: 0.5rem;
+}
+
+.starting-popup .popup-top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.starting-popup img {
+  width: 14rem;
+}
+
+.starting-popup h4 {
+  font-size: 1.3rem;
+  margin: 0;
+  margin-top: 1rem;
+  font-weight: normal;
+}
+
+.starting-popup h3 {
+  font-size: 2rem;
+  margin: 0;
+  margin-bottom: 0.2rem;
+  margin-left: 1.2rem;
+  font-weight: 600;
+}
+
+.starting-popup .themes {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.theme-option {
+  width: 3rem;
+  height: 14rem;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin-right: 0.5rem;
+}
+
+.theme-option:last-child {
+  margin-right: 0;
+}
+
+.theme-option .theme-ground {
+  width: 100%;
+  height: 45%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.theme-option .theme-background {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  transition: all 0.1s ease-in-out;
+  transform-origin: center;
+  position: relative;
+}
+
+.theme-option:hover .theme-background {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.theme-option:active .theme-background {
+  transform: scale(1.2);
+  filter: brightness(1.2);
+}
+
+.theme-option .theme-info {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  height: 6rem;
+  background: linear-gradient(0deg, #000000b0, transparent);
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 0.5rem;
+  justify-content: flex-end;
+}
+
+.theme-info .theme-name {
+  font-weight: bold;
+}
+
+.theme-info .theme-description {
+  font-size: 0.7rem;
+  margin-top: 0.4rem;
+  width: 90%;
+}
+
+.theme-option .theme-circle {
+  /* right above the ground */
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10000rem;
+  position: absolute;
+  bottom: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#toasts {
+  position: fixed;
+  top: 4rem;
+  width: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 1rem;
+}
+
+.toast {
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0.5rem 1rem;
+  border-radius: 10000rem;
+  margin: 0.2rem;
+  pointer-events: all;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  transition: 0.2s;
+  height: 2.5rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  background: #03081dc0;
+  animation: toast 0.2s ease-in-out;
+}
+
+@keyframes toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast.error {
+  background: #dd4141e0;
+}
+
+.toast.success {
+  background: #99e077e0;
+  color: #000000;
+}
+
+.toast.warning {
+  background: #ffb951e0;
+  color: #000000;
+}
+
+.toast.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast .icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  fill: #ffffff;
+  margin-right: 0.7rem;
+}
+
+.toast .close {
+  width: 1rem;
+  height: 1rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  fill: #ffffff80;
+  margin-left: 0.7rem;
+}
+
+
+.toast .close:hover {
+  fill: #ffffff;
+}
+
+.toast.success .icon, .toast.warning .icon {
+  fill: #000000;
+}
+
+.toast.success .close, .toast.warning .close {
+  fill: #00000080;
+}
+
+.toast.success .close:hover, .toast.warning .close:hover {
+  fill: #000000;
+}
+
 .pause-button:active svg {
   width: 100%;
   height: 100%;
@@ -487,4 +816,67 @@ details summary {
 .toolbar .tool.fake svg {
   color: #e0ddff0a;
   fill: #e0ddff0a;
+}
+
+.object {
+  background: #03081d60;
+  border-radius: 0.5rem;
+  padding: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: background 0.1s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.object:hover {
+  background: #ffffff30;
+}
+
+.object img {
+  width: 70%;
+  height: 70%;
+  margin: 0;
+  display: block;
+  object-fit: contain;
+  transition: width 0.1s ease-in-out, height 0.1s ease-in-out, opacity 0.1s ease-in-out;
+  /* stop dragging it */
+  pointer-events: none;
+  user-select: none;
+}
+
+.object:hover img {
+  width: 77%;
+  height: 77%;
+}
+
+.object:active {
+  background: #ffffff00;
+}
+
+.object:active img {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.toolbar.object-grid-bar {
+  height: auto;
+  display: flex;
+  /* make it rows */
+  flex-direction: column;
+  /* align left */
+  justify-content: flex-start;
+  align-items: flex-start;
+  border-radius: 1rem;
+  user-select: none;
+}
+
+.object-grid-bar span {
+  margin: 0.5rem 0;
+  color: #ffffffff;
 }

@@ -36,6 +36,12 @@ function createPolygonShape(tuples) {
     destroyVecArr();
     return shape;
 }
+var SimuloObjectType;
+(function (SimuloObjectType) {
+    SimuloObjectType["POLYGON"] = "POLYGON";
+    SimuloObjectType["CIRCLE"] = "CIRCLE";
+    SimuloObjectType["EDGE"] = "EDGE";
+})(SimuloObjectType || (SimuloObjectType = {}));
 class SimuloObject {
     constructor(physicsServer, body) {
         this._body = body;
@@ -43,6 +49,10 @@ class SimuloObject {
     }
     wakeUp() {
         this._body.SetAwake(true);
+    }
+    get zDepth() {
+        let objectData = this._body.GetUserData();
+        return objectData.zDepth;
     }
     get id() {
         let objectData = this._body.GetUserData();
@@ -60,6 +70,54 @@ class SimuloObject {
     set velocity({ x, y }) {
         this._body.SetLinearVelocity(new box2D.b2Vec2(x, y));
     }
+    get angularVelocity() {
+        return this._body.GetAngularVelocity();
+    }
+    set angularVelocity(angularVelocity) {
+        this._body.SetAngularVelocity(angularVelocity);
+    }
+    get points() {
+        let objectData = this._body.GetUserData();
+        return objectData.points;
+    }
+    get type() {
+        // we get it from box2d
+        let shape = this._body.GetFixtureList().GetShape();
+        if (shape instanceof box2D.b2PolygonShape) {
+            return SimuloObjectType.POLYGON;
+        }
+        else if (shape instanceof box2D.b2CircleShape) {
+            return SimuloObjectType.CIRCLE;
+        }
+        else if (shape instanceof box2D.b2EdgeShape) {
+            return SimuloObjectType.EDGE;
+        }
+        else {
+            throw new Error("Unknown shape type");
+        }
+    }
+    get radius() {
+        // if type is circle, return radius from box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius()
+        if (this.type === SimuloObjectType.CIRCLE) {
+            return box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius();
+        }
+        else {
+            return undefined;
+        }
+    }
+    /*set points(points: [x: number, y: number][] | undefined) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.points = points;
+        if (points) {
+            let shape = createPolygonShape(points);
+            // destroy all fixtures
+            let fixture = this._body.GetFixtureList();
+            while (Box2D.getPointer(fixture)) {
+                let nextFixture = fixture.GetNext();
+                this._body.DestroyFixture(fixture);
+                fixture = nextFixture;
+            }
+            */
     get rotation() {
         return this._body.GetAngle();
     }
@@ -129,11 +187,11 @@ class SimuloObject {
         let objectData = this._body.GetUserData();
         objectData.image = image;
     }
-    get collision_sound() {
+    get collisionSound() {
         let objectData = this._body.GetUserData();
         return objectData.sound;
     }
-    set collision_sound(sound) {
+    set collisionSound(sound) {
         let objectData = this._body.GetUserData();
         objectData.sound = sound;
     }
@@ -229,6 +287,10 @@ class SimuloJoint {
     get id() {
         let jointData = this._joint.GetUserData();
         return jointData.id;
+    }
+    get zDepth() {
+        let jointData = this._joint.GetUserData();
+        return jointData.zDepth;
     }
     destroy() {
         this._joint.GetBodyA().GetWorld().DestroyJoint(this._joint);
@@ -353,7 +415,34 @@ class SimuloPhysicsServer {
         // object. key is ID, value is SimuloObject
         this.bodies = {};
         this.currentID = 0; // used to assign IDs to objects
+        this.highestZDepth = 0; // used to assign z-depths to objects
         this.deleteObjects = [];
+        this.getParticle = (particleSystem, index) => {
+            const posBuffer = particleSystem.GetPositionBuffer();
+            const pos_p = box2D.getPointer(posBuffer) + index * 8;
+            const x = box2D.HEAPF32[pos_p >> 2];
+            const y = box2D.HEAPF32[(pos_p + 4) >> 2];
+            const color = particleSystem.GetColorBuffer();
+            const color_p = box2D.getPointer(color) + index * 4;
+            const r = box2D.HEAPU8[color_p];
+            const g = box2D.HEAPU8[color_p + 1];
+            const b = box2D.HEAPU8[color_p + 2];
+            const a = box2D.HEAPU8[color_p + 3];
+            console.log(`particle rgba(${r},${g},${b},${a / 255})`);
+            return {
+                x, y, color: `rgba(${r},${g},${b},${a / 255})`, radius: 0.1
+            };
+        };
+        this.getAllParticles = (particleSystem) => {
+            // we use getParticlePosition
+            // first, get count:
+            const count = particleSystem.GetParticleCount();
+            const particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push(this.getParticle(particleSystem, i));
+            }
+            return particles;
+        };
         const gravity = new box2D.b2Vec2(0, 9.81);
         const world = new box2D.b2World(gravity);
         world.SetContinuousPhysics(true);
@@ -361,6 +450,7 @@ class SimuloPhysicsServer {
         const ground = world.CreateBody(bd_ground);
         var groundData = ground.GetUserData();
         groundData.id = this.currentID++;
+        groundData.zDepth = this.highestZDepth++;
         this.ground = ground;
         this.world = world;
         this.theme = theme;
@@ -428,7 +518,28 @@ class SimuloPhysicsServer {
             theme.ground.borderScaleWithZoom;
         floorData.sound = "ground.wav";
         floorData.id = this.currentID++;
+        floorData.zDepth = this.highestZDepth++;
         this.addPerson([0, 0]);
+        // add water
+        const psd = new box2D.b2ParticleSystemDef();
+        psd.set_radius(0.1);
+        psd.set_dampingStrength(0.2);
+        const particleSystem = world.CreateParticleSystem(psd);
+        /*
+                var box = new box2D.b2PolygonShape();
+                var pgd = new box2D.b2ParticleGroupDef();
+                box.SetAsBox(1, 0.5);
+                pgd.flags = box2D.b2_elasticParticle;
+                pgd.groupFlags = box2D.b2_solidParticleGroup;
+                pgd.position.Set(1, 4);
+                pgd.angle = -0.5;
+                pgd.angularVelocity = 2;
+                pgd.shape = box;
+                pgd.color.Set(0, 0, 255, 255);
+                particleSystem.CreateParticleGroup(pgd);
+                box2D.destroy(box);
+                box2D.destroy(pgd);*/
+        this.particleSystem = particleSystem;
     }
     emit(event, data) {
         if (this.listeners[event]) {
@@ -486,6 +597,7 @@ class SimuloPhysicsServer {
         image: string | null;
         */
         bodyData.id = this.currentID++;
+        bodyData.zDepth = this.highestZDepth++;
         for (var key in data) {
             if (key == 'sound') {
                 bodyData.sound = data[key];
@@ -561,6 +673,7 @@ class SimuloPhysicsServer {
             jointData.line = null;
         }
         jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
     }
     addPerson(offset) {
         var personBodyPoints = [
@@ -585,7 +698,7 @@ class SimuloPhysicsServer {
         personBodyPoints = personBodyPoints.map(function (point) {
             return [point[0] * personScale, point[1] * personScale];
         });
-        var body = this.addPolygon(personBodyPoints, [offset[0], offset[1]], 0, 1, 0.5, 0, {
+        var body = this.addPolygon(personBodyPoints, [offset[0], offset[1]], Math.PI, 1, 0.5, 0, {
             color: "#00000000",
             border: null,
             borderWidth: null,
@@ -593,7 +706,7 @@ class SimuloPhysicsServer {
             image: "assets/textures/body.png",
             sound: "ground.wav",
         }, false);
-        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * personScale)], 0, 1, 0.5, 0, {
+        var head = this.addCircle(1.71 * personScale, [offset[0], offset[1] + (1.88 * -personScale)], Math.PI, 1, 0.5, 0, {
             color: "#99e077",
             border: null,
             borderWidth: null,
@@ -601,14 +714,14 @@ class SimuloPhysicsServer {
             circleCake: false,
             sound: "ground.wav"
         }, false);
-        var axle = this.addAxle([0, (0.32 * personScale)], [0, ((1.88 - 0.32) * personScale)], body, head);
+        var axle = this.addAxle([0, (0.32 * personScale)], [0, ((1.88 - 0.32) * -personScale)], body, head);
         // arguments (in order): anchorA, anchorB, bodyA, bodyB
         /*if (Math.random() < 0.5) {
             var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0);
         }
         else*/ {
             // add image (last param) as assets/textures/spring.png
-            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * personScale)], body, head, 20 * personScale, 0.005 * personScale, 0, 0 /*, "assets/textures/spring.png"*/);
+            var spring = this.addSpring([0, (3.26 * personScale)], [0, ((1.88 - 3.26) * -personScale)], body, head, 20 * personScale, 0.005 * personScale, 0, 0 /*, "assets/textures/spring.png"*/);
         }
     }
     addCircle(radius, position, rotation, density, friction, restitution, 
@@ -629,6 +742,7 @@ class SimuloPhysicsServer {
         body.CreateFixture(fd);
         var bodyData = body.GetUserData();
         bodyData.id = this.currentID++;
+        bodyData.zDepth = this.highestZDepth++;
         // for each key in data, set bodyData[key] to data[key]
         for (var key in data) {
             if (key == 'sound') {
@@ -681,6 +795,7 @@ class SimuloPhysicsServer {
         // add jointdata
         var jointData = mouseJoint.GetUserData();
         jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
         jointData.line = {
             color: "#ffffff",
             scale_with_zoom: true
@@ -726,6 +841,101 @@ class SimuloPhysicsServer {
         }
         return selectedBodies.map((b) => {
             return new SimuloObject(this, b);
+        }).sort((a, b) => {
+            return a.zDepth - b.zDepth;
+        }).reverse();
+    }
+    addParticleBox(x, y, width, height) {
+        const particleGroupDef = new box2D.b2ParticleGroupDef();
+        particleGroupDef.set_color(new box2D.b2ParticleColor(131, 225, 205, 128));
+        var boxShape = new box2D.b2PolygonShape();
+        boxShape.SetAsBox(width / 2, height / 2, new box2D.b2Vec2(x, y), 0);
+        particleGroupDef.set_shape(boxShape);
+        this.particleSystem.CreateParticleGroup(particleGroupDef);
+        box2D.destroy(boxShape);
+        box2D.destroy(particleGroupDef);
+    }
+    getAllObjects() {
+        var bodies = [];
+        var node = this.world.GetBodyList();
+        while (box2D.getPointer(node)) {
+            var b = node;
+            node = node.GetNext();
+            var position = b.GetPosition();
+            var fl = b.GetFixtureList();
+            if (!fl) {
+                continue;
+            }
+            while (box2D.getPointer(fl)) {
+                var shape = fl.GetShape();
+                bodies.push(b);
+                fl = fl.GetNext();
+            }
+        }
+        return bodies.map((b) => {
+            return new SimuloObject(this, b);
+        }).sort((a, b) => {
+            return a.zDepth - b.zDepth;
+        }).reverse();
+    }
+    /** Saves a collection of `SimuloObject`s to a `SimuloSavedObject`s you can restore with `load()` */
+    save(stuff) {
+        var savedStuff = stuff.map((o) => {
+            return {
+                id: o.id,
+                type: o.type,
+                position: o.position,
+                rotation: o.rotation,
+                velocity: o.velocity,
+                angularVelocity: o.angularVelocity,
+                density: o.density,
+                friction: o.friction,
+                restitution: o.restitution,
+                border: o.border,
+                borderWidth: o.borderWidth,
+                borderScaleWithZoom: o.borderScaleWithZoom,
+                circleCake: o.circleCake,
+                image: o.image,
+                sound: o.collisionSound,
+                color: o.color,
+                isStatic: o.isStatic,
+                mass: o.mass,
+                joints: [],
+                points: o.points,
+                radius: o.radius,
+            };
+        });
+        return savedStuff;
+    }
+    /** Spawns in some `SimuloObject`s from a `SimuloSavedObject[]` you saved with `save()`, doesn't replace anything, just adds to the world */
+    load(stuff) {
+        stuff.forEach((o) => {
+            // if its a polygon, use addPolygon
+            if (o.type === SimuloObjectType.POLYGON) {
+                this.addPolygon(o.points, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                    border: o.border,
+                    borderWidth: o.borderWidth,
+                    borderScaleWithZoom: o.borderScaleWithZoom,
+                    circleCake: o.circleCake,
+                    image: o.image,
+                    sound: o.sound,
+                    color: o.color
+                }, o.isStatic);
+                return;
+            }
+            // if its a circle, use addCircle
+            if (o.type === SimuloObjectType.CIRCLE) {
+                this.addCircle(o.radius, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                    border: o.border,
+                    borderWidth: o.borderWidth,
+                    borderScaleWithZoom: o.borderScaleWithZoom,
+                    circleCake: o.circleCake,
+                    image: o.image,
+                    sound: o.sound,
+                    color: o.color
+                }, o.isStatic);
+                return;
+            }
         });
     }
     getObjectByID(id) {
@@ -767,7 +977,9 @@ class SimuloPhysicsServer {
             return new SimuloObject(this, b);
         });
         selectedObjects = selectedObjects.filter((obj, index, self) => index === self.findIndex((t) => (t.id === obj.id)));
-        return selectedObjects;
+        return selectedObjects.sort((a, b) => {
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
     getObjectsInRect(pointA, pointB) {
         var posA = new box2D.b2Vec2(pointA[0], pointA[1]);
@@ -819,10 +1031,19 @@ class SimuloPhysicsServer {
         });
         // remove duplicate .id
         selectedObjects = selectedObjects.filter((obj, index, self) => index === self.findIndex((t) => (t.id === obj.id)));
-        return selectedObjects;
+        return selectedObjects.sort((a, b) => {
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
     step(delta, velocityIterations, positionIterations) {
-        this.world.Step(delta, velocityIterations, positionIterations);
+        try {
+            this.world.Step(delta, velocityIterations, positionIterations);
+        }
+        catch (e) {
+            console.error('Error in world.Step', e);
+            //alert('Uh oh! We did an oopsie and there was an error updating the world! Try changing the simulation speed. If you see this message nonstop, rip your world and we are sorry lol.')
+            return null;
+        }
         this.deleteObjects.forEach((obj) => {
             if (obj instanceof box2D.b2Body) {
                 this.world.DestroyBody(obj);
@@ -835,6 +1056,7 @@ class SimuloPhysicsServer {
             }
         });
         this.deleteObjects = [];
+        let particles = this.getAllParticles(this.particleSystem);
         // get body
         var node = this.world.GetBodyList();
         var shapes = [];
@@ -876,6 +1098,7 @@ class SimuloPhysicsServer {
                         circleCake: bodyData.circleCake,
                         image: bodyData.image,
                         id: bodyData.id,
+                        zDepth: bodyData.zDepth,
                     });
                 }
                 else if (shapeType == box2D.b2Shape.e_polygon) {
@@ -907,6 +1130,7 @@ class SimuloPhysicsServer {
                             }),
                             image: bodyData.image,
                             id: bodyData.id,
+                            zDepth: bodyData.zDepth,
                         });
                     }
                     else {
@@ -922,6 +1146,7 @@ class SimuloPhysicsServer {
                             borderScaleWithZoom: bodyData.borderScaleWithZoom,
                             image: bodyData.image,
                             id: bodyData.id,
+                            zDepth: bodyData.zDepth,
                         });
                     }
                 }
@@ -951,6 +1176,7 @@ class SimuloPhysicsServer {
                         borderScaleWithZoom: bodyData.borderScaleWithZoom,
                         image: bodyData.image,
                         id: bodyData.id,
+                        zDepth: bodyData.zDepth,
                     });
                 }
                 else {
@@ -995,6 +1221,7 @@ class SimuloPhysicsServer {
                     image: image,
                     line: line,
                     width: dData.width,
+                    zDepth: dData.zDepth,
                 });
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
@@ -1020,14 +1247,22 @@ class SimuloPhysicsServer {
                     image: image,
                     line: line,
                     width: mData.width,
+                    zDepth: mData.zDepth,
                 });
             }
         }
         var thisStep = {
-            shapes: shapes,
+            shapes: shapes.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
             background: this.theme.background,
-            springs: springs,
-            mouseSprings: mouseSprings
+            springs: springs.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
+            mouseSprings: mouseSprings.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
+            particles: particles
         };
         return thisStep;
     }

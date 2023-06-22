@@ -22,10 +22,13 @@ assets/sounds/deny.wav
 assets/sounds/ground.wav
 assets/sounds/impact.wav
 assets/sounds/impact_old.wav
+assets/sounds/spawn_down.wav
+assets/sounds/spawn_up.wav
 assets/textures/add_axle.png
 assets/textures/add_circle.png
 assets/textures/add_circle_old.png
 assets/textures/add_fixed_joint.png
+assets/textures/add_particle.png
 assets/textures/add_polygon.png
 assets/textures/add_polygon_old.png
 assets/textures/add_rectangle.png
@@ -35,6 +38,7 @@ assets/textures/add_spring_old.png
 assets/textures/body.png
 assets/textures/cursor.png
 assets/textures/person.png
+assets/textures/select.png
 assets/textures/spring.png
 assets/textures/spring.svg
 assets/textures/tools/box.png
@@ -115,6 +119,9 @@ shared/src/worker.js
 shared/src/worker.js.map
 shared/themes.js
 shared/themes.js.map
+media/banner.png
+media/banner.svg
+media/icon change?.svg
 media/icon.png
 media/icon.svg
 media/icon_192.png
@@ -126,6 +133,7 @@ media/icon_small.png
 media/icon_smaller.png
 media/icon_square.png
 media/icon_square.svg
+media/icon_square_new.svg
 media/logo.svg
 media/maskable_icon_x128.png
 media/maskable_icon_x192.png

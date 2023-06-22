@@ -1,6 +1,6 @@
 {
     "name": "simulo",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "main": "server/src/index.js",
     "scripts": {
         "start": "node server/src/index.js",

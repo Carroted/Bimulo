@@ -3,8 +3,6 @@
 import express from "express";
 import chalk from "chalk";
 import terminalLink from 'terminal-link';
-//import { WebSocketServer } from "ws"; // TODO: move back to ws from socket.io
-// from ./shared/utils.js
 // This is ESM, let's get back __dirname and __filename
 import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
@@ -18,142 +16,11 @@ console.log("Node.js server for Simulo with " + terminalLink('Express', 'https:/
 // Get log from log.ts
 import log from './log.js';
 log.info("Starting servers..."); // Servers take a few seconds to start up, so we'll log this to the console
-var themes = {
-    default: {
-        background: "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
-        ground: {
-            color: "#a1acfa",
-            border: null,
-            borderWidth: null,
-            borderScaleWithZoom: false,
-        },
-        newObjects: {
-            color: {
-                hueMin: 0,
-                hueMax: 360,
-                satMin: 0,
-                satMax: 100,
-                valMin: 80,
-                valMax: 100,
-                alpMin: 1,
-                alpMax: 1,
-            },
-            border: null,
-            borderWidth: null,
-            borderScaleWithZoom: false,
-            circleCake: false,
-            springImage: null,
-        },
-        toolIcons: {
-            "drag": null,
-            "addRectangle": "assets/textures/add_rectangle.png",
-            "addCircle": "assets/textures/add_circle.png",
-            "addPerson": "media/icon_square.png"
-        },
-        systemCursor: false,
-        toolIconSize: 0.5,
-        toolIconOffset: [0.55, 0.75]
-    },
-    nostalgia: {
-        background: "#738cff",
-        ground: {
-            color: "#57b00d",
-            border: "#111111a0",
-            borderWidth: 1,
-            borderScaleWithZoom: true,
-        },
-        newObjects: {
-            color: {
-                hueMin: 0,
-                hueMax: 360,
-                satMin: 0,
-                satMax: 100,
-                valMin: 0,
-                valMax: 100,
-                alpMin: 1,
-                alpMax: 1,
-            },
-            border: "#111111a0",
-            borderWidth: 1,
-            borderScaleWithZoom: true,
-            circleCake: true,
-            springImage: "assets/textures/spring.png",
-        },
-        toolIcons: {
-            "drag": "assets/textures/tools/drag.png",
-            "addRectangle": "assets/textures/tools/box.png",
-            "addCircle": "assets/textures/tools/circle.png",
-            "addPerson": "media/icon_square.png"
-        },
-        systemCursor: true,
-        toolIconSize: 0.7,
-        toolIconOffset: [0.3, 0.4]
-    },
-};
-//var theme = themes["nostalgia"];
 const app = express(); // TODO: type this
 // make http server (esm import)
 import * as http from "http";
 const server = http.createServer();
 server.on("request", app);
-/*							x: formatted.data.x,
-                            y: formatted.data.y,
-                            color: getRandomColor(
-                                theme.newObjects.color.hueMin,
-                                theme.newObjects.color.hueMax,
-                                theme.newObjects.color.satMin,
-                                theme.newObjects.color.satMax,
-                                theme.newObjects.color.valMin,
-                                theme.newObjects.color.valMax,
-                                theme.newObjects.color.alpMin,
-                                theme.newObjects.color.alpMax,
-                                true
-                            ),
-                            shape: "circle",
-                            border: theme.newObjects.border,
-                            borderWidth: theme.newObjects.borderWidth,
-                            borderScaleWithZoom: theme.newObjects.borderScaleWithZoom,
-                            circleCake: theme.newObjects.circleCake,
-                            */
-/*
-wss.on('connection', (ws) => {
-  */
-/*
-  // get verts from body
-  var node = world.GetBodyList();
-  /*
-  while (node) {
-    var b = node;
-    node = node.GetNext();
-    var position = b.GetPosition();
- 
-    // Draw the dynamic objects
-    if (b.GetType() == b2_dynamicBody) {
-      // Canvas Y coordinates start at opposite location, so we flip
-      var flipy = -position.y;
-      var fl = b.GetFixtureList();
-      if (!fl) {
-        continue;
-      }
-      var shape = fl.GetShape();
-      var shapeType = shape.GetType();
-      if (shapeType == b2Shape.e_circle) {
-        console.log("circle of radius " + shape.GetRadius() + " at " + position.x + ", " + flipy);
-      } else if (shapeType == b2Shape.e_polygon) {
-        const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
-        var vertexCount = polygonShape.get_m_count();
-        // iterate over vertices
-        for (let i = 0; i < vertexCount; i++) {
-          const vertex = polygonShape.get_m_vertices(i);
-          console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
-        }
-        console.log("polygon of " + vertexCount + " vertices at " + position.x + ", " + flipy);
-      }
-      else {
-        console.log("unknown shape type");
-      }
-    }
-  }*/
 app.use(express.static(__dirname + "/../../client"));
 // static serve node_modules/@tabler/icons/icons
 app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg"));

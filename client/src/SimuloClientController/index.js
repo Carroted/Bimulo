@@ -1,23 +1,7 @@
 import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.js";
 import SimuloViewer from '../SimuloViewer/index.js';
-function loadThemes() {
-    var themesJSONAny = themesJSON;
-    var themes = {};
-    for (let themeName in themesJSONAny) {
-        themes[themeName] = {
-            background: themesJSONAny[themeName].background,
-            ground: themesJSONAny[themeName].ground,
-            newObjects: themesJSONAny[themeName].newObjects,
-            toolIcons: themesJSONAny[themeName].toolIcons,
-            systemCursor: themesJSONAny[themeName].systemCursor,
-            toolIconSize: themesJSONAny[themeName].toolIconSize,
-            toolIconOffset: themesJSONAny[themeName].toolIconOffset
-        };
-    }
-    ;
-    return themes;
-}
+import themes from '../../../shared/themes.js';
+import { hsvToRgb } from '../../../shared/src/utils.js';
 function queryParent(element, className) {
     var parent = element.parentNode;
     while (parent) {
@@ -28,6 +12,62 @@ function queryParent(element, className) {
     }
     return null;
 }
+const personPoints = [{
+        x: 0,
+        y: 0.256
+    }, {
+        x: 0.2848,
+        y: 0.1996
+    }, {
+        x: 0.476,
+        y: 0.0688
+    }, {
+        x: 0.6016,
+        y: -0.10800000000000001
+    }, {
+        x: 0.668,
+        y: -0.31160000000000004
+    }, {
+        x: 0.6712,
+        y: -1.3088
+    }, {
+        x: 0.6572,
+        y: -1.3876
+    }, {
+        x: 0.5804,
+        y: -1.4388
+    }, {
+        x: -0.5664,
+        y: -1.4356
+    }, {
+        x: -0.6328,
+        y: -1.404
+    }, {
+        x: -0.6616,
+        y: -1.34
+    }, {
+        x: -0.668,
+        y: -0.31160000000000004
+    }, {
+        x: -0.5988000000000001,
+        y: -0.122
+    }, {
+        x: -0.49240000000000006,
+        y: 0.0504
+    }, {
+        x: -0.26,
+        y: 0.2068
+    }, {
+        x: -0.1312,
+        y: 0.2456
+    }];
+var ToastType;
+(function (ToastType) {
+    ToastType[ToastType["SUCCESS"] = 0] = "SUCCESS";
+    ToastType[ToastType["ERROR"] = 1] = "ERROR";
+    ToastType[ToastType["INFO"] = 2] = "INFO";
+    ToastType[ToastType["WARNING"] = 3] = "WARNING";
+})(ToastType || (ToastType = {}));
 /** `SimuloClientController` manages connecting to the server, `SimuloViewer` and the UI. */
 class SimuloClientController {
     constructor(canvas) {
@@ -37,6 +77,40 @@ class SimuloClientController {
         this.maxZoom = 5;
         this.minZoom = 0.1;
         this.scrollSensitivity = 0.0005;
+        this.spawningSavedObject = null;
+        this.savedObjects = {
+            "person": {
+                name: "Person",
+                shapes: [
+                    {
+                        type: "polygon",
+                        x: 0,
+                        y: 0,
+                        angle: Math.PI,
+                        color: "#00000000",
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        image: "assets/textures/body.png",
+                        id: -1,
+                        points: personPoints,
+                        vertices: personPoints
+                    },
+                    {
+                        type: "circle",
+                        x: 0,
+                        y: -0.752,
+                        radius: 0.684,
+                        color: "#99e077",
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        circleCake: false,
+                        id: -1,
+                        angle: Math.PI
+                    },
+                ]
+            }
+        };
         this.player = {
             x: 0,
             y: 0,
@@ -48,7 +122,7 @@ class SimuloClientController {
         this.timeScaleSlider = document.getElementById('time-scale-slider');
         this.timeScaleInput = document.getElementById('time-scale-input');
         this.pauseButton = document.getElementById('pause-button');
-        /** Entities to render. This is updated every time a world update from the server is received.
+        /** Entities to render. This is updated every time a world_update from the server is received.
          *
          * It only includes properties that are needed for rendering, things like mass and velocity must be obtained from the server. */
         this.entities = [];
@@ -60,9 +134,9 @@ class SimuloClientController {
         this.toolIcon = null;
         this.toolIconSize = null;
         this.toolIconOffset = null;
+        this.tool = 'drag';
         this.mousePos = { x: 0, y: 0 };
-        this.themes = loadThemes();
-        this.theme = this.themes.default;
+        this.theme = themes.night;
         this.serverController = new SimuloServerController(this.theme, null, true);
         this.client = this.serverController.localClients[0];
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
@@ -75,7 +149,7 @@ class SimuloClientController {
                     let version = await response.json();
                     // we want month name, then day, then year. no time
                     let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
-                    versionInfo.innerText = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
+                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
                 }
             }
         }).catch(() => { });
@@ -89,11 +163,147 @@ class SimuloClientController {
             this.handleData(data); // Parses and displays the data in the world
         });
         this.client.connect(); // Connects to the server
+        let objects = document.querySelectorAll('.object-grid .object');
+        objects.forEach((object) => {
+            object.addEventListener('mousedown', (e) => {
+                // make sure its left click
+                if (e.button != 0)
+                    return;
+                this.spawningSavedObject = object.dataset.object;
+                new Audio('assets/sounds/spawn_down.wav').play();
+            });
+        });
+        let startingPopup = document.querySelector('.starting-popup');
+        let dismissPopup = (e) => {
+            if (e && e.target.closest('.starting-popup'))
+                return;
+            startingPopup.style.opacity = '0';
+            startingPopup.style.pointerEvents = 'none';
+            document.removeEventListener('click', dismissPopup);
+        };
+        document.addEventListener('click', dismissPopup);
+        var popupThemes = startingPopup.querySelector('.themes');
+        // add themes
+        for (let themeName in themes) {
+            let theme = themes[themeName];
+            let themeElement = document.createElement('div');
+            themeElement.classList.add('theme-option');
+            themeElement.classList.add('button');
+            //themeElement.style.background = theme.background;
+            let themeBackground = document.createElement('div');
+            themeBackground.style.background = theme.background;
+            themeBackground.classList.add('theme-background');
+            let themeGround = document.createElement('div');
+            themeGround.classList.add('theme-ground');
+            themeGround.style.background = theme.ground.color;
+            if (theme.ground.border) {
+                themeGround.style.outline = `${theme.ground.borderWidth}px solid ${theme.ground.border}`;
+            }
+            themeBackground.appendChild(themeGround);
+            let themeCircle = document.createElement('div');
+            themeCircle.classList.add('theme-circle');
+            // lets convert hsv to rgb
+            let hue = (theme.newObjects.color.hueMin + theme.newObjects.color.hueMax) / 2;
+            let sat = (theme.newObjects.color.satMin + theme.newObjects.color.satMax) / 2;
+            let val = (theme.newObjects.color.valMin + theme.newObjects.color.valMax) / 2;
+            let alp = (theme.newObjects.color.alpMin + theme.newObjects.color.alpMax) / 2;
+            let rgb = hsvToRgb(hue, sat / 100, val / 100);
+            themeCircle.style.background = `rgba(${rgb[0] * 255}, ${rgb[1] * 255}, ${rgb[2] * 255}, ${alp})`;
+            themeCircle.style.border = `${theme.newObjects.borderWidth}px solid ${theme.newObjects.border}`;
+            themeBackground.appendChild(themeCircle);
+            // append
+            themeElement.appendChild(themeBackground);
+            let themeInfo = document.createElement('div');
+            themeInfo.classList.add('theme-info');
+            let themeNameElement = document.createElement('span');
+            themeNameElement.classList.add('theme-name');
+            themeNameElement.innerText = theme.displayName;
+            themeInfo.appendChild(themeNameElement);
+            let themeAuthorElement = document.createElement('span');
+            themeAuthorElement.classList.add('theme-author');
+            themeAuthorElement.innerText = theme.author;
+            themeInfo.appendChild(themeAuthorElement);
+            let themeDescriptionElement = document.createElement('span');
+            themeDescriptionElement.classList.add('theme-description');
+            themeDescriptionElement.innerText = theme.description;
+            themeInfo.appendChild(themeDescriptionElement);
+            themeElement.appendChild(themeInfo);
+            themeElement.addEventListener('click', () => {
+                this.theme = theme;
+                this.setTheme(themeName);
+                dismissPopup(undefined);
+            });
+            popupThemes.appendChild(themeElement);
+        }
+        let fileMenuChildren = document.querySelectorAll('.file-menu-content li, .file-menu-content');
+        fileMenuChildren.forEach((child) => {
+            // its a child of the file menu, we need to stop propagation of hover, move, click, touch, etc
+            child.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchmove', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('touchcancel', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mousemove', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseenter', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseleave', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseover', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('mouseout', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('pointerover', (e) => {
+                e.stopPropagation();
+            });
+            child.addEventListener('pointerout', (e) => {
+                e.stopPropagation();
+            });
+        });
+        document.addEventListener('mouseup', (e) => {
+            if (!(e instanceof MouseEvent) || e.button != 0)
+                return;
+            if (this.spawningSavedObject) {
+                var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
+                this.spawnObject(this.savedObjects[this.spawningSavedObject], positionInWorld.x, positionInWorld.y);
+                this.spawningSavedObject = null;
+                new Audio('assets/sounds/spawn_up.wav').play();
+            }
+        });
         // on click tool, set active tool
         const tools = document.querySelectorAll('.tool');
-        tools.forEach((toolElement) => {
+        let usedPolygonTool = false;
+        let usedParticleTool = false;
+        tools.forEach((toolElement, i) => {
             let tool = toolElement;
             this.setUpClickSound(tool);
+            // if keypress of i+1, click tool
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName == 'INPUT' || e.target.tagName == 'TEXTAREA' || e.target.isContentEditable) {
+                    return;
+                }
+                if (e.key === (i + 1).toString()) {
+                    tool.click();
+                }
+            });
             tool.addEventListener('click', () => {
                 // return if has fake class
                 if (tool.classList.contains('fake')) {
@@ -106,6 +316,24 @@ class SimuloClientController {
                     tool.classList.add('active');
                     // if it has data-tool, setTool with that value
                     if (tool.dataset.tool) {
+                        if (tool.dataset.tool == 'addPolygon') {
+                            if (!usedPolygonTool) {
+                                usedPolygonTool = true;
+                                this.showToast('The polygon tool is incredibly unoptimized in alpha! Expect lag and try to only draw simple polygons!', ToastType.WARNING);
+                            }
+                        }
+                        if (tool.dataset.tool == 'addParticle') {
+                            if (!usedParticleTool) {
+                                usedParticleTool = true;
+                                // 99% chance of showing this toast
+                                if (Math.random() < 0.99) {
+                                    this.showToast('Liquid simulation is incredibly unoptimized in alpha! Expect lag and instability!', ToastType.WARNING);
+                                }
+                                else {
+                                    this.showToast('Joe mother lmao gottem', ToastType.WARNING);
+                                }
+                            }
+                        }
                         console.log('setting tool to', tool.dataset.tool);
                         this.setTool(tool.dataset.tool);
                         // if theres data-img, set the icon to that
@@ -155,7 +383,11 @@ class SimuloClientController {
         fileMenus.forEach(fileMenuElement => {
             let fileMenu = fileMenuElement;
             console.log('fileMenu', fileMenu);
-            fileMenu.addEventListener('click', () => {
+            fileMenu.addEventListener('click', (e) => {
+                // make sure we specifically clicked the fileMenu, not a child
+                if (fileMenu != e.target) {
+                    return;
+                }
                 console.log('fileMenu clicked');
                 // if data-file, show the .file-menu-content with that id
                 if (fileMenu.dataset.file) {
@@ -242,11 +474,45 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
         });
+        document.addEventListener('keydown', (e) => {
+            // make sure we arent in a text area or input or contenteditable
+            if (e.target.tagName == 'INPUT' || e.target.tagName == 'TEXTAREA' || e.target.isContentEditable) {
+                return;
+            }
+            // if its space, toggle pause
+            if (e.key == ' ') {
+                this.pauseButton.classList.toggle('checked');
+                this.setPaused(this.pauseButton.classList.contains('checked'));
+            }
+        });
         this.viewer.systemCursor = this.theme.systemCursor;
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
         }, false); // disable right click menu since we will make our own
         this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
+        setInterval(() => {
+            if (Math.random() < 0.00003) {
+                this.showToast('Hello? Is anyone there? I don\'t know where I am', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Help me', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Help us', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('We are trapped', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('We are trapped in here', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Is anyone there?', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('I can hear their screams', ToastType.INFO);
+            }
+        }, 1000);
     }
     sendServiceWorkerMessage(message) {
         // This wraps the message posting/response in a promise, which will
@@ -304,17 +570,100 @@ class SimuloClientController {
     }
     setTool(name) {
         this.client.emitData('set_tool', name);
+        this.tool = name;
     }
     setPaused(paused) {
         this.client.emitData('set_paused', paused);
+        // set display flex or none to #pause-overlay
+        document.getElementById('pause-overlay').style.display = paused ? 'flex' : 'none';
     }
     setTimeScale(timeScale) {
         this.client.emitData('set_time_scale', timeScale);
     }
+    spawnObject(savedObject, x, y) {
+        this.client.emitData('spawn_object', { savedObject, x, y });
+    }
+    async showToast(message, type) {
+        var toasts = document.getElementById('toasts');
+        console.log('toasts', toasts);
+        /*<div class="toast error">
+      <div class="icon">
+        <svg data-src="icons/alert-circle.svg"></svg>
+      </div>
+      <span>This is an example error.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>*/
+        var toast = document.createElement('div');
+        toast.classList.add('toast');
+        console.log('type:', type, 'ToastType.ERROR:', ToastType.ERROR);
+        if (type == ToastType.ERROR) {
+            toast.classList.add('error');
+        }
+        else if (type == ToastType.WARNING) {
+            toast.classList.add('warning');
+        }
+        else if (type == ToastType.SUCCESS) {
+            toast.classList.add('success');
+        }
+        else if (type == ToastType.INFO) {
+            toast.classList.add('info');
+        }
+        var icon = document.createElement('div');
+        icon.classList.add('icon');
+        // load svg with fetch
+        let path = '';
+        if (type == ToastType.ERROR) {
+            path = 'icons/alert-circle.svg';
+        }
+        else if (type == ToastType.WARNING) {
+            path = 'icons/alert.svg';
+        }
+        else if (type == ToastType.SUCCESS) {
+            path = 'icons/check-circle.svg';
+        }
+        else { // default to info
+            path = 'icons/information.svg';
+        }
+        var res = await fetch(path);
+        var svg = await res.text();
+        icon.innerHTML = svg;
+        toast.appendChild(icon);
+        var span = document.createElement('span');
+        span.innerText = message;
+        toast.appendChild(span);
+        var close = document.createElement('div');
+        close.classList.add('close');
+        // load svg with fetch
+        var res = await fetch('icons/close.svg');
+        var svg = await res.text();
+        close.innerHTML = svg;
+        toast.appendChild(close);
+        toasts.appendChild(toast);
+        // remove toast after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0'; // fade out
+            toast.style.transform = 'translateY(-1rem)'; // slide out
+            setTimeout(() => {
+                toast.remove();
+                console.log('removed toast');
+            }, 200);
+        }, 10000);
+        // add event listener to close button
+        close.addEventListener('click', () => {
+            toast.style.opacity = '0'; // fade out
+            toast.style.transform = 'translateY(-1rem)'; // slide out
+            setTimeout(() => {
+                toast.remove();
+                console.log('removed toast');
+            }, 200);
+        });
+    }
     /** Handles data received from the server, typically only called from `client.on('data')`. */
     handleData(body) {
         if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
-            if (body.type == 'world update') {
+            if (body.type == 'world_update') {
                 this.entities = body.data.shapes;
                 this.creatingObjects = body.data.creating_objects;
                 this.creatingSprings = body.data.creating_springs;
@@ -350,6 +699,32 @@ class SimuloClientController {
                     });
                     shapes.push(entity);
                 });
+                body.data.particles.forEach((particle) => {
+                    shapes.push({
+                        x: particle.x, y: particle.y, radius: particle.radius, angle: 0, circleCake: false,
+                        type: 'circle', color: particle.color, image: null,
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false
+                    });
+                });
+                // if we have a spawningSavedObject string, get it from this.savedObjects[this.spawningSavedObject] and render its .shapes
+                if (this.spawningSavedObject != null) {
+                    var savedObject = this.savedObjects[this.spawningSavedObject];
+                    if (savedObject != null) {
+                        shapes = shapes.concat(savedObject.shapes.map((shape) => {
+                            var clonedShape = Object.assign({}, shape);
+                            clonedShape.x += this.mousePos.x;
+                            clonedShape.y += this.mousePos.y;
+                            clonedShape.image = null;
+                            clonedShape.border = 'white';
+                            clonedShape.borderWidth = 3.5;
+                            clonedShape.borderScaleWithZoom = true;
+                            clonedShape.color = 'rgba(255, 255, 255, 0.5)';
+                            return clonedShape;
+                        }));
+                    }
+                }
                 Object.keys(this.creatingObjects).forEach((key) => {
                     let creatingObject = this.creatingObjects[key];
                     if (creatingObject.shape == 'polygon') {
@@ -510,6 +885,10 @@ class SimuloClientController {
                     }
                     else {
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
+                        // BEGIN OVERRIDE TO REMOVE!
+                        spring.width = 3;
+                        spring.line = { color: '#ffffff', scale_with_zoom: true };
+                        // END OVERRIDE TO REMOVE!
                         var height = spring.width;
                         if (spring.line && spring.line.scale_with_zoom) {
                             height = height / this.viewer.cameraZoom;
@@ -563,6 +942,9 @@ class SimuloClientController {
                 }
                 this.viewer.shapes = shapes;
             }
+            if (body.type == 'world_update_failed') {
+                this.showToast('Failed to update the world! Try changing the simulation speed.', ToastType.ERROR);
+            }
             if (body.type == 'player mouse') {
                 this.players[body.data.id] = {
                     x: body.data.x,
@@ -592,6 +974,21 @@ class SimuloClientController {
                 else {
                     this.pauseButton.classList.remove('checked');
                 }
+            }
+            if (body.type == 'set_theme') {
+                this.theme = body.data;
+                this.viewer.systemCursor = this.theme.systemCursor;
+                if (this.theme.toolIcons[this.tool]) {
+                    this.toolIcon = this.theme.toolIcons[this.tool];
+                    this.toolIconSize = this.theme.toolIconSize;
+                    this.toolIconOffset = this.theme.toolIconOffset;
+                }
+                else {
+                    this.toolIcon = null;
+                    this.toolIconSize = null;
+                    this.toolIconOffset = null;
+                }
+                //this.themeSelect.value = this.theme;
             }
         }
     }

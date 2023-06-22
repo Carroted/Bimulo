@@ -28,8 +28,88 @@
 </head>
 
 <body>
-  <canvas width="300" height="200" id="game"></canvas>
+  <canvas width="300" height="200" id="game" tabindex="1"></canvas>
   <div class="version-info" id="version-info">Simulo Alpha</div>
+  <div id="pause-overlay">
+    <svg data-src="icons/pause.svg"></svg>
+    Note: the select/move tool and the drag tool are currently unstable when paused!
+  </div>
+  <div class="popup-container">
+    <div class="starting-popup">
+      <div class="popup-top">
+        <img src="media/logo.svg" alt="Simulo logo">
+        <h3>Welcome back</h3>
+      </div>
+      <h4>Reminder:</h4>
+      <ul>
+        <li>This Alpha version is not stable enough to build anything serious with, treat it only as a demo of the
+          Simulo
+          game
+          engine.</li>
+        <li>Using Firefox is NOT recommended, as it is very slow with this kind of intensive Canvas game, we recommend a
+          Chromium
+          browser.
+          <ul>
+            <li>Don't report lag in Firefox! The game runs up to 50x slower in Firefox and there's nothing we can do
+              about
+              it.</li>
+            <li>Chromium browsers include Chrome, Brave, Edge, Opera and many more.</li>
+          </ul>
+        </li>
+        <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
+          toolbars. If a toolbar is disabled, you won't be able to open it.</li>
+      </ul>
+      <h4>Pick a theme!</h4>
+      <div class="themes"></div>
+    </div>
+  </div>
+  <div id="toasts"><!--
+    <div class="toast">
+      <div class="icon" style="fill: #99e077;">
+        <svg data-src="icons/arrow-right.svg"></svg>
+      </div>
+      <span><b>Joe</b> joined the room.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast">
+      <div class="icon">
+        <svg data-src="icons/information.svg"></svg>
+      </div>
+      <span>This is an example toast.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast error">
+      <div class="icon">
+        <svg data-src="icons/alert-circle.svg"></svg>
+      </div>
+      <span>This is an example error.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast success">
+      <div class="icon">
+        <svg data-src="icons/check-circle.svg"></svg>
+      </div>
+      <span>This is an example success.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>
+    <div class="toast warning">
+      <div class="icon">
+        <svg data-src="icons/alert.svg"></svg>
+      </div>
+      <span>This is an example warning.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>-->
+  </div>
   <div class="toolbar">
     <div class="tool active" data-menu="tools" id="menu-1-button">
       <svg data-src="icons/wrench.svg"></svg>
@@ -56,9 +136,6 @@
       <svg data-src="icons/cursor-default.svg"></svg>
     </div>
     <div class="tool" data-tool="select">
-      <svg data-src="icons/select.svg"></svg>
-    </div>
-    <div class="tool fake" data-tool="move">
       <svg data-src="icons/cursor-move.svg"></svg>
     </div>
     <div class="tool fake" data-tool="scale">
@@ -66,6 +143,12 @@
     </div>
     <div class="tool fake" data-tool="rotate">
       <svg data-src="icons/rotate-3d-variant.svg"></svg>
+    </div>
+    <!--<div class="tool fake" data-tool="texture">
+      <svg data-src="icons/texture.svg"></svg>
+    </div>-->
+    <div class="tool" data-tool="addParticle">
+      <svg data-src="icons/water.svg"></svg>
     </div>
     <div class="tool fake" data-tool="knife">
       <svg data-src="icons/box-cutter.svg"></svg>
@@ -105,26 +188,34 @@
     <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
     <input id="time-scale-input" type="number" min="0" max="3" value="1">
   </div>
-  <div class="toolbar secondary" id="objects" style="display: none;">Objects!!!!
+  <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;"><span>Objects</span>
     <div class="object-grid">
-      <div class="object">
+      <div class="object" data-object="person">
         <img src="assets/textures/person.png">
       </div>
     </div>
   </div>
 
   <div class="toolbar file">
-    <div class="file-menu" data-file="file">File</div>
-    <div class="file-menu" data-file="settings">Settings</div>
+    <div class="file-menu" data-file="file">File<div class="file-menu-content" id="file">
+        <ul>
+          <li class="button">Joe</li>
+          <li class="button">Joe</li>
+        </ul>
+      </div>
+    </div>
+    <div class="file-menu" data-file="settings">Settings<div class="file-menu-content" id="settings">
+        <ul>
+          <li class="button">Joe</li>
+          <li class="button">Joe</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  <div class="file-menu-content" id="file">
-    Coming soon! Check Settings for now.
-  </div>
 
-  <div class="file-menu-content" id="settings">
-    Coming soon! Check File for now.
-  </div>
+
+
 
   <div class="chat" style="display: none;">
     <div class="messages">

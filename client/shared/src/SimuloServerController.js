@@ -22,6 +22,7 @@ function rotatePoint(point, angle) {
     const newY = x * Math.sin(angle) + y * Math.cos(angle);
     return [newX, newY];
 }
+import themes from "../themes.js";
 function getDistance(point1, point2) {
     const xDiff = point2[0] - point1[0];
     const yDiff = point2[1] - point1[1];
@@ -93,11 +94,15 @@ class SimuloServerController {
         // step physics
         if (this.paused) {
             if (this.previousStep) {
-                this.sendAll("world update", this.previousStep);
+                this.sendAll("world_update", this.previousStep);
             }
             return;
         }
         var step = this.physicsServer.step(delta * this.timeScale * this.timeScaleMultiplier, this.velocityIterations, this.positionIterations);
+        if (!step) {
+            this.sendAll("world_update_failed", null);
+        }
+        step = step;
         var springs1 = step.springs;
         var springs2 = this.springs.map((s) => {
             return {
@@ -123,9 +128,10 @@ class SimuloServerController {
             Object.keys(this.selectedObjects).reduce((acc, key) => {
                 acc[key] = this.selectedObjects[key].map((obj) => obj.id.toString());
                 return acc;
-            }, {})
+            }, {}),
+            particles: step.particles
         };
-        this.sendAll("world update", thisStep);
+        this.sendAll("world_update", thisStep);
         this.previousStep = thisStep;
         //console.log("vomit");
     }
@@ -287,6 +293,22 @@ class SimuloServerController {
             else if (this.tools[uuid] == "drag") {
                 // instead, start a spring
                 var bodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                var radius = 20 / formatted.data.zoom; // its a square but we call it radius anyway
+                if (bodies.length === 0 || bodies[0].isStatic) {
+                    bodies = this.physicsServer.getObjectsInRect([formatted.data.x - radius, formatted.data.y - radius], [formatted.data.x + radius, formatted.data.y + radius]);
+                    // filter it put bodies with .isStatic true at the end, and those with .isStatic false at the beginning
+                    bodies = bodies.sort((a, b) => {
+                        if (a.isStatic && !b.isStatic) {
+                            return 1;
+                        }
+                        else if (!a.isStatic && b.isStatic) {
+                            return -1;
+                        }
+                        else {
+                            return 0;
+                        }
+                    });
+                }
                 if (bodies.length > 0) {
                     var selectedBody = bodies[0];
                     var mouseJoint = this.physicsServer.addMouseSpring(selectedBody, [formatted.data.x, formatted.data.y], 30, 0, 1000000 * selectedBody.mass, 4);
@@ -311,6 +333,9 @@ class SimuloServerController {
                     borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
                     vertices: [[formatted.data.x, formatted.data.y]]
                 };
+            }
+            else if (this.tools[uuid] == "addParticle") {
+                this.physicsServer.addParticleBox(formatted.data.x, formatted.data.y, 0.2, 0.2);
             }
             else {
                 console.log("Unknown tool: " + this.tools[uuid]);
@@ -570,12 +595,42 @@ class SimuloServerController {
             }
         }
         else if (formatted.type == "set_theme") {
-            //this.theme = themes[formatted.data];
-            // TODO: check for themes and set
+            if (this.theme !== themes[formatted.data]) {
+                this.theme = themes[formatted.data];
+                var floor = this.physicsServer.getObjectByID(1);
+                if (floor) {
+                    floor.color = this.theme.ground.color;
+                    floor.border = this.theme.ground.border;
+                    floor.borderWidth = this.theme.ground.borderWidth;
+                    floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
+                }
+                // get 2 and 3 and set those to person.color and person.border and all that
+                var personBody = this.physicsServer.getObjectByID(2);
+                var personHead = this.physicsServer.getObjectByID(3);
+                var personParts = [personBody, personHead];
+                personParts.forEach((part) => {
+                    if (part) {
+                        part.color = this.theme.person.color;
+                        part.border = this.theme.person.border;
+                        part.borderWidth = this.theme.person.borderWidth;
+                        part.borderScaleWithZoom = this.theme.person.borderScaleWithZoom;
+                        part.image = null;
+                    }
+                });
+                this.sendAll("set_theme", this.theme);
+            }
         }
         else if (formatted.type == "set_tool") {
             console.log("set tool to", formatted.data);
             this.tools[uuid] = formatted.data;
+        }
+        else if (formatted.type == "spawn_object") {
+            console.log("spawn object", formatted.data);
+            // regardless of what anyone thinks, call addPerson
+            this.physicsServer.addPerson([
+                formatted.data.x,
+                formatted.data.y
+            ]);
         }
         else if (formatted.type == "set_time_scale") {
             this.timeScaleMultiplier = formatted.data;

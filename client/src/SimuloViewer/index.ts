@@ -161,7 +161,11 @@ class SimuloViewer {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-        var windowEnd = this.transformPoint(this.canvas.width, this.canvas.height);
+        // if no tabindex, set to 1
+        if (this.canvas.tabIndex == -1) {
+            this.canvas.tabIndex = 1;
+        }
+        var windowEnd = this.transformPoint(window.innerWidth, window.innerHeight);
         this.cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
 
         this.lastX = window.innerWidth / 2;
@@ -172,6 +176,7 @@ class SimuloViewer {
         this.canvas.addEventListener('touchstart', (e) => {
             this.mouseTouchDown++;
             this.touchStartElement = e.target as HTMLElement;
+            this.canvas.focus();
         });
         /*this.canvas.addEventListener('touchend', (e) => {
             if (this.fullscreen) { return; } // we will handle on document element instead
@@ -181,6 +186,14 @@ class SimuloViewer {
             if (this.mouseTouchDown > 0) { return; } // we will handle on document element instead
             this.onPointerMove(e);
         });
+        this.canvas.addEventListener('keydown', (e) => {
+            if (this.mouseTouchDown > 0) { return; } // we will handle on document element instead
+            this.emit('keyDown', e);
+        });
+        this.canvas.addEventListener('keyup', (e) => {
+            if (this.mouseTouchDown > 0) { return; } // we will handle on document element instead
+            this.emit('keyUp', e);
+        });
         /*this.canvas.addEventListener('touchmove', (e) => {
             if (this.fullscreen) { return; } // we will handle on document element instead
             this.handleTouch(e, this.onPointerMove);
@@ -189,6 +202,7 @@ class SimuloViewer {
             this.adjustZoom((-e.deltaY) > 0 ? 1.1 : 0.9, null, null);
         });
         this.canvas.addEventListener('mousedown', (e) => {
+            this.canvas.focus();
             this.mouseTouchDown++;
             this.onPointerDown(e);
             // stop propagation to prevent text selection
@@ -221,13 +235,28 @@ class SimuloViewer {
             this.handleTouch(e, this.onPointerMove);
         });
         documentElement.addEventListener('mousemove', (e) => {
-            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            if (this.mouseTouchDown <= 0) {
+                // if mouse isnt down and cursor is in the canvas rect
+                let rect = this.canvas.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom && !e.buttons) {
+                    // then we will handle it
+                    this.onPointerMove(e);
+                }
+            } // its not from us
             this.onPointerMove(e);
         });
         documentElement.addEventListener('mouseup', (e) => {
             if (this.mouseTouchDown <= 0) { return; } // its not from us
             this.mouseTouchDown--;
             this.onPointerUp(e);
+        });
+        documentElement.addEventListener('keydown', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.emit('keyDown', e);
+        });
+        documentElement.addEventListener('keyup', (e) => {
+            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.emit('keyUp', e);
         });
 
 
@@ -252,6 +281,9 @@ class SimuloViewer {
     }
 
     onPointerMove = (e: MouseEvent | TouchEvent) => {
+        // ignore if getEventLocation(e).x and y are 0 or null
+        if (!getEventLocation(e).x && !getEventLocation(e).y) { return; }
+
         if (this.isDragging) {
             this.cameraOffset.x = getEventLocation(e).x - this.dragStart.x;
             this.cameraOffset.y = getEventLocation(e).y - this.dragStart.y;
