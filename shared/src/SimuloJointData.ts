@@ -5,6 +5,8 @@ interface SimuloJointData extends Box2D.b2JointUserData {
     image: string | null;
     line: { color: string, scale_with_zoom: boolean } | null;
     width: number;
+    /** We sort shapes with this for almost everything, including rendering. Newer shapes get a higher Z Depth. At the start of a scene, IDs and Z Depths will be the same, but user interaction can change this. */
+    zDepth: number;
 }
 
 export default SimuloJointData;

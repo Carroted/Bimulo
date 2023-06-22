@@ -67,6 +67,10 @@ class SimuloObject {
     wakeUp() {
         this._body.SetAwake(true);
     }
+    get zDepth(): number {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.zDepth;
+    }
     get id(): number {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         return objectData.id;
@@ -313,6 +317,10 @@ class SimuloJoint {
         let jointData = this._joint.GetUserData() as SimuloJointData;
         return jointData.id;
     }
+    get zDepth(): number {
+        let jointData = this._joint.GetUserData() as SimuloJointData;
+        return jointData.zDepth;
+    }
     constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         this._joint = joint;
         this._physicsServer = physicsServer;
@@ -477,6 +485,7 @@ class SimuloPhysicsServer {
     // object. key is ID, value is SimuloObject
     bodies: { [key: string]: SimuloObject } = {};
     currentID: number = 0; // used to assign IDs to objects
+    highestZDepth: number = 0; // used to assign z-depths to objects
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -543,6 +552,7 @@ class SimuloPhysicsServer {
         image: string | null;
         */
         bodyData.id = this.currentID++;
+        bodyData.zDepth = this.highestZDepth++;
         for (var key in data) {
             if (key == 'sound') {
                 bodyData.sound = data[key];
@@ -620,6 +630,7 @@ class SimuloPhysicsServer {
             jointData.line = null;
         }
         jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
     }
     addPerson(offset: [x: number, y: number]) {
         var personBodyPoints: [x: number, y: number][] = [
@@ -710,6 +721,7 @@ class SimuloPhysicsServer {
         body.CreateFixture(fd);
         var bodyData = body.GetUserData() as SimuloObjectData;
         bodyData.id = this.currentID++;
+        bodyData.zDepth = this.highestZDepth++;
         // for each key in data, set bodyData[key] to data[key]
         for (var key in data) {
             if (key == 'sound') {
@@ -771,6 +783,7 @@ class SimuloPhysicsServer {
         // add jointdata
         var jointData = mouseJoint.GetUserData() as SimuloJointData;
         jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
         jointData.line = {
             color: "#ffffff",
             scale_with_zoom: true
@@ -792,6 +805,7 @@ class SimuloPhysicsServer {
         const ground = world.CreateBody(bd_ground);
         var groundData = ground.GetUserData() as SimuloObjectData;
         groundData.id = this.currentID++;
+        groundData.zDepth = this.highestZDepth++;
         this.ground = ground;
 
         this.world = world;
@@ -874,6 +888,7 @@ class SimuloPhysicsServer {
             theme.ground.borderScaleWithZoom;
         floorData.sound = "ground.wav";
         floorData.id = this.currentID++;
+        floorData.zDepth = this.highestZDepth++;
 
         this.addPerson([0, 0]);
     }
@@ -915,7 +930,9 @@ class SimuloPhysicsServer {
         }
         return selectedBodies.map((b) => {
             return new SimuloObject(this, b);
-        });
+        }).sort((a, b) => { // sort by .zDepth
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
     getAllObjects() {
         var bodies: Box2D.b2Body[] = [];
@@ -938,158 +955,10 @@ class SimuloPhysicsServer {
         }
         return bodies.map((b) => {
             return new SimuloObject(this, b);
-        });
+        }).sort((a, b) => { // sort by .zDepth
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
-    /*class SimuloObject {
-    private _physicsServer: SimuloPhysicsServer;
-    wakeUp() {
-        this._body.SetAwake(true);
-    }
-    get id(): number {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.id;
-    }
-    get position(): { x: number, y: number } {
-        return { x: this._body.GetPosition().get_x(), y: this._body.GetPosition().get_y() };
-    }
-    set position({ x, y }: { x: number, y: number }) {
-        this._body.SetTransform(new box2D.b2Vec2(x, y), this._body.GetAngle());
-    }
-    get velocity(): { x: number, y: number } {
-        return { x: this._body.GetLinearVelocity().get_x(), y: this._body.GetLinearVelocity().get_y() };
-    }
-    set velocity({ x, y }: { x: number, y: number }) {
-        this._body.SetLinearVelocity(new box2D.b2Vec2(x, y));
-    }
-    get angularVelocity(): number {
-        return this._body.GetAngularVelocity();
-    }
-    set angularVelocity(angularVelocity: number) {
-        this._body.SetAngularVelocity(angularVelocity);
-    }
-    get rotation(): number {
-        return this._body.GetAngle();
-    }
-    set rotation(angle: number) {
-        this._body.SetTransform(this._body.GetPosition(), angle);
-    }
-    get density(): number {
-        return this._body.GetFixtureList().GetDensity();
-    }
-    set density(density: number) {
-        this._body.GetFixtureList().SetDensity(density);
-        this._body.ResetMassData();
-    }
-    get friction(): number {
-        return this._body.GetFixtureList().GetFriction();
-    }
-    set friction(friction: number) {
-        this._body.GetFixtureList().SetFriction(friction);
-    }
-    get restitution(): number {
-        return this._body.GetFixtureList().GetRestitution();
-    }
-    set restitution(restitution: number) {
-        this._body.GetFixtureList().SetRestitution(restitution);
-    }
-    get border(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.border;
-    }
-    set border(border: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.border = border;
-    }
-    get borderWidth(): number | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.borderWidth;
-    }
-    set borderWidth(borderWidth: number | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.borderWidth = borderWidth;
-    }
-    get borderScaleWithZoom(): boolean {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.borderScaleWithZoom;
-    }
-    set borderScaleWithZoom(borderScaleWithZoom: boolean) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.borderScaleWithZoom = borderScaleWithZoom;
-    }
-    get circleCake(): boolean {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        // if undefined return false
-        if (objectData.circleCake == undefined) {
-            return false;
-        }
-        return objectData.circleCake;
-    }
-    set circleCake(circleCake: boolean) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.circleCake = circleCake;
-    }
-    get image(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.image;
-    }
-    set image(image: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.image = image;
-    }
-    get collision_sound(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.sound;
-    }
-    set collision_sound(sound: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.sound = sound;
-    }
-    get color(): string {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.color;
-    }
-    set color(color: string) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.color = color;
-    }
-    get isStatic(): boolean {
-        return this._body.GetType() == box2D.b2_staticBody;
-    }
-    set isStatic(isStatic: boolean) {
-        if (isStatic) {
-            this._body.SetType(box2D.b2_staticBody);
-        } else {
-            this._body.SetType(box2D.b2_dynamicBody);
-        }
-    }
-    get mass(): number {
-        return this._body.GetMass();
-    }
-
-    // when set any of the above, itll update the box2d body, which we'll define now:
-    _body: Box2D.b2Body; // this is not meant to be accessed in scripting, only in the physics server. however, we cant really make it private and it shouldnt cause any issues
-
-    constructor(physicsServer: SimuloPhysicsServer, body: Box2D.b2Body) {
-        this._body = body;
-        this._physicsServer = physicsServer;
-    }
-    addForce([x, y]: [x: number, y: number]) {
-        this._body.ApplyForce(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
-    }
-    addImpulse([x, y]: [x: number, y: number]) {
-        this._body.ApplyLinearImpulse(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
-    }
-    addTorque(torque: number) {
-        this._body.ApplyTorque(torque, true);
-    }
-    addAngularImpulse(impulse: number) {
-        this._body.ApplyAngularImpulse(impulse, true);
-    }
-    destroy() {
-        this._body.GetWorld().DestroyBody(this._body);
-        // No longer real
-    }
-}*/
 
     /** Saves a collection of `SimuloObject`s to a `SimuloSavedObject`s you can restore with `load()` */
     save(stuff: SimuloObject[]): SimuloSavedObject[] {
@@ -1201,7 +1070,9 @@ class SimuloPhysicsServer {
                 t.id === obj.id
             ))
         );
-        return selectedObjects;
+        return selectedObjects.sort((a, b) => { // sort by .zDepth
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
 
     getObjectsInRect(pointA: [x: number, y: number], pointB: [x: number, y: number]) {
@@ -1262,7 +1133,9 @@ class SimuloPhysicsServer {
             ))
         );
 
-        return selectedObjects;
+        return selectedObjects.sort((a, b) => { // sort by .zDepth
+            return a.zDepth - b.zDepth;
+        }).reverse();
     }
 
     step(delta: number, velocityIterations: number, positionIterations: number) {
@@ -1326,6 +1199,7 @@ class SimuloPhysicsServer {
                         circleCake: bodyData.circleCake,
                         image: bodyData.image,
                         id: bodyData.id,
+                        zDepth: bodyData.zDepth,
                     } as SimuloCircle);
                 } else if (shapeType == box2D.b2Shape.e_polygon) {
                     const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
@@ -1356,6 +1230,7 @@ class SimuloPhysicsServer {
                             }),
                             image: bodyData.image,
                             id: bodyData.id,
+                            zDepth: bodyData.zDepth,
                         } as SimuloPolygon);
                     }
                     else {
@@ -1371,6 +1246,7 @@ class SimuloPhysicsServer {
                             borderScaleWithZoom: bodyData.borderScaleWithZoom,
                             image: bodyData.image,
                             id: bodyData.id,
+                            zDepth: bodyData.zDepth,
                         } as SimuloPolygon);
                     }
                 } else if (shapeType == box2D.b2Shape.e_edge) {
@@ -1399,6 +1275,7 @@ class SimuloPhysicsServer {
                         borderScaleWithZoom: bodyData.borderScaleWithZoom,
                         image: bodyData.image,
                         id: bodyData.id,
+                        zDepth: bodyData.zDepth,
                     } as SimuloEdge);
                 } else {
                     //console.log("unknown shape type");
@@ -1416,8 +1293,8 @@ class SimuloPhysicsServer {
         });*/
 
         var joint = this.world.GetJointList();
-        var springs: { p1: number[], p2: number[], image: string | null, line: { color: string, scale_with_zoom: boolean } | null, width: number }[] = []; // distance joints are considered springs
-        var mouseSprings: { p1: number[], p2: number[], image: string | null, line: { color: string, scale_with_zoom: boolean } | null, width: number }[] = [];
+        var springs: { p1: number[], p2: number[], image: string | null, line: { color: string, scale_with_zoom: boolean } | null, width: number, zDepth: number }[] = []; // distance joints are considered springs
+        var mouseSprings: { p1: number[], p2: number[], image: string | null, line: { color: string, scale_with_zoom: boolean } | null, width: number, zDepth: number }[] = [];
         while (box2D.getPointer(joint)) {
             var j = joint;
             joint = joint.GetNext();
@@ -1444,6 +1321,7 @@ class SimuloPhysicsServer {
                     image: image,
                     line: line,
                     width: dData.width,
+                    zDepth: dData.zDepth,
                 });
             }
             else if (j.GetType() == box2D.e_mouseJoint) {
@@ -1469,15 +1347,22 @@ class SimuloPhysicsServer {
                     image: image,
                     line: line,
                     width: mData.width,
+                    zDepth: mData.zDepth,
                 });
             }
         }
 
         var thisStep: SimuloStep = {
-            shapes: shapes,
+            shapes: shapes.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
             background: this.theme.background,
-            springs: springs,
-            mouseSprings: mouseSprings
+            springs: springs.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
+            mouseSprings: mouseSprings.sort((a, b) => {
+                return a.zDepth - b.zDepth;
+            }).reverse(),
         };
 
         return thisStep;

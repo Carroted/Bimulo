@@ -14,6 +14,8 @@ interface SimuloObjectData extends Box2D.b2BodyUserData {
     image: string | null;
     /** For polygons, this is the full shape used in rendering. In physics, the points from addPolygon are triangulated via earcut. */
     points?: [x: number, y: number][];
+    /** We sort shapes with this for almost everything, including rendering. Newer shapes get a higher Z Depth. At the start of a scene, IDs and Z Depths will be the same, but user interaction can change this. */
+    zDepth: number;
 }
 
 export default SimuloObjectData;
