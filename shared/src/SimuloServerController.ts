@@ -313,6 +313,22 @@ class SimuloServerController {
                 // instead, start a spring
 
                 var bodies: SimuloObject[] = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                var radius = 20 / formatted.data.zoom; // its a square but we call it radius anyway
+                if (bodies.length === 0 || bodies[0].isStatic) {
+                    bodies = this.physicsServer.getObjectsInRect([formatted.data.x - radius, formatted.data.y - radius], [formatted.data.x + radius, formatted.data.y + radius]);
+                    // filter it put bodies with .isStatic true at the end, and those with .isStatic false at the beginning
+                    bodies = bodies.sort((a, b) => {
+                        if (a.isStatic && !b.isStatic) {
+                            return 1;
+                        }
+                        else if (!a.isStatic && b.isStatic) {
+                            return -1;
+                        }
+                        else {
+                            return 0;
+                        }
+                    });
+                }
 
                 if (bodies.length > 0) {
                     var selectedBody = bodies[0];
@@ -674,27 +690,30 @@ class SimuloServerController {
                 this.previousStep.selected_objects = this.selectedObjects;
             }
         } else if (formatted.type == "set_theme") {
-            this.theme = themes[formatted.data];
-            var floor = this.physicsServer.getObjectByID(1);
-            if (floor) {
-                floor.color = this.theme.ground.color;
-                floor.border = this.theme.ground.border;
-                floor.borderWidth = this.theme.ground.borderWidth;
-                floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
-            }
-            // get 2 and 3 and set those to person.color and person.border and all that
-            var personBody = this.physicsServer.getObjectByID(2);
-            var personHead = this.physicsServer.getObjectByID(3);
-            var personParts = [personBody, personHead];
-            personParts.forEach((part) => {
-                if (part) {
-                    part.color = this.theme.person.color;
-                    part.border = this.theme.person.border;
-                    part.borderWidth = this.theme.person.borderWidth;
-                    part.borderScaleWithZoom = this.theme.person.borderScaleWithZoom;
+            if (this.theme !== themes[formatted.data]) {
+                this.theme = themes[formatted.data];
+                var floor = this.physicsServer.getObjectByID(1);
+                if (floor) {
+                    floor.color = this.theme.ground.color;
+                    floor.border = this.theme.ground.border;
+                    floor.borderWidth = this.theme.ground.borderWidth;
+                    floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
                 }
-            });
-            this.sendAll("set_theme", this.theme);
+                // get 2 and 3 and set those to person.color and person.border and all that
+                var personBody = this.physicsServer.getObjectByID(2);
+                var personHead = this.physicsServer.getObjectByID(3);
+                var personParts = [personBody, personHead];
+                personParts.forEach((part) => {
+                    if (part) {
+                        part.color = this.theme.person.color;
+                        part.border = this.theme.person.border;
+                        part.borderWidth = this.theme.person.borderWidth;
+                        part.borderScaleWithZoom = this.theme.person.borderScaleWithZoom;
+                        part.image = null;
+                    }
+                });
+                this.sendAll("set_theme", this.theme);
+            }
         } else if (formatted.type == "set_tool") {
             console.log("set tool to", formatted.data);
             this.tools[uuid] = formatted.data;

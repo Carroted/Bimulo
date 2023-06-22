@@ -1,5 +1,6 @@
 interface SimuloTheme {
     displayName: string;
+    author: string;
     description: string;
     background: string;
     ground: {

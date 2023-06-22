@@ -286,14 +286,17 @@ class SimuloClientController {
             let themeElement = document.createElement('div');
             themeElement.classList.add('theme-option');
             themeElement.classList.add('button');
-            themeElement.style.background = theme.background;
+            //themeElement.style.background = theme.background;
+            let themeBackground = document.createElement('div');
+            themeBackground.style.background = theme.background;
+            themeBackground.classList.add('theme-background');
             let themeGround = document.createElement('div');
             themeGround.classList.add('theme-ground');
             themeGround.style.background = theme.ground.color;
             if (theme.ground.border) {
                 themeGround.style.outline = `${theme.ground.borderWidth}px solid ${theme.ground.border}`;
             }
-            themeElement.appendChild(themeGround);
+            themeBackground.appendChild(themeGround);
             let themeCircle = document.createElement('div');
             themeCircle.classList.add('theme-circle');
 
@@ -303,9 +306,28 @@ class SimuloClientController {
             let val = (theme.newObjects.color.valMin + theme.newObjects.color.valMax) / 2;
             let alp = (theme.newObjects.color.alpMin + theme.newObjects.color.alpMax) / 2;
             let rgb = hsvToRgb(hue, sat / 100, val / 100);
-            themeCircle.style.background = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alp})`;
+            themeCircle.style.background = `rgba(${rgb[0] * 255}, ${rgb[1] * 255}, ${rgb[2] * 255}, ${alp})`;
             themeCircle.style.border = `${theme.newObjects.borderWidth}px solid ${theme.newObjects.border}`;
-            themeElement.appendChild(themeCircle);
+            themeBackground.appendChild(themeCircle);
+            // append
+            themeElement.appendChild(themeBackground);
+            let themeInfo = document.createElement('div');
+            themeInfo.classList.add('theme-info');
+            let themeNameElement = document.createElement('span');
+            themeNameElement.classList.add('theme-name');
+            themeNameElement.innerText = theme.displayName;
+            themeInfo.appendChild(themeNameElement);
+            let themeAuthorElement = document.createElement('span');
+            themeAuthorElement.classList.add('theme-author');
+            themeAuthorElement.innerText = theme.author;
+            themeInfo.appendChild(themeAuthorElement);
+            let themeDescriptionElement = document.createElement('span');
+            themeDescriptionElement.classList.add('theme-description');
+            themeDescriptionElement.innerText = theme.description;
+            themeInfo.appendChild(themeDescriptionElement);
+            themeElement.appendChild(themeInfo);
+
+
             themeElement.addEventListener('click', () => {
                 this.theme = theme;
                 this.setTheme(themeName)
