@@ -47,6 +47,7 @@ export default {
       "addAxle": "assets/textures/add_axle.png",
       "addFixedJoint": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
@@ -96,6 +97,7 @@ export default {
       "addAxle": "assets/textures/add_axle.png",
       "addFixedJoint": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
@@ -145,6 +147,7 @@ export default {
       "addAxle": "assets/textures/add_axle.png",
       "addFixedJoint": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
     "toolIconSize": 0.5,
@@ -194,6 +197,7 @@ export default {
       "addAxle": "assets/textures/tools/hinge.png",
       "addFixedJoint": "assets/textures/tools/fixjoint.png",
       "select": "assets/textures/tools/move.png",
+      "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": true,
     "toolIconSize": 0.7,

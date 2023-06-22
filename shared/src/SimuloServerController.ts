@@ -88,7 +88,7 @@ class SimuloServerController {
         // step physics
         if (this.paused) {
             if (this.previousStep) {
-                this.sendAll("world update", this.previousStep);
+                this.sendAll("world_update", this.previousStep);
             }
             return;
         }
@@ -97,6 +97,12 @@ class SimuloServerController {
             this.velocityIterations,
             this.positionIterations
         );
+
+        if (!step) {
+            this.sendAll("world_update_failed", null);
+        }
+
+        step = step as SimuloStep;
 
         var springs1 = step.springs;
         var springs2 = this.springs.map((s) => {
@@ -124,9 +130,10 @@ class SimuloServerController {
                 Object.keys(this.selectedObjects).reduce((acc: { [key: string]: string[] }, key: string) => {
                     acc[key] = this.selectedObjects[key].map((obj: SimuloObject | SimuloJoint) => obj.id.toString());
                     return acc;
-                }, {})
+                }, {}),
+            particles: step.particles
         };
-        this.sendAll("world update", thisStep);
+        this.sendAll("world_update", thisStep);
         this.previousStep = thisStep;
 
         //console.log("vomit");
@@ -373,6 +380,9 @@ class SimuloServerController {
                     borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
                     vertices: [[formatted.data.x, formatted.data.y]] as [x: number, y: number][]
                 } as SimuloCreatingPolygon;
+            }
+            else if (this.tools[uuid] == "addParticle") {
+                this.physicsServer.addParticleBox(formatted.data.x, formatted.data.y, 0.2, 0.2);
             }
             else {
                 console.log("Unknown tool: " + this.tools[uuid]);

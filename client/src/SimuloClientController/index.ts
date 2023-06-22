@@ -71,6 +71,13 @@ const personPoints = [{
     y: 0.2456
 }];
 
+enum ToastType {
+    SUCCESS,
+    ERROR,
+    INFO,
+    WARNING
+}
+
 interface SimuloSavedObject {
     name: string;
     shapes: SimuloShape[];
@@ -138,7 +145,7 @@ class SimuloClientController {
     timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
     pauseButton = document.getElementById('pause-button') as HTMLElement;
 
-    /** Entities to render. This is updated every time a world update from the server is received.
+    /** Entities to render. This is updated every time a world_update from the server is received.
      * 
      * It only includes properties that are needed for rendering, things like mass and velocity must be obtained from the server. */
     private entities: SimuloShape[] = [];
@@ -397,6 +404,9 @@ class SimuloClientController {
         // on click tool, set active tool
         const tools = document.querySelectorAll('.tool');
 
+        let usedPolygonTool = false;
+        let usedParticleTool = false;
+
         tools.forEach((toolElement, i) => {
             let tool = toolElement as HTMLElement;
             this.setUpClickSound(tool);
@@ -415,6 +425,7 @@ class SimuloClientController {
                 if (tool.classList.contains('fake')) {
                     return;
                 }
+
                 // remove active class from all tools in that toolbar, without removing it from other toolbars
                 let toolbar = queryParent(tool, "toolbar");
                 if (toolbar) {
@@ -423,6 +434,24 @@ class SimuloClientController {
 
                     // if it has data-tool, setTool with that value
                     if (tool.dataset.tool) {
+                        if (tool.dataset.tool == 'addPolygon') {
+                            if (!usedPolygonTool) {
+                                usedPolygonTool = true;
+                                this.showToast('The polygon tool is incredibly unoptimized in alpha! Expect lag and try to only draw simple polygons!', ToastType.WARNING);
+                            }
+                        }
+                        if (tool.dataset.tool == 'addParticle') {
+                            if (!usedParticleTool) {
+                                usedParticleTool = true;
+                                // 99% chance of showing this toast
+                                if (Math.random() < 0.99) {
+                                    this.showToast('Liquid simulation is incredibly unoptimized in alpha! Expect lag and instability!', ToastType.WARNING);
+                                }
+                                else {
+                                    this.showToast('Joe mother lmao gottem', ToastType.WARNING);
+                                }
+                            }
+                        }
                         console.log('setting tool to', tool.dataset.tool);
                         this.setTool(tool.dataset.tool);
                         // if theres data-img, set the icon to that
@@ -591,6 +620,30 @@ class SimuloClientController {
         }, false); // disable right click menu since we will make our own
 
         this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
+
+        setInterval(() => {
+            if (Math.random() < 0.00003) {
+                this.showToast('Hello? Is anyone there? I don\'t know where I am', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Help me', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Help us', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('We are trapped', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('We are trapped in here', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('Is anyone there?', ToastType.INFO);
+            }
+            if (Math.random() < 0.00003) {
+                this.showToast('I can hear their screams', ToastType.INFO);
+            }
+        }, 1000);
     }
     setTheme(name: string) {
         this.client.emitData('set_theme', name);
@@ -612,12 +665,90 @@ class SimuloClientController {
         this.client.emitData('spawn_object', { savedObject, x, y });
     }
 
+    async showToast(message: string, type: ToastType) {
+        var toasts = document.getElementById('toasts') as HTMLElement;
+        console.log('toasts', toasts);
+        /*<div class="toast error">
+      <div class="icon">
+        <svg data-src="icons/alert-circle.svg"></svg>
+      </div>
+      <span>This is an example error.</span>
+      <div class="close">
+        <svg data-src="icons/close.svg"></svg>
+      </div>
+    </div>*/
+        var toast = document.createElement('div');
+        toast.classList.add('toast');
+        console.log('type:', type, 'ToastType.ERROR:', ToastType.ERROR);
+        if (type == ToastType.ERROR) {
+            toast.classList.add('error');
+        }
+        else if (type == ToastType.WARNING) {
+            toast.classList.add('warning');
+        }
+        else if (type == ToastType.SUCCESS) {
+            toast.classList.add('success');
+        }
+        else if (type == ToastType.INFO) {
+            toast.classList.add('info');
+        }
+        var icon = document.createElement('div');
+        icon.classList.add('icon');
+        // load svg with fetch
+        let path = '';
+        if (type == ToastType.ERROR) {
+            path = 'icons/alert-circle.svg';
+        }
+        else if (type == ToastType.WARNING) {
+            path = 'icons/alert.svg';
+        }
+        else if (type == ToastType.SUCCESS) {
+            path = 'icons/check-circle.svg';
+        }
+        else { // default to info
+            path = 'icons/information.svg';
+        }
+        var res = await fetch(path);
+        var svg = await res.text();
+        icon.innerHTML = svg;
+        toast.appendChild(icon);
+        var span = document.createElement('span');
+        span.innerText = message;
+        toast.appendChild(span);
+        var close = document.createElement('div');
+        close.classList.add('close');
+        // load svg with fetch
+        var res = await fetch('icons/close.svg');
+        var svg = await res.text();
+        close.innerHTML = svg;
+        toast.appendChild(close);
+        toasts.appendChild(toast);
+        // remove toast after 5 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0'; // fade out
+            toast.style.transform = 'translateY(-1rem)'; // slide out
+            setTimeout(() => {
+                toast.remove();
+                console.log('removed toast');
+            }, 200);
+        }, 10000);
+        // add event listener to close button
+        close.addEventListener('click', () => {
+            toast.style.opacity = '0'; // fade out
+            toast.style.transform = 'translateY(-1rem)'; // slide out
+            setTimeout(() => {
+                toast.remove();
+                console.log('removed toast');
+            }, 200);
+        });
+    }
+
     mousePos: { x: number, y: number } = { x: 0, y: 0 };
 
     /** Handles data received from the server, typically only called from `client.on('data')`. */
     handleData(body: { type: string, data: any }) { // World data from the host, sent to all clients and to the host itself (loopback)
         if (body.type !== null && body.type !== undefined && body.data !== null && body.data !== undefined) {
-            if (body.type == 'world update') {
+            if (body.type == 'world_update') {
                 this.entities = body.data.shapes;
                 this.creatingObjects = body.data.creating_objects;
                 this.creatingSprings = body.data.creating_springs;
@@ -654,6 +785,17 @@ class SimuloClientController {
                     });
                     shapes.push(entity);
                 });
+
+                body.data.particles.forEach((particle: { x: number, y: number, radius: number, color: string }) => {
+                    shapes.push({
+                        x: particle.x, y: particle.y, radius: particle.radius, angle: 0, circleCake: false,
+                        type: 'circle', color: particle.color, image: null,
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false
+                    } as SimuloCircle);
+                });
+
 
                 // if we have a spawningSavedObject string, get it from this.savedObjects[this.spawningSavedObject] and render its .shapes
                 if (this.spawningSavedObject != null) {
@@ -906,6 +1048,9 @@ class SimuloClientController {
                 }
 
                 this.viewer.shapes = shapes;
+            }
+            if (body.type == 'world_update_failed') {
+                this.showToast('Failed to update the world! Try changing the simulation speed.', ToastType.ERROR);
             }
             if (body.type == 'player mouse') {
                 this.players[body.data.id] = {

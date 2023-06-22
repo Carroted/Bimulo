@@ -712,8 +712,6 @@ details summary {
   align-items: center;
   justify-content: flex-start;
   transition: 0.2s;
-  opacity: 0;
-  transform: translateY(-1rem);
   height: 2.5rem;
   -webkit-backface-visibility: hidden;
   -webkit-perspective: 1000;
@@ -725,6 +723,19 @@ details summary {
   transform: translateZ(0);
   backdrop-filter: blur(35px);
   background: #03081dc0;
+  animation: toast 0.2s ease-in-out;
+}
+
+@keyframes toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .toast.error {

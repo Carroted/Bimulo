@@ -15,6 +15,12 @@ interface SimuloStep {
             scale_with_zoom: boolean;
         } | null
     }[];
+    particles: {
+        x: number;
+        y: number;
+        radius: number;
+        color: string;
+    }[];
 }
 
 export default SimuloStep;

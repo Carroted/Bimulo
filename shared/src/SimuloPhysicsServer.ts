@@ -793,7 +793,7 @@ class SimuloPhysicsServer {
         var joint = new SimuloMouseSpring(this, mouseJoint);
         return joint;
     }
-
+    particleSystem: Box2D.b2ParticleSystem;
 
     constructor(theme: SimuloTheme) { // theme is the starting theme for the room to know what to set background to for example and new objects
         const gravity = new box2D.b2Vec2(0, 9.81);
@@ -891,6 +891,57 @@ class SimuloPhysicsServer {
         floorData.zDepth = this.highestZDepth++;
 
         this.addPerson([0, 0]);
+
+        // add water
+        const psd = new box2D.b2ParticleSystemDef();
+        psd.set_radius(0.1);
+        psd.set_dampingStrength(0.2);
+        const particleSystem = world.CreateParticleSystem(psd);
+
+        /*
+                var box = new box2D.b2PolygonShape();
+                var pgd = new box2D.b2ParticleGroupDef();
+                box.SetAsBox(1, 0.5);
+                pgd.flags = box2D.b2_elasticParticle;
+                pgd.groupFlags = box2D.b2_solidParticleGroup;
+                pgd.position.Set(1, 4);
+                pgd.angle = -0.5;
+                pgd.angularVelocity = 2;
+                pgd.shape = box;
+                pgd.color.Set(0, 0, 255, 255);
+                particleSystem.CreateParticleGroup(pgd);
+                box2D.destroy(box);
+                box2D.destroy(pgd);*/
+
+        this.particleSystem = particleSystem;
+    }
+
+    private getParticle = (particleSystem: Box2D.b2ParticleSystem, index: number) => {
+        const posBuffer = particleSystem.GetPositionBuffer();
+        const pos_p = box2D.getPointer(posBuffer) + index * 8;
+        const x = box2D.HEAPF32[pos_p >> 2];
+        const y = box2D.HEAPF32[(pos_p + 4) >> 2];
+        const color = particleSystem.GetColorBuffer();
+        const color_p = box2D.getPointer(color) + index * 4;
+        const r = box2D.HEAPU8[color_p];
+        const g = box2D.HEAPU8[color_p + 1];
+        const b = box2D.HEAPU8[color_p + 2];
+        const a = box2D.HEAPU8[color_p + 3];
+        console.log(`particle rgba(${r},${g},${b},${a / 255})`);
+        return {
+            x, y, color: `rgba(${r},${g},${b},${a / 255})`, radius: 0.1
+        };
+    };
+    private getAllParticles = (particleSystem: Box2D.b2ParticleSystem) => {
+        // we use getParticlePosition
+
+        // first, get count:
+        const count = particleSystem.GetParticleCount();
+        const particles: { x: number, y: number, color: string, radius: number }[] = [];
+        for (let i = 0; i < count; i++) {
+            particles.push(this.getParticle(particleSystem, i));
+        }
+        return particles;
     }
 
     getObjectsAtPoint(point: [x: number, y: number]) {
@@ -933,6 +984,17 @@ class SimuloPhysicsServer {
         }).sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
         }).reverse();
+    }
+    addParticleBox(x: number, y: number, width: number, height: number) {
+        const particleGroupDef = new box2D.b2ParticleGroupDef();
+        particleGroupDef.set_color(new box2D.b2ParticleColor(131, 225, 205, 128));
+        var boxShape = new box2D.b2PolygonShape();
+        boxShape.SetAsBox(width / 2, height / 2, new box2D.b2Vec2(x, y), 0);
+        particleGroupDef.set_shape(boxShape);
+        this.particleSystem.CreateParticleGroup(particleGroupDef);
+
+        box2D.destroy(boxShape);
+        box2D.destroy(particleGroupDef);
     }
     getAllObjects() {
         var bodies: Box2D.b2Body[] = [];
@@ -1139,7 +1201,13 @@ class SimuloPhysicsServer {
     }
 
     step(delta: number, velocityIterations: number, positionIterations: number) {
-        this.world.Step(delta, velocityIterations, positionIterations);
+        try {
+            this.world.Step(delta, velocityIterations, positionIterations);
+        } catch (e) {
+            console.error('Error in world.Step', e);
+            //alert('Uh oh! We did an oopsie and there was an error updating the world! Try changing the simulation speed. If you see this message nonstop, rip your world and we are sorry lol.')
+            return null;
+        }
         this.deleteObjects.forEach((obj) => {
             if (obj instanceof box2D.b2Body) {
                 this.world.DestroyBody(obj);
@@ -1152,6 +1220,9 @@ class SimuloPhysicsServer {
             }
         });
         this.deleteObjects = [];
+
+        let particles = this.getAllParticles(this.particleSystem);
+
 
         // get body
         var node: Box2D.b2Body = this.world.GetBodyList();
@@ -1363,6 +1434,7 @@ class SimuloPhysicsServer {
             mouseSprings: mouseSprings.sort((a, b) => {
                 return a.zDepth - b.zDepth;
             }).reverse(),
+            particles: particles
         };
 
         return thisStep;
