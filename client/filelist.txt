@@ -36,8 +36,11 @@ assets/textures/add_rectangle_old.png
 assets/textures/add_spring.png
 assets/textures/add_spring_old.png
 assets/textures/body.png
+assets/textures/body_purple.png
+assets/textures/car.png
 assets/textures/cursor.png
 assets/textures/person.png
+assets/textures/person_purple.png
 assets/textures/select.png
 assets/textures/spring.png
 assets/textures/spring.svg
