@@ -691,6 +691,14 @@ class SimuloServerController {
             }
             this.physicsServer.load(savedObjects);
         }
+        else if (formatted.type == "delete_selection") {
+            var selectedObjects = this.selectedObjects[uuid];
+            if (selectedObjects) {
+                selectedObjects.forEach((object) => {
+                    this.physicsServer.destroy(object);
+                });
+            }
+        }
     }
     addScript(code) {
         var cachedObjects = {};

@@ -82,6 +82,20 @@ interface SimuloSavedObject {
     name: string;
     shapes: SimuloShape[];
 }
+
+const defaultSavedObjects: {
+    name: string;
+    author: string | null;
+    data: string;
+    description: string | null;
+    image: string;
+}[] = [{
+    name: "Person",
+    author: "asour",
+    data: `[{"id":3,"type":"CIRCLE","position":{"x":0.027060299522868793,"y":-0.6546055597719658},"rotation":3.1736624240875244,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x":0.007093784741751354,"y":0.09707290702490923},"rotation":3.141267776489258,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]}]`,
+    description: "A ragdoll, mascot, crash test dummy, size reference and more all in one.",
+    image: "assets/textures/person.png"
+}];
 /** `SimuloClientController` manages connecting to the server, `SimuloViewer` and the UI. */
 class SimuloClientController {
     client: SimuloClient;
@@ -93,7 +107,7 @@ class SimuloClientController {
     maxZoom = 5;
     minZoom = 0.1;
     scrollSensitivity = 0.0005;
-    spawningSavedObject: string | null = null;
+    spawningSavedObject: number | null = null;
     savedObjects: {
         [key: string]: SimuloSavedObject;
     } = {
@@ -294,6 +308,7 @@ class SimuloClientController {
 
         this.client.connect(); // Connects to the server
 
+        /*
         let objects = document.querySelectorAll('.object-grid .object');
         objects.forEach((object) => {
             object.addEventListener('mousedown', (e) => {
@@ -303,6 +318,8 @@ class SimuloClientController {
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
         });
+        */
+        this.updateObjectsList();
 
         let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
         let dismissPopup = (e: MouseEvent | undefined) => {
@@ -420,9 +437,11 @@ class SimuloClientController {
         document.addEventListener('mouseup', (e) => {
             if (!(e instanceof MouseEvent) || e.button != 0) return;
 
-            if (this.spawningSavedObject) {
-                var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
-                this.spawnObject(this.savedObjects[this.spawningSavedObject], positionInWorld.x, positionInWorld.y);
+            if (this.spawningSavedObject != null) {
+                //var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
+                let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                console.log('yo yo yo its me, line 429 and today i wanna show you objects[this.spawningSavedObject]:', objects[this.spawningSavedObject], 'and my friend .data:', objects[this.spawningSavedObject].data);
+                this.loadSavedObjects(objects[this.spawningSavedObject].data, this.mousePos.x, this.mousePos.y);
                 this.spawningSavedObject = null;
                 new Audio('assets/sounds/spawn_up.wav').play();
             }
@@ -584,6 +603,7 @@ class SimuloClientController {
             }
         });
 
+        let mouseDownOnCanvas = false;
 
         this.pauseButton.addEventListener('click', () => {
             // set checked class
@@ -615,6 +635,8 @@ class SimuloClientController {
             };
             this.mousePos = pos;
             this.client.emitData("player mouse down", this.player);
+            mouseDownOnCanvas = true;
+            console.log('mouse now down on canvas!');
         });
         this.viewer.on('mouseUp', (pos: { x: number, y: number }) => {
             this.player = {
@@ -627,6 +649,42 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
         });
+        document.addEventListener('mouseup', (e) => {
+            console.log('mouseup on document');
+            if (mouseDownOnCanvas) {
+                console.log('mouse was down on canvas, now up on document');
+                // that means we started the mouse down on the canvas, and it ended off the canvas
+                // lets check if we're hovering over object-grid-bar or one of its children
+                let checkElement = (target: HTMLElement) => {
+                    return target.classList.contains('object-grid-bar') || target.classList.contains('object-grid') || target.classList.contains('object') || target.dataset.menu == 'objects';
+                };
+                let target = document.elementFromPoint(e.clientX, e.clientY);
+                if (target) {
+                    console.log('we have a target element from point', target);
+                    if (checkElement(target as HTMLElement) || (target.parentElement && checkElement(target.parentElement))) {
+                        // if our tool is move, we just dragged the object to the object grid, lets save it
+                        if (this.tool == 'select') { // select = move
+                            this.saveSelectionToObjects();
+                        }
+                        else {
+                            console.log('everything was in place but the tool was', this.tool);
+                        }
+                    }
+                    else {
+                        console.log(target, 'wasnt what we wanted');
+                    }
+                }
+                else {
+                    console.log('no target element from point');
+                }
+            }
+            else {
+                console.log('mouse wasnt down on canvas');
+            }
+
+            mouseDownOnCanvas = false;
+        });
+
         document.addEventListener('keydown', (e) => {
             // make sure we arent in a text area or input or contenteditable
             if ((e.target as HTMLElement).tagName == 'INPUT' || (e.target as HTMLElement).tagName == 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) {
@@ -642,12 +700,17 @@ class SimuloClientController {
             // if its CTRL+C, copy
             if (e.ctrlKey && e.key == 'c') {
                 this.saveSelection();
-                this.showToast('Copied to clipboard', ToastType.INFO);
+                this.showToast('Copied to clipboard (Note: does not yet copy joints or fluid)', ToastType.INFO);
             }
             // if its CTRL+V, paste
             if (e.ctrlKey && e.key == 'v') {
                 this.loadSelection();
                 this.showToast('Pasted from clipboard', ToastType.INFO);
+            }
+            // delete key
+            if (e.key == 'Delete') {
+                this.deleteSelection();
+                this.showToast('Deleted selection', ToastType.INFO);
             }
         });
 
@@ -681,7 +744,7 @@ class SimuloClientController {
             if (Math.random() < 0.00003) {
                 this.showToast('I can hear their screams', ToastType.INFO);
             }
-        }, 300);
+        }, 90);
     }
     setTheme(name: string) {
         this.client.emitData('set_theme', name);
@@ -718,8 +781,16 @@ class SimuloClientController {
         console.log('Saved', (saved as { data: string }).data);
     }
 
-    loadSavedObjects(saveData: string) {
-        this.client.emitData('load_save_data', saveData);
+    async getSelectedObjects() {
+        return ((await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y })) as { data: string }).data;
+    }
+
+    loadSavedObjects(saveData: string, x: number, y: number) {
+        this.client.emitData('load_save_data', {
+            data: saveData,
+            x,
+            y
+        });
     }
 
     loadSelection() {
@@ -727,6 +798,59 @@ class SimuloClientController {
         navigator.clipboard.readText().then((text) => {
             this.client.emitData('load_save_data', { data: text, x: this.mousePos.x, y: this.mousePos.y });
         });
+    }
+
+    deleteSelection() {
+        this.client.emitData('delete_selection', null);
+    }
+
+    async saveSelectionToObjects() {
+        // get selected objects
+        let selectedObjects = await this.getSelectedObjects();
+        if (JSON.parse(selectedObjects).length == 0) {
+            return;
+        }
+
+        // push them to localstorage objects with name "Unnamed Object" and the current date
+        let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+        objects.push({
+            name: 'Unnamed Object',
+            date: new Date().toLocaleString(),
+            author: null,
+            description: null,
+            data: selectedObjects,
+            image: 'assets/textures/unknown.png'
+        });
+        localStorage.setItem('objects', JSON.stringify(objects));
+        // update objects list
+        this.updateObjectsList();
+        this.showToast('Saved ' + JSON.parse(selectedObjects).length + ' objects', ToastType.INFO);
+    }
+
+    async updateObjectsList() {
+        let grid = document.querySelector('#objects .object-grid') as HTMLElement;
+        grid.innerHTML = '';
+        let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+        for (let i = 0; i < objects.length; i++) {
+            /* <div class="object" data-object="person">
+        <img src="assets/textures/person.png">
+      </div> */
+            // we will not include image for now
+            let object = objects[i];
+            let div = document.createElement('div');
+            div.classList.add('object');
+            div.dataset.object = i.toString();
+            div.addEventListener('mousedown', (e) => {
+                // make sure its left click
+                if ((e as MouseEvent).button != 0) return;
+                this.spawningSavedObject = i;
+                new Audio('assets/sounds/spawn_down.wav').play();
+            });
+            let img = document.createElement('img');
+            img.src = object.image;
+            div.appendChild(img);
+            grid.appendChild(div);
+        }
     }
 
     async showToast(message: string, type: ToastType) {
@@ -863,8 +987,33 @@ class SimuloClientController {
 
                 // if we have a spawningSavedObject string, get it from this.savedObjects[this.spawningSavedObject] and render its .shapes
                 if (this.spawningSavedObject != null) {
-                    var savedObject = this.savedObjects[this.spawningSavedObject];
-                    if (savedObject != null) {
+                    //var savedObject = this.savedObjects[this.spawningSavedObject];
+                    let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                    let savedObjects: {
+                        id: number;
+                        type: "POLYGON" | "CIRCLE" | "EDGE";
+                        position: { x: number; y: number; };
+                        rotation: number;
+                        velocity: { x: number; y: number; };
+                        angularVelocity: number;
+                        density: number;
+                        friction: number;
+                        restitution: number;
+                        border: string | null;
+                        borderWidth: number | null;
+                        borderScaleWithZoom: boolean | null | undefined;
+                        circleCake: boolean | null | undefined;
+                        sound: string | null;
+                        color: string;
+                        isStatic: boolean;
+                        mass: number;
+                        joints: any[]; // not important to this ghost rendering
+                        radius: number | undefined;
+                        image: string | null | undefined;
+                        points: [x: number, y: number][];
+                    }[] = JSON.parse(objects[this.spawningSavedObject].data);
+                    console.log('savedObjects: ', savedObjects);
+                    /*if (savedObject != null) {
                         shapes = shapes.concat(savedObject.shapes.map((shape) => {
                             var clonedShape = Object.assign({}, shape);
                             clonedShape.x += this.mousePos.x;
@@ -876,7 +1025,43 @@ class SimuloClientController {
                             clonedShape.color = 'rgba(255, 255, 255, 0.5)';
                             return clonedShape;
                         }));
-                    }
+                    }*/
+                    savedObjects.forEach((savedObject) => {
+                        if (savedObject.type == 'POLYGON') {
+                            shapes.push({
+                                x: savedObject.position.x + this.mousePos.x,
+                                y: savedObject.position.y + this.mousePos.y,
+                                angle: savedObject.rotation,
+                                type: 'polygon',
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                border: 'white',
+                                borderWidth: 3.5,
+                                borderScaleWithZoom: true,
+                                points: savedObject.points.map((point) => { return { x: point[0], y: point[1] } }),
+                                id: savedObject.id,
+                                image: null
+                            } as SimuloPolygon);
+                            console.log('latest shape: ', shapes[shapes.length - 1]);
+                        }
+                        else if (savedObject.type == 'CIRCLE') {
+                            shapes.push({
+                                x: savedObject.position.x + this.mousePos.x,
+                                y: savedObject.position.y + this.mousePos.y,
+                                angle: savedObject.rotation,
+                                type: 'circle',
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                border: 'white',
+                                borderWidth: 3.5,
+                                borderScaleWithZoom: true,
+                                circleCake: false,
+                                radius: savedObject.radius,
+                                id: savedObject.id,
+                                image: null
+                            } as SimuloCircle);
+                            console.log('latest shape: ', shapes[shapes.length - 1]);
+                        }
+
+                    });
                 }
 
                 Object.keys(this.creatingObjects).forEach((key) => {
@@ -1122,9 +1307,21 @@ class SimuloClientController {
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
                 var audio = new Audio('assets/sounds/' + body.data.sound);
-                audio.volume = body.data.volume;
-                // pitch from 0.5 to 1.5
-                audio.playbackRate = body.data.pitch;
+                if (body.data.volume < Infinity) {
+                    try {
+                        audio.volume = body.data.volume;
+                        // pitch from 0.5 to 1.5
+                        audio.playbackRate = body.data.pitch;
+                    }
+                    catch (e) {
+                        console.log('Failed to set volume or pitch of audio: ' + e);
+                    }
+                }
+                else {
+                    // we'll take it from here thanks, i dont think you know what youre doing :)
+                    audio.volume = 1;
+                    audio.playbackRate = 1;
+                }
                 audio.play();
             }
             if (body.type == 'set_time_scale') {

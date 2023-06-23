@@ -64,6 +64,7 @@ assets/textures/tools/texture.png
 assets/textures/tools/thruster.png
 assets/textures/tools/tracer.png
 assets/textures/tools/zoom.png
+assets/textures/unknown.png
 icons/add-box.svg
 icons/add-circle.svg
 icons/add-polygon.svg
