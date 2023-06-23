@@ -82,6 +82,32 @@ interface SimuloSavedObject {
     name: string;
     shapes: SimuloShape[];
 }
+
+const defaultSavedObjects: {
+    name: string;
+    author: string | null;
+    data: string;
+    description: string | null;
+    image: string;
+}[] = [{
+    name: "Person",
+    author: "asour",
+    data: `[{"id":3,"type":"CIRCLE","position":{"x":0.027060299522868793,"y":-0.6546055597719658},"rotation":3.1736624240875244,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x":0.007093784741751354,"y":0.09707290702490923},"rotation":3.141267776489258,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]}]`,
+    description: "A ragdoll, mascot, crash test dummy, size reference and more all in one.",
+    image: "assets/textures/person.png"
+}, {
+    name: "Purple Person",
+    author: "asour",
+    data: `[{"id":3,"type":"CIRCLE","position":{"x":0.027060299522868793,"y":-0.6546055597719658},"rotation":3.1736624240875244,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#8c67f2","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x":0.007093784741751354,"y":0.09707290702490923},"rotation":3.141267776489258,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body_purple.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]}]`,
+    description: "Same as person, but purple",
+    image: "assets/textures/person_purple.png"
+}, {
+    name: "Basic Car",
+    author: "asour",
+    data: `[{"id":16,"type":"CIRCLE","position":{"x":2.996374755454317,"y":2.329615572353532},"rotation":10.404781341552734,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(211.64599036813416, 116.3114585334254, 128.11140656073175, 1)","isStatic":false,"mass":1.3809078931808472,"joints":[{"id":35,"bodyA":16,"bodyB":14,"anchorA":[-0.06215667724609375,-0.031076431274414062],"anchorB":[2.0718441009521484,-0.04247474670410156],"collideConnected":true,"zDepth":35,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.8930270671844482,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":34,"bodyA":14,"bodyB":16,"anchorA":[2.2168750762939453,0.05075836181640625],"anchorB":[-0.06215667724609375,-0.031076431274414062],"collideConnected":true,"zDepth":34,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.7762930393218994,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":33,"bodyA":16,"bodyB":14,"anchorA":[-0.07251548767089844,-0.13467025756835938],"anchorB":[2.2168750762939453,0.05075836181640625],"collideConnected":true,"zDepth":33,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6723198890686035,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":32,"bodyA":14,"bodyB":16,"anchorA":[-0.1035928726196289,0.14399147033691406],"anchorB":[-0.07251548767089844,-0.13467025756835938],"collideConnected":true,"zDepth":32,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7305455207824707,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":31,"bodyA":16,"bodyB":14,"anchorA":[0.010358810424804688,-0.09323310852050781],"anchorB":[-0.1035928726196289,0.14399147033691406],"collideConnected":true,"zDepth":31,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.8194663524627686,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":30,"bodyA":14,"bodyB":16,"anchorA":[-9.5367431640625e-7,0.1129150390625],"anchorB":[0.010358810424804688,-0.09323310852050781],"collideConnected":true,"zDepth":30,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.76554799079895,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":23,"bodyA":14,"bodyB":16,"anchorA":[3.573932647705078,0.009321212768554688],"anchorB":[0.010358810424804688,-0.05179595947265625],"collideConnected":true,"zDepth":23,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.899566650390625,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":22,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,-0.020717620849609375],"anchorB":[3.573932647705078,0.009321212768554688],"collideConnected":true,"zDepth":22,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.9386088848114014,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":21,"bodyA":14,"bodyB":16,"anchorA":[3.5842933654785156,-0.03211402893066406],"anchorB":[-0.020719528198242188,-0.020717620849609375],"collideConnected":true,"zDepth":21,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.981227159500122,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":20,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,0.010358810424804688],"anchorB":[3.5842933654785156,-0.03211402893066406],"collideConnected":true,"zDepth":20,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.010831356048584,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":19,"bodyA":15,"bodyB":16,"anchorA":[-0.005179405212402344,-0.03625679016113281],"anchorB":[-0.020719528198242188,0.010358810424804688],"collideConnected":true,"zDepth":19,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.5032477378845215,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":18,"bodyA":16,"bodyB":15,"anchorA":[-0.020719528198242188,0],"anchorB":[-0.005179405212402344,-0.03625679016113281],"collideConnected":true,"zDepth":18,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.502945423126221,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":17,"bodyA":15,"bodyB":16,"anchorA":[0.03625774383544922,-0.07769393920898438],"anchorB":[-0.020719528198242188,0],"collideConnected":true,"zDepth":17,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.462861061096191,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"radius":0.6629906892776489},{"id":15,"type":"CIRCLE","position":{"x":-2.536483377861723,"y":2.2748746665918134},"rotation":-10.279982566833496,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(201.94351491912954, 233.1177873741904, 196.43321536487724, 1)","isStatic":false,"mass":1.6284500360488892,"joints":[{"id":38,"bodyA":15,"bodyB":14,"anchorA":[0.005179405212402344,-0.11913108825683594],"anchorB":[-2.134002685546875,0.04039955139160156],"collideConnected":true,"zDepth":38,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6384940147399902,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":37,"bodyA":14,"bodyB":15,"anchorA":[-2.123642921447754,0.04039955139160156],"anchorB":[0.005179405212402344,-0.10877227783203125],"collideConnected":true,"zDepth":37,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.651193857192993,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":36,"bodyA":15,"bodyB":14,"anchorA":[-0.005179405212402344,-0.21236419677734375],"anchorB":[-2.123642921447754,0.04039955139160156],"collideConnected":true,"zDepth":36,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.5541961193084717,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":29,"bodyA":15,"bodyB":14,"anchorA":[-0.046616554260253906,-0.1605682373046875],"anchorB":[-9.5367431640625e-7,0.1129150390625],"collideConnected":true,"zDepth":29,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7630393505096436,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":28,"bodyA":14,"bodyB":15,"anchorA":[0.08287239074707031,0.14399147033691406],"anchorB":[-0.046616554260253906,-0.1605682373046875],"collideConnected":true,"zDepth":28,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.806914806365967,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":27,"bodyA":15,"bodyB":14,"anchorA":[-0.015539169311523438,-0.18128585815429688],"anchorB":[0.08287239074707031,0.14399147033691406],"collideConnected":true,"zDepth":27,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.769735097885132,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":26,"bodyA":15,"bodyB":14,"anchorA":[0.03625774383544922,-0.1605682373046875],"anchorB":[-3.5532169342041016,-0.011396408081054688],"collideConnected":true,"zDepth":26,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6710948944091797,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":25,"bodyA":14,"bodyB":15,"anchorA":[-3.522139549255371,0.009321212768554688],"anchorB":[0.03625774383544922,-0.1605682373046875],"collideConnected":true,"zDepth":25,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6424362659454346,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":24,"bodyA":15,"bodyB":14,"anchorA":[0.015539169311523438,-0.11913108825683594],"anchorB":[-3.522139549255371,0.009321212768554688],"collideConnected":true,"zDepth":24,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6766533851623535,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":19,"bodyA":15,"bodyB":16,"anchorA":[-0.005179405212402344,-0.03625679016113281],"anchorB":[-0.020719528198242188,0.010358810424804688],"collideConnected":true,"zDepth":19,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.5032477378845215,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":18,"bodyA":16,"bodyB":15,"anchorA":[-0.020719528198242188,0],"anchorB":[-0.005179405212402344,-0.03625679016113281],"collideConnected":true,"zDepth":18,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.502945423126221,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":17,"bodyA":15,"bodyB":16,"anchorA":[0.03625774383544922,-0.07769393920898438],"anchorB":[-0.020719528198242188,0],"collideConnected":true,"zDepth":17,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.462861061096191,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"radius":0.719966471195221},{"id":14,"type":"POLYGON","position":{"x":0.3676232391121541,"y":-0.1269903389013507},"rotation":-0.034425824880599976,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(213.87663392405085, 183.03583592500704, 86.46282192908527, 1)","isStatic":false,"mass":9.236974716186523,"joints":[{"id":38,"bodyA":15,"bodyB":14,"anchorA":[0.005179405212402344,-0.11913108825683594],"anchorB":[-2.134002685546875,0.04039955139160156],"collideConnected":true,"zDepth":38,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6384940147399902,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":37,"bodyA":14,"bodyB":15,"anchorA":[-2.123642921447754,0.04039955139160156],"anchorB":[0.005179405212402344,-0.10877227783203125],"collideConnected":true,"zDepth":37,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.651193857192993,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":36,"bodyA":15,"bodyB":14,"anchorA":[-0.005179405212402344,-0.21236419677734375],"anchorB":[-2.123642921447754,0.04039955139160156],"collideConnected":true,"zDepth":36,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.5541961193084717,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":35,"bodyA":16,"bodyB":14,"anchorA":[-0.06215667724609375,-0.031076431274414062],"anchorB":[2.0718441009521484,-0.04247474670410156],"collideConnected":true,"zDepth":35,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.8930270671844482,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":34,"bodyA":14,"bodyB":16,"anchorA":[2.2168750762939453,0.05075836181640625],"anchorB":[-0.06215667724609375,-0.031076431274414062],"collideConnected":true,"zDepth":34,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.7762930393218994,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":33,"bodyA":16,"bodyB":14,"anchorA":[-0.07251548767089844,-0.13467025756835938],"anchorB":[2.2168750762939453,0.05075836181640625],"collideConnected":true,"zDepth":33,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6723198890686035,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":32,"bodyA":14,"bodyB":16,"anchorA":[-0.1035928726196289,0.14399147033691406],"anchorB":[-0.07251548767089844,-0.13467025756835938],"collideConnected":true,"zDepth":32,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7305455207824707,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":31,"bodyA":16,"bodyB":14,"anchorA":[0.010358810424804688,-0.09323310852050781],"anchorB":[-0.1035928726196289,0.14399147033691406],"collideConnected":true,"zDepth":31,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.8194663524627686,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":30,"bodyA":14,"bodyB":16,"anchorA":[-9.5367431640625e-7,0.1129150390625],"anchorB":[0.010358810424804688,-0.09323310852050781],"collideConnected":true,"zDepth":30,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.76554799079895,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":29,"bodyA":15,"bodyB":14,"anchorA":[-0.046616554260253906,-0.1605682373046875],"anchorB":[-9.5367431640625e-7,0.1129150390625],"collideConnected":true,"zDepth":29,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7630393505096436,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":28,"bodyA":14,"bodyB":15,"anchorA":[0.08287239074707031,0.14399147033691406],"anchorB":[-0.046616554260253906,-0.1605682373046875],"collideConnected":true,"zDepth":28,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.806914806365967,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":27,"bodyA":15,"bodyB":14,"anchorA":[-0.015539169311523438,-0.18128585815429688],"anchorB":[0.08287239074707031,0.14399147033691406],"collideConnected":true,"zDepth":27,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.769735097885132,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":26,"bodyA":15,"bodyB":14,"anchorA":[0.03625774383544922,-0.1605682373046875],"anchorB":[-3.5532169342041016,-0.011396408081054688],"collideConnected":true,"zDepth":26,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6710948944091797,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":25,"bodyA":14,"bodyB":15,"anchorA":[-3.522139549255371,0.009321212768554688],"anchorB":[0.03625774383544922,-0.1605682373046875],"collideConnected":true,"zDepth":25,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6424362659454346,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":24,"bodyA":15,"bodyB":14,"anchorA":[0.015539169311523438,-0.11913108825683594],"anchorB":[-3.522139549255371,0.009321212768554688],"collideConnected":true,"zDepth":24,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6766533851623535,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":23,"bodyA":14,"bodyB":16,"anchorA":[3.573932647705078,0.009321212768554688],"anchorB":[0.010358810424804688,-0.05179595947265625],"collideConnected":true,"zDepth":23,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.899566650390625,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":22,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,-0.020717620849609375],"anchorB":[3.573932647705078,0.009321212768554688],"collideConnected":true,"zDepth":22,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.9386088848114014,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":21,"bodyA":14,"bodyB":16,"anchorA":[3.5842933654785156,-0.03211402893066406],"anchorB":[-0.020719528198242188,-0.020717620849609375],"collideConnected":true,"zDepth":21,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.981227159500122,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":20,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,0.010358810424804688],"anchorB":[3.5842933654785156,-0.03211402893066406],"collideConnected":true,"zDepth":20,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.010831356048584,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"points":[[-3.8971424656729177,-0.5925479772368174],[3.8971424656729177,-0.5925479772368174],[3.8971424656729177,0.5925479772368174],[-3.8971424656729177,0.5925479772368174]]}]`,
+    description: 'Car which uses spring to connect everything, demonstrating how you can make a car without axles',
+    image: "assets/textures/car.png"
+}];
 /** `SimuloClientController` manages connecting to the server, `SimuloViewer` and the UI. */
 class SimuloClientController {
     client: SimuloClient;
@@ -93,7 +119,7 @@ class SimuloClientController {
     maxZoom = 5;
     minZoom = 0.1;
     scrollSensitivity = 0.0005;
-    spawningSavedObject: string | null = null;
+    spawningSavedObject: number | null = null;
     savedObjects: {
         [key: string]: SimuloSavedObject;
     } = {
@@ -294,6 +320,7 @@ class SimuloClientController {
 
         this.client.connect(); // Connects to the server
 
+        /*
         let objects = document.querySelectorAll('.object-grid .object');
         objects.forEach((object) => {
             object.addEventListener('mousedown', (e) => {
@@ -303,6 +330,8 @@ class SimuloClientController {
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
         });
+        */
+        this.updateObjectsList();
 
         let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
         let dismissPopup = (e: MouseEvent | undefined) => {
@@ -420,9 +449,11 @@ class SimuloClientController {
         document.addEventListener('mouseup', (e) => {
             if (!(e instanceof MouseEvent) || e.button != 0) return;
 
-            if (this.spawningSavedObject) {
-                var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
-                this.spawnObject(this.savedObjects[this.spawningSavedObject], positionInWorld.x, positionInWorld.y);
+            if (this.spawningSavedObject != null) {
+                //var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
+                let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                console.log('yo yo yo its me, line 429 and today i wanna show you objects[this.spawningSavedObject]:', objects[this.spawningSavedObject], 'and my friend .data:', objects[this.spawningSavedObject].data);
+                this.loadSavedObjects(objects[this.spawningSavedObject].data, this.mousePos.x, this.mousePos.y);
                 this.spawningSavedObject = null;
                 new Audio('assets/sounds/spawn_up.wav').play();
             }
@@ -584,6 +615,7 @@ class SimuloClientController {
             }
         });
 
+        let mouseDownOnCanvas = false;
 
         this.pauseButton.addEventListener('click', () => {
             // set checked class
@@ -615,6 +647,8 @@ class SimuloClientController {
             };
             this.mousePos = pos;
             this.client.emitData("player mouse down", this.player);
+            mouseDownOnCanvas = true;
+            console.log('mouse now down on canvas!');
         });
         this.viewer.on('mouseUp', (pos: { x: number, y: number }) => {
             this.player = {
@@ -627,6 +661,42 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
         });
+        document.addEventListener('mouseup', (e) => {
+            console.log('mouseup on document');
+            if (mouseDownOnCanvas) {
+                console.log('mouse was down on canvas, now up on document');
+                // that means we started the mouse down on the canvas, and it ended off the canvas
+                // lets check if we're hovering over object-grid-bar or one of its children
+                let checkElement = (target: HTMLElement) => {
+                    return target.classList.contains('object-grid-bar') || target.classList.contains('object-grid') || target.classList.contains('object') || target.dataset.menu == 'objects';
+                };
+                let target = document.elementFromPoint(e.clientX, e.clientY);
+                if (target) {
+                    console.log('we have a target element from point', target);
+                    if (checkElement(target as HTMLElement) || (target.parentElement && checkElement(target.parentElement))) {
+                        // if our tool is move, we just dragged the object to the object grid, lets save it
+                        if (this.tool == 'select') { // select = move
+                            this.saveSelectionToObjects();
+                        }
+                        else {
+                            console.log('everything was in place but the tool was', this.tool);
+                        }
+                    }
+                    else {
+                        console.log(target, 'wasnt what we wanted');
+                    }
+                }
+                else {
+                    console.log('no target element from point');
+                }
+            }
+            else {
+                console.log('mouse wasnt down on canvas');
+            }
+
+            mouseDownOnCanvas = false;
+        });
+
         document.addEventListener('keydown', (e) => {
             // make sure we arent in a text area or input or contenteditable
             if ((e.target as HTMLElement).tagName == 'INPUT' || (e.target as HTMLElement).tagName == 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) {
@@ -642,12 +712,17 @@ class SimuloClientController {
             // if its CTRL+C, copy
             if (e.ctrlKey && e.key == 'c') {
                 this.saveSelection();
-                this.showToast('Copied to clipboard (Note: does not yet copy joints or fluid)', ToastType.INFO);
+                this.showToast('Copied to clipboard (Note: does not yet copy fluid)', ToastType.INFO);
             }
             // if its CTRL+V, paste
             if (e.ctrlKey && e.key == 'v') {
                 this.loadSelection();
                 this.showToast('Pasted from clipboard', ToastType.INFO);
+            }
+            // delete key
+            if (e.key == 'Delete') {
+                this.deleteSelection();
+                this.showToast('Deleted selection', ToastType.INFO);
             }
         });
 
@@ -681,7 +756,7 @@ class SimuloClientController {
             if (Math.random() < 0.00003) {
                 this.showToast('I can hear their screams', ToastType.INFO);
             }
-        }, 300);
+        }, 90);
     }
     setTheme(name: string) {
         this.client.emitData('set_theme', name);
@@ -718,8 +793,16 @@ class SimuloClientController {
         console.log('Saved', (saved as { data: string }).data);
     }
 
-    loadSavedObjects(saveData: string) {
-        this.client.emitData('load_save_data', saveData);
+    async getSelectedObjects() {
+        return ((await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y })) as { data: string }).data;
+    }
+
+    loadSavedObjects(saveData: string, x: number, y: number) {
+        this.client.emitData('load_save_data', {
+            data: saveData,
+            x,
+            y
+        });
     }
 
     loadSelection() {
@@ -727,6 +810,59 @@ class SimuloClientController {
         navigator.clipboard.readText().then((text) => {
             this.client.emitData('load_save_data', { data: text, x: this.mousePos.x, y: this.mousePos.y });
         });
+    }
+
+    deleteSelection() {
+        this.client.emitData('delete_selection', null);
+    }
+
+    async saveSelectionToObjects() {
+        // get selected objects
+        let selectedObjects = await this.getSelectedObjects();
+        if (JSON.parse(selectedObjects).length == 0) {
+            return;
+        }
+
+        // push them to localstorage objects with name "Unnamed Object" and the current date
+        let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+        objects.push({
+            name: 'Unnamed Object',
+            date: new Date().toLocaleString(),
+            author: null,
+            description: null,
+            data: selectedObjects,
+            image: 'assets/textures/unknown.png'
+        });
+        localStorage.setItem('objects', JSON.stringify(objects));
+        // update objects list
+        this.updateObjectsList();
+        this.showToast('Saved ' + JSON.parse(selectedObjects).length + ' objects', ToastType.INFO);
+    }
+
+    async updateObjectsList() {
+        let grid = document.querySelector('#objects .object-grid') as HTMLElement;
+        grid.innerHTML = '';
+        let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+        for (let i = 0; i < objects.length; i++) {
+            /* <div class="object" data-object="person">
+        <img src="assets/textures/person.png">
+      </div> */
+            // we will not include image for now
+            let object = objects[i];
+            let div = document.createElement('div');
+            div.classList.add('object');
+            div.dataset.object = i.toString();
+            div.addEventListener('mousedown', (e) => {
+                // make sure its left click
+                if ((e as MouseEvent).button != 0) return;
+                this.spawningSavedObject = i;
+                new Audio('assets/sounds/spawn_down.wav').play();
+            });
+            let img = document.createElement('img');
+            img.src = object.image;
+            div.appendChild(img);
+            grid.appendChild(div);
+        }
     }
 
     async showToast(message: string, type: ToastType) {
@@ -863,8 +999,33 @@ class SimuloClientController {
 
                 // if we have a spawningSavedObject string, get it from this.savedObjects[this.spawningSavedObject] and render its .shapes
                 if (this.spawningSavedObject != null) {
-                    var savedObject = this.savedObjects[this.spawningSavedObject];
-                    if (savedObject != null) {
+                    //var savedObject = this.savedObjects[this.spawningSavedObject];
+                    let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                    let savedObjects: {
+                        id: number;
+                        type: "POLYGON" | "CIRCLE" | "EDGE";
+                        position: { x: number; y: number; };
+                        rotation: number;
+                        velocity: { x: number; y: number; };
+                        angularVelocity: number;
+                        density: number;
+                        friction: number;
+                        restitution: number;
+                        border: string | null;
+                        borderWidth: number | null;
+                        borderScaleWithZoom: boolean | null | undefined;
+                        circleCake: boolean | null | undefined;
+                        sound: string | null;
+                        color: string;
+                        isStatic: boolean;
+                        mass: number;
+                        joints: any[]; // not important to this ghost rendering
+                        radius: number | undefined;
+                        image: string | null | undefined;
+                        points: [x: number, y: number][];
+                    }[] = JSON.parse(objects[this.spawningSavedObject].data);
+                    console.log('savedObjects: ', savedObjects);
+                    /*if (savedObject != null) {
                         shapes = shapes.concat(savedObject.shapes.map((shape) => {
                             var clonedShape = Object.assign({}, shape);
                             clonedShape.x += this.mousePos.x;
@@ -876,7 +1037,43 @@ class SimuloClientController {
                             clonedShape.color = 'rgba(255, 255, 255, 0.5)';
                             return clonedShape;
                         }));
-                    }
+                    }*/
+                    savedObjects.forEach((savedObject) => {
+                        if (savedObject.type == 'POLYGON') {
+                            shapes.push({
+                                x: savedObject.position.x + this.mousePos.x,
+                                y: savedObject.position.y + this.mousePos.y,
+                                angle: savedObject.rotation,
+                                type: 'polygon',
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                border: 'white',
+                                borderWidth: 3.5,
+                                borderScaleWithZoom: true,
+                                points: savedObject.points.map((point) => { return { x: point[0], y: point[1] } }),
+                                id: savedObject.id,
+                                image: null
+                            } as SimuloPolygon);
+                            console.log('latest shape: ', shapes[shapes.length - 1]);
+                        }
+                        else if (savedObject.type == 'CIRCLE') {
+                            shapes.push({
+                                x: savedObject.position.x + this.mousePos.x,
+                                y: savedObject.position.y + this.mousePos.y,
+                                angle: savedObject.rotation,
+                                type: 'circle',
+                                color: 'rgba(255, 255, 255, 0.5)',
+                                border: 'white',
+                                borderWidth: 3.5,
+                                borderScaleWithZoom: true,
+                                circleCake: false,
+                                radius: savedObject.radius,
+                                id: savedObject.id,
+                                image: null
+                            } as SimuloCircle);
+                            console.log('latest shape: ', shapes[shapes.length - 1]);
+                        }
+
+                    });
                 }
 
                 Object.keys(this.creatingObjects).forEach((key) => {
@@ -1122,9 +1319,21 @@ class SimuloClientController {
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
                 var audio = new Audio('assets/sounds/' + body.data.sound);
-                audio.volume = body.data.volume;
-                // pitch from 0.5 to 1.5
-                audio.playbackRate = body.data.pitch;
+                if (body.data.volume < Infinity) {
+                    try {
+                        audio.volume = body.data.volume;
+                        // pitch from 0.5 to 1.5
+                        audio.playbackRate = body.data.pitch;
+                    }
+                    catch (e) {
+                        console.log('Failed to set volume or pitch of audio: ' + e);
+                    }
+                }
+                else {
+                    // we'll take it from here thanks, i dont think you know what youre doing :)
+                    audio.volume = 1;
+                    audio.playbackRate = 1;
+                }
                 audio.play();
             }
             if (body.type == 'set_time_scale') {

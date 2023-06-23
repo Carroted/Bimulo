@@ -595,7 +595,13 @@ class SimuloPhysicsServer {
         jd.set_localAnchorB(new box2D.b2Vec2(anchorB[0], anchorB[1]));
         // no collide
         jd.set_collideConnected(false);
-        this.world.CreateJoint(jd);
+        // set id and zdepth
+        let joint = this.world.CreateJoint(jd);
+        let jointData = joint.GetUserData() as SimuloJointData;
+        jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
+        jointData.anchorA = anchorA;
+        jointData.anchorB = anchorB;
     }
     getProxy(body: SimuloObject) {
         return createSandboxedInstance(body);
@@ -617,6 +623,8 @@ class SimuloPhysicsServer {
         jd.set_damping(damping);
         var joint = this.world.CreateJoint(jd);
         var jointData = joint.GetUserData() as SimuloJointData;
+        jointData.anchorA = anchorA;
+        jointData.anchorB = anchorB;
         jointData.width = width;
         if (image) {
             jointData.image = image;
@@ -791,6 +799,8 @@ class SimuloPhysicsServer {
         };
         jointData.width = width;
         jointData.image = null;
+        jointData.anchorA = point;
+        jointData.anchorB = point;
         var joint = new SimuloMouseSpring(this, mouseJoint);
         return joint;
     }
@@ -890,6 +900,12 @@ class SimuloPhysicsServer {
         floorData.sound = "ground.wav";
         floorData.id = this.currentID++;
         floorData.zDepth = this.highestZDepth++;
+        floorData.points = [
+            [floorShape.get_m_vertices(0).get_x(), floorShape.get_m_vertices(0).get_y()],
+            [floorShape.get_m_vertices(1).get_x(), floorShape.get_m_vertices(1).get_y()],
+            [floorShape.get_m_vertices(2).get_x(), floorShape.get_m_vertices(2).get_y()],
+            [floorShape.get_m_vertices(3).get_x(), floorShape.get_m_vertices(3).get_y()]
+        ];
 
         this.addPerson([0, 0]);
 
@@ -1026,6 +1042,142 @@ class SimuloPhysicsServer {
     /** Saves a collection of `SimuloObject`s to a `SimuloSavedObject`s you can restore with `load()` */
     save(stuff: SimuloObject[]): SimuloSavedObject[] {
         var savedStuff: SimuloSavedObject[] = stuff.map((o) => {
+            // get joints of object
+            var joints: SimuloSavedJoint[] = [];
+            var jointList = o._body.GetJointList();
+            while (box2D.getPointer(jointList)) {
+                let j = jointList;
+                jointList = jointList.next;
+                let joint = j.joint;
+                let jointData = joint.GetUserData() as SimuloJointData;
+                let bodyB = joint.GetBodyB();
+                let bodyBData = bodyB.GetUserData() as SimuloObjectData;
+                let bodyBID = bodyBData.id;
+                let bodyA = joint.GetBodyA();
+                let bodyAData = bodyA.GetUserData() as SimuloObjectData;
+                let bodyAID = bodyAData.id;
+                let jointType = joint.GetType();
+                let jointTypeParsed: string;
+                let localAnchorA = jointData.anchorA;
+                let localAnchorB = jointData.anchorB;
+                let baseObject = {
+                    id: jointData.id,
+                    bodyA: bodyAID,
+                    bodyB: bodyBID,
+                    anchorA: localAnchorA,
+                    anchorB: localAnchorB,
+                    collideConnected: joint.GetCollideConnected(),
+                    zDepth: jointData.zDepth,
+                };
+                if (jointType === box2D.e_revoluteJoint) {
+                    jointTypeParsed = "axle";
+                    let revoluteJoint = box2D.castObject(joint, box2D.b2RevoluteJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        lowerLimit: revoluteJoint.GetLowerLimit(),
+                        upperLimit: revoluteJoint.GetUpperLimit(),
+                        enableLimit: revoluteJoint.IsLimitEnabled(),
+                        motorSpeed: revoluteJoint.GetMotorSpeed(),
+                        maxMotorTorque: revoluteJoint.GetMaxMotorTorque(),
+                        enableMotor: revoluteJoint.IsMotorEnabled(),
+                    });
+                } else if (jointType === box2D.e_prismaticJoint) {
+                    jointTypeParsed = "slider";
+                    let prismaticJoint = box2D.castObject(joint, box2D.b2PrismaticJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        lowerTranslation: prismaticJoint.GetLowerLimit(),
+                        upperTranslation: prismaticJoint.GetUpperLimit(),
+                        enableLimit: prismaticJoint.IsLimitEnabled(),
+                        motorSpeed: prismaticJoint.GetMotorSpeed(),
+                        maxMotorForce: prismaticJoint.GetMaxMotorForce(),
+                        enableMotor: prismaticJoint.IsMotorEnabled(),
+                    });
+                } else if (jointType === box2D.e_distanceJoint) {
+                    jointTypeParsed = "spring";
+                    let distanceJoint = box2D.castObject(joint, box2D.b2DistanceJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        dampingRatio: distanceJoint.GetDamping(),
+                        frequencyHz: distanceJoint.GetStiffness(),
+                        length: distanceJoint.GetLength(),
+                        image: jointData.image,
+                        width: jointData.width,
+                        line: jointData.line,
+                    });
+                } else if (jointType === box2D.e_pulleyJoint) {
+                    jointTypeParsed = "pulley";
+                    let pulleyJoint = box2D.castObject(joint, box2D.b2PulleyJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        groundAnchorA: [pulleyJoint.GetGroundAnchorA().get_x(), pulleyJoint.GetGroundAnchorA().get_y()],
+                        groundAnchorB: [pulleyJoint.GetGroundAnchorB().get_x(), pulleyJoint.GetGroundAnchorB().get_y()],
+                        lengthA: pulleyJoint.GetLengthA(),
+                        lengthB: pulleyJoint.GetLengthB(),
+                        ratio: pulleyJoint.GetRatio(),
+                    });
+                } else if (jointType === box2D.e_mouseJoint) {
+                    /*jointTypeParsed = "mouseSpring";
+                    let mouseJoint = box2D.castObject(joint, box2D.b2MouseJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        dampingRatio: mouseJoint.GetDamping(),
+                        frequencyHz: mouseJoint.GetStiffness(),
+                        maxForce: mouseJoint.GetMaxForce(),
+                    });*/
+                    // skip this, we dont yet save mouse joints
+                } else if (jointType === box2D.e_gearJoint) {
+                    jointTypeParsed = "gear";
+                    let gearJoint = box2D.castObject(joint, box2D.b2GearJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        ratio: gearJoint.GetRatio(),
+                    });
+                } else if (jointType === box2D.e_wheelJoint) {
+                    jointTypeParsed = "wheel";
+                    let wheelJoint = box2D.castObject(joint, box2D.b2WheelJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        dampingRatio: wheelJoint.GetDamping(),
+                        frequencyHz: wheelJoint.GetStiffness(),
+                        motorSpeed: wheelJoint.GetMotorSpeed(),
+                        maxMotorTorque: wheelJoint.GetMaxMotorTorque(),
+                        enableMotor: wheelJoint.IsMotorEnabled(),
+                    });
+                } else if (jointType === box2D.e_weldJoint) {
+                    jointTypeParsed = "weld";
+                    let weldJoint = box2D.castObject(joint, box2D.b2WeldJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        dampingRatio: weldJoint.GetDamping(),
+                        frequencyHz: weldJoint.GetStiffness(),
+                    });
+                } else if (jointType === box2D.e_frictionJoint) {
+                    jointTypeParsed = "friction";
+                    let frictionJoint = box2D.castObject(joint, box2D.b2FrictionJoint);
+                    joints.push({
+                        ...baseObject,
+                        type: jointTypeParsed,
+                        maxForce: frictionJoint.GetMaxForce(),
+                        maxTorque: frictionJoint.GetMaxTorque(),
+                    });
+                } else if (jointType === box2D.e_ropeJoint) {
+                    // skip for now
+                } else if (jointType === box2D.e_motorJoint) {
+                    // skip for now
+                } else {
+                    jointTypeParsed = "unknown";
+                }
+            }
+
             return {
                 id: o.id,
                 type: o.type,
@@ -1045,7 +1197,7 @@ class SimuloPhysicsServer {
                 color: o.color,
                 isStatic: o.isStatic,
                 mass: o.mass,
-                joints: [], // todo: make it real (and pure)
+                joints: joints,
                 points: o.points,
                 radius: o.radius,
             };
@@ -1054,25 +1206,28 @@ class SimuloPhysicsServer {
     }
     /** Spawns in some `SimuloObject`s from a `SimuloSavedObject[]` you saved with `save()`, doesn't replace anything, just adds to the world */
     load(stuff: SimuloSavedObject[]) {
+        let jointsToAdd: any[] = [];
+        let realIDs: { [key: number]: number } = {};
+
         stuff.forEach((o) => {
+            let obj: SimuloObject | null = null;
             // if its a polygon, use addPolygon
             if (o.type === SimuloObjectType.POLYGON) {
-                let obj = this.addPolygon(o.points as [x: number, y: number][], [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
-                    border: o.border,
-                    borderWidth: o.borderWidth,
-                    borderScaleWithZoom: o.borderScaleWithZoom,
-                    circleCake: o.circleCake,
-                    image: o.image,
-                    sound: o.sound,
-                    color: o.color
-                }, o.isStatic);
-                obj.velocity = o.velocity;
-                obj.angularVelocity = o.angularVelocity;
-                return;
+                if (o.points) {
+                    obj = this.addPolygon(o.points as [x: number, y: number][], [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                        border: o.border,
+                        borderWidth: o.borderWidth,
+                        borderScaleWithZoom: o.borderScaleWithZoom,
+                        circleCake: o.circleCake,
+                        image: o.image,
+                        sound: o.sound,
+                        color: o.color
+                    }, o.isStatic);
+                }
             }
             // if its a circle, use addCircle
-            if (o.type === SimuloObjectType.CIRCLE) {
-                let obj = this.addCircle(o.radius as number, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+            else if (o.type === SimuloObjectType.CIRCLE) {
+                obj = this.addCircle(o.radius as number, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
                     border: o.border,
                     borderWidth: o.borderWidth,
                     borderScaleWithZoom: o.borderScaleWithZoom,
@@ -1081,9 +1236,33 @@ class SimuloPhysicsServer {
                     sound: o.sound,
                     color: o.color
                 }, o.isStatic);
-                obj.velocity = o.velocity;
-                obj.angularVelocity = o.angularVelocity;
-                return;
+            }
+            if (obj) {
+                let object = obj as SimuloObject; // im sick and tired of TS saying "oh but obj could be null!!" after i checked already
+                object.velocity = o.velocity;
+                object.angularVelocity = o.angularVelocity;
+                jointsToAdd = jointsToAdd.concat(o.joints);
+
+                realIDs[o.id] = object.id;
+            }
+        });
+
+        // filter jointsToAdd to remove duplicate .id
+        jointsToAdd = jointsToAdd.filter((j, i, a) => {
+            return a.findIndex((j2) => j2.id === j.id) === i;
+        });
+
+        jointsToAdd.forEach((j) => {
+            let objectAID = realIDs[j.bodyA];
+            let objectBID = realIDs[j.bodyB];
+            let objectA = this.getObjectByID(objectAID) as SimuloObject;
+            let objectB = this.getObjectByID(objectBID) as SimuloObject;
+            // for now, lets only re-add axle (revolute) and spring (distance) joints since we dont use others
+            if (j.type === "axle") {
+                this.addAxle(j.anchorA, j.anchorB, objectA, objectB);
+            }
+            else if (j.type === "spring") {
+                this.addSpring(j.anchorA, j.anchorB, objectA, objectB, j.frequencyHz, j.length, j.dampingRatio, j.width, j.image, j.line);
             }
         });
     }

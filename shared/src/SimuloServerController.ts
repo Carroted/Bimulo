@@ -561,6 +561,11 @@ class SimuloServerController {
                             [formatted.data.x, formatted.data.y]
                         );
 
+                        // if theres more than one body, ignore id 1 (the floor)
+                        if (bodies.length > 1) {
+                            bodies = bodies.filter((body) => body.id != 1);
+                        }
+
                         /*// on each object, set color to red
                         for (var i = 0; i < bodies.length; i++) {
                             bodies[i].color = "#ff0000"; // trolled :uber_troll:
@@ -794,6 +799,14 @@ class SimuloServerController {
                 savedObjects[i].position = objectPosition;
             }
             this.physicsServer.load(savedObjects);
+        }
+        else if (formatted.type == "delete_selection") {
+            var selectedObjects = this.selectedObjects[uuid];
+            if (selectedObjects) {
+                selectedObjects.forEach((object) => {
+                    this.physicsServer.destroy(object);
+                });
+            }
         }
     }
 

@@ -439,7 +439,6 @@ details summary {
 .object-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(2, 1fr);
   width: 100%;
   grid-gap: 0.25rem;
   margin-bottom: 0.7em;
