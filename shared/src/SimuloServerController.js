@@ -90,6 +90,16 @@ class SimuloServerController {
             client.emit('data', { type: type, data: data });
         });
     }
+    send(id, type, data) {
+        if (this.networkServer) {
+            this.networkServer.sendAll(type, data); // we unfortunately dont know the IDs of the datachannels, so we have to send to all
+        }
+        this.localClients.forEach((client) => {
+            if (client.id === id) {
+                client.emit('data', { type: type, data: data });
+            }
+        });
+    }
     loop(delta) {
         // step physics
         if (this.paused) {
@@ -641,6 +651,45 @@ class SimuloServerController {
         else if (formatted.type == "set_paused") {
             this.paused = formatted.data;
             this.sendAll("set_paused", this.paused);
+        }
+        else if (formatted.type == "save_selection") {
+            var selectedObjects = this.selectedObjects[uuid];
+            if (selectedObjects) {
+                /*console.log('saved objects:', JSON.stringify(this.physicsServer.save(selectedObjects.filter((object) => {
+                    return object instanceof SimuloObject;
+                }) as SimuloObject[])));*/
+                if (formatted.data.key !== undefined) {
+                    //console.log('sending result with key', formatted.data.key);
+                    this.send(uuid, "save_selection", {
+                        key: formatted.data.key,
+                        data: JSON.stringify(this.physicsServer.save(selectedObjects.filter((object) => {
+                            return object instanceof SimuloObject;
+                        })).map((object) => {
+                            // subtract mouse pos
+                            let position = { x: object.position.x, y: object.position.y };
+                            position.x -= formatted.data.x;
+                            position.y -= formatted.data.y;
+                            object.position = position;
+                            return object;
+                        }))
+                    });
+                }
+                else {
+                    // console.log('no key, not sending result')
+                }
+            }
+        }
+        else if (formatted.type == "load_save_data") {
+            // load saved objects
+            var savedObjects = JSON.parse(formatted.data.data);
+            let position = { x: formatted.data.x, y: formatted.data.y };
+            for (let i = 0; i < savedObjects.length; i++) {
+                let objectPosition = { x: savedObjects[i].position.x, y: savedObjects[i].position.y };
+                objectPosition.x += position.x;
+                objectPosition.y += position.y;
+                savedObjects[i].position = objectPosition;
+            }
+            this.physicsServer.load(savedObjects);
         }
     }
     addScript(code) {

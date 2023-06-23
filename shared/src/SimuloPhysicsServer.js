@@ -83,13 +83,14 @@ class SimuloObject {
     get type() {
         // we get it from box2d
         let shape = this._body.GetFixtureList().GetShape();
-        if (shape instanceof box2D.b2PolygonShape) {
+        let shapeType = shape.GetType();
+        if (shapeType === box2D.b2Shape.e_polygon) {
             return SimuloObjectType.POLYGON;
         }
-        else if (shape instanceof box2D.b2CircleShape) {
+        else if (shapeType === box2D.b2Shape.e_circle) {
             return SimuloObjectType.CIRCLE;
         }
-        else if (shape instanceof box2D.b2EdgeShape) {
+        else if (shapeType === box2D.b2Shape.e_edge) {
             return SimuloObjectType.EDGE;
         }
         else {
@@ -912,7 +913,7 @@ class SimuloPhysicsServer {
         stuff.forEach((o) => {
             // if its a polygon, use addPolygon
             if (o.type === SimuloObjectType.POLYGON) {
-                this.addPolygon(o.points, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                let obj = this.addPolygon(o.points, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
                     border: o.border,
                     borderWidth: o.borderWidth,
                     borderScaleWithZoom: o.borderScaleWithZoom,
@@ -921,11 +922,13 @@ class SimuloPhysicsServer {
                     sound: o.sound,
                     color: o.color
                 }, o.isStatic);
+                obj.velocity = o.velocity;
+                obj.angularVelocity = o.angularVelocity;
                 return;
             }
             // if its a circle, use addCircle
             if (o.type === SimuloObjectType.CIRCLE) {
-                this.addCircle(o.radius, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                let obj = this.addCircle(o.radius, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
                     border: o.border,
                     borderWidth: o.borderWidth,
                     borderScaleWithZoom: o.borderScaleWithZoom,
@@ -934,6 +937,8 @@ class SimuloPhysicsServer {
                     sound: o.sound,
                     color: o.color
                 }, o.isStatic);
+                obj.velocity = o.velocity;
+                obj.angularVelocity = o.angularVelocity;
                 return;
             }
         });

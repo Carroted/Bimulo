@@ -134,6 +134,7 @@ class SimuloClientController {
         this.toolIcon = null;
         this.toolIconSize = null;
         this.toolIconOffset = null;
+        this.key = 0;
         this.tool = 'drag';
         this.mousePos = { x: 0, y: 0 };
         this.theme = themes.night;
@@ -484,6 +485,16 @@ class SimuloClientController {
                 this.pauseButton.classList.toggle('checked');
                 this.setPaused(this.pauseButton.classList.contains('checked'));
             }
+            // if its CTRL+C, copy
+            if (e.ctrlKey && e.key == 'c') {
+                this.saveSelection();
+                this.showToast('Copied to clipboard', ToastType.INFO);
+            }
+            // if its CTRL+V, paste
+            if (e.ctrlKey && e.key == 'v') {
+                this.loadSelection();
+                this.showToast('Pasted from clipboard', ToastType.INFO);
+            }
         });
         this.viewer.systemCursor = this.theme.systemCursor;
         document.addEventListener('contextmenu', function (e) {
@@ -565,6 +576,29 @@ class SimuloClientController {
             throw new Error('Service worker not supported or not yet registered');
         }
     }
+    async emitDataAsync(type, data) {
+        let key = this.key++; // unique key for this request
+        return new Promise((resolve, reject) => {
+            let handler = (body) => {
+                //console.log('requst from our handlerr!!! body is', body);
+                if (body.data.key === key) {
+                    //console.log('Got response', body.data);
+                    this.client.off('data', handler);
+                    //console.log('Removed handler');
+                    resolve(body.data);
+                }
+                else if (body.data.key !== undefined) {
+                    //console.log('we got a diff key, it was', body.data.key, 'we wanted', key);
+                }
+            };
+            this.client.on('data', handler);
+            //console.log('Added handler');
+            this.client.emitData(type, {
+                ...data,
+                key
+            });
+        });
+    }
     setTheme(name) {
         this.client.emitData('set_theme', name);
     }
@@ -582,6 +616,28 @@ class SimuloClientController {
     }
     spawnObject(savedObject, x, y) {
         this.client.emitData('spawn_object', { savedObject, x, y });
+    }
+    async saveSelection() {
+        let saved = await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y });
+        // copy saved.data to clipboard
+        navigator.clipboard.writeText(saved.data);
+        // fallback with creating a textarea and selecting it
+        let textArea = document.createElement('textarea');
+        textArea.value = saved.data;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+        console.log('Saved', saved.data);
+    }
+    loadSavedObjects(saveData) {
+        this.client.emitData('load_save_data', saveData);
+    }
+    loadSelection() {
+        // get clipboard text
+        navigator.clipboard.readText().then((text) => {
+            this.client.emitData('load_save_data', { data: text, x: this.mousePos.x, y: this.mousePos.y });
+        });
     }
     async showToast(message, type) {
         var toasts = document.getElementById('toasts');

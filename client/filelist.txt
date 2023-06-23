@@ -122,6 +122,7 @@ shared/themes.js.map
 media/banner.png
 media/banner.svg
 media/icon change?.svg
+media/icon change?.svg.2023_06_22_21_50_31.3.svg
 media/icon.png
 media/icon.svg
 media/icon_192.png
@@ -134,6 +135,7 @@ media/icon_smaller.png
 media/icon_square.png
 media/icon_square.svg
 media/icon_square_new.svg
+media/icon_square_new.svg.2023_06_22_21_50_31.0.svg
 media/logo.svg
 media/maskable_icon_x128.png
 media/maskable_icon_x192.png
