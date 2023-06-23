@@ -520,6 +520,12 @@ class SimuloPhysicsServer {
         floorData.sound = "ground.wav";
         floorData.id = this.currentID++;
         floorData.zDepth = this.highestZDepth++;
+        floorData.points = [
+            [floorShape.get_m_vertices(0).get_x(), floorShape.get_m_vertices(0).get_y()],
+            [floorShape.get_m_vertices(1).get_x(), floorShape.get_m_vertices(1).get_y()],
+            [floorShape.get_m_vertices(2).get_x(), floorShape.get_m_vertices(2).get_y()],
+            [floorShape.get_m_vertices(3).get_x(), floorShape.get_m_vertices(3).get_y()]
+        ];
         this.addPerson([0, 0]);
         // add water
         const psd = new box2D.b2ParticleSystemDef();
@@ -1072,15 +1078,17 @@ class SimuloPhysicsServer {
             let obj = null;
             // if its a polygon, use addPolygon
             if (o.type === SimuloObjectType.POLYGON) {
-                obj = this.addPolygon(o.points, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
-                    border: o.border,
-                    borderWidth: o.borderWidth,
-                    borderScaleWithZoom: o.borderScaleWithZoom,
-                    circleCake: o.circleCake,
-                    image: o.image,
-                    sound: o.sound,
-                    color: o.color
-                }, o.isStatic);
+                if (o.points) {
+                    obj = this.addPolygon(o.points, [o.position.x, o.position.y], o.rotation, o.density, o.friction, o.restitution, {
+                        border: o.border,
+                        borderWidth: o.borderWidth,
+                        borderScaleWithZoom: o.borderScaleWithZoom,
+                        circleCake: o.circleCake,
+                        image: o.image,
+                        sound: o.sound,
+                        color: o.color
+                    }, o.isStatic);
+                }
             }
             // if its a circle, use addCircle
             else if (o.type === SimuloObjectType.CIRCLE) {

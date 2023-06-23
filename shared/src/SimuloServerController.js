@@ -472,6 +472,10 @@ class SimuloServerController {
                         [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y], 
                         // point B
                         [formatted.data.x, formatted.data.y]);
+                        // if theres more than one body, ignore id 1 (the floor)
+                        if (bodies.length > 1) {
+                            bodies = bodies.filter((body) => body.id != 1);
+                        }
                         /*// on each object, set color to red
                         for (var i = 0; i < bodies.length; i++) {
                             bodies[i].color = "#ff0000"; // trolled :uber_troll:
