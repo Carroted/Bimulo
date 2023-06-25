@@ -1,0 +1,94 @@
+/* semi-bold */
+@font-face {
+    font-family: 'Urbanist';
+    font-style: normal;
+    font-weight: 400;
+    src: url('assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
+}
+
+*::selection {
+    background-color: #7fdb55a0;
+    color: #03081d;
+}
+
+/* bold */
+@font-face {
+    font-family: 'Urbanist';
+    font-style: normal;
+    font-weight: 600;
+    src: url('assets/fonts/Urbanist-Bold.woff2') format('woff2');
+}
+
+/* extra-bold */
+@font-face {
+    font-family: 'Urbanist';
+    font-style: normal;
+    font-weight: 800;
+    src: url('assets/fonts/Urbanist-ExtraBold.woff2') format('woff2');
+}
+
+
+:root {
+    background: #0f0b16;
+    /* fill the entire screen with the background */
+    min-height: 100vh;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Urbanist', sans-serif;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6rem;
+    background: #161120;
+    display: flex;
+    /* align all to left, we will align-self after */
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 2rem;
+    margin: 0;
+    overflow: hidden;
+}
+
+header>a img {
+    height: 3rem;
+    width: auto;
+}
+
+header>nav {
+    justify-self: flex-end;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+
+header>nav a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.4rem;
+    margin: 0 0.7rem;
+    font-weight: 600;
+    padding: 0;
+}
+
+header>nav a:link, header>nav a:visited {
+    color: #fff;
+}
