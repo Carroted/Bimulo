@@ -458,6 +458,17 @@ class SimuloClientController {
                 new Audio('assets/sounds/spawn_up.wav').play();
             }
         });
+        document.addEventListener('touchend', (e) => {
+            if (!(e instanceof TouchEvent)) return;
+            if (this.spawningSavedObject != null) {
+                //var positionInWorld = this.viewer.transformPoint(e.clientX, e.clientY);
+                let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                console.log('yo yo yo its me, line 429 and today i wanna show you objects[this.spawningSavedObject]:', objects[this.spawningSavedObject], 'and my friend .data:', objects[this.spawningSavedObject].data);
+                this.loadSavedObjects(objects[this.spawningSavedObject].data, this.mousePos.x, this.mousePos.y);
+                this.spawningSavedObject = null;
+                new Audio('assets/sounds/spawn_up.wav').play();
+            }
+        });
 
         // on click tool, set active tool
         const tools = document.querySelectorAll('.tool');
@@ -855,6 +866,10 @@ class SimuloClientController {
             div.addEventListener('mousedown', (e) => {
                 // make sure its left click
                 if ((e as MouseEvent).button != 0) return;
+                this.spawningSavedObject = i;
+                new Audio('assets/sounds/spawn_down.wav').play();
+            });
+            div.addEventListener('touchstart', (e) => {
                 this.spawningSavedObject = i;
                 new Audio('assets/sounds/spawn_down.wav').play();
             });

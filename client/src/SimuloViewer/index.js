@@ -78,6 +78,8 @@ class SimuloViewer {
                 window.requestAnimationFrame(this.loop);
             }
         };
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
         this.onPointerMove = (e) => {
             // ignore if getEventLocation(e).x and y are 0 or null
             if (!getEventLocation(e).x && !getEventLocation(e).y) {
@@ -98,6 +100,56 @@ class SimuloViewer {
                 y: mousePos.y
             });
         };
+        this.onPointerDown = (e) => {
+            var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+            if (window.TouchEvent && e instanceof TouchEvent) {
+                this.emit("mouseDown", {
+                    x: mousePos.x,
+                    y: mousePos.y
+                });
+                this.pointerDown = true;
+            }
+            else {
+                if (e.button == 2 || e.button && 3) {
+                    this.isDragging = true;
+                    this.dragStart.x = getEventLocation(e).x - this.cameraOffset.x;
+                    this.dragStart.y = getEventLocation(e).y - this.cameraOffset.y;
+                    this.dragStart2.x = getEventLocation(e).x;
+                    this.dragStart2.y = getEventLocation(e).y;
+                }
+                // if its not those buttons, we will see how much cursor moves first
+                if (e.button == 0) {
+                    this.emit("mouseDown", {
+                        x: mousePos.x,
+                        y: mousePos.y
+                    });
+                    this.pointerDown = true;
+                }
+            }
+        };
+        this.onPointerUp = (e) => {
+            if (window.TouchEvent && e instanceof TouchEvent) {
+                this.pointerDown = false;
+                var mousePos = this.transformPoint(this.lastTouchX, this.lastTouchY);
+                this.emit("mouseUp", {
+                    x: mousePos.x,
+                    y: mousePos.y
+                });
+            }
+            else {
+                if (e.button == 0) {
+                    this.pointerDown = false;
+                    var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+                    this.emit("mouseUp", {
+                        x: mousePos.x,
+                        y: mousePos.y
+                    });
+                }
+            }
+            this.isDragging = false;
+            this.lastZoom = this.cameraZoom;
+            this.initialPinchDistance = null;
+        };
         this.oldWidth = 50;
         this.oldHeight = 50;
         this.shapes = [];
@@ -117,6 +169,8 @@ class SimuloViewer {
         this.canvas.addEventListener('touchstart', (e) => {
             this.mouseTouchDown++;
             this.touchStartElement = e.target;
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
             this.canvas.focus();
         });
         /*this.canvas.addEventListener('touchend', (e) => {
@@ -182,6 +236,8 @@ class SimuloViewer {
             if (this.mouseTouchDown <= 0) {
                 return;
             } // its not from us
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
             this.handleTouch(e, this.onPointerMove);
         });
         documentElement.addEventListener('mousemove', (e) => {
@@ -339,61 +395,12 @@ class SimuloViewer {
             this.ctx.fill();
         }
     }
-    onPointerDown(e) {
-        var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-        if (window.TouchEvent && e instanceof TouchEvent) {
-            this.emit("mouseDown", {
-                x: mousePos.x,
-                y: mousePos.y
-            });
-            this.pointerDown = true;
-        }
-        else {
-            if (e.button == 2 || e.button && 3) {
-                this.isDragging = true;
-                this.dragStart.x = getEventLocation(e).x - this.cameraOffset.x;
-                this.dragStart.y = getEventLocation(e).y - this.cameraOffset.y;
-                this.dragStart2.x = getEventLocation(e).x;
-                this.dragStart2.y = getEventLocation(e).y;
-            }
-            // if its not those buttons, we will see how much cursor moves first
-            if (e.button == 0) {
-                this.emit("mouseDown", {
-                    x: mousePos.x,
-                    y: mousePos.y
-                });
-                this.pointerDown = true;
-            }
-        }
-    }
-    onPointerUp(e) {
-        if (window.TouchEvent && e instanceof TouchEvent) {
-            this.pointerDown = false;
-            var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-            this.emit("mouseUp", {
-                x: mousePos.x,
-                y: mousePos.y
-            });
-        }
-        else {
-            if (e.button == 0) {
-                this.pointerDown = false;
-                var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
-                this.emit("mouseUp", {
-                    x: mousePos.x,
-                    y: mousePos.y
-                });
-            }
-        }
-        this.isDragging = false;
-        this.lastZoom = this.cameraZoom;
-        this.initialPinchDistance = null;
-    }
     handleTouch(e, singleTouchHandler) {
         if (this.touchStartElement != this.canvas) {
+            console.log('it didnt start on canvas');
             return;
         }
-        if (e.touches.length == 1) {
+        if (e.touches.length <= 1) {
             singleTouchHandler(e);
         }
         else if (e.type == "touchmove" && e.touches.length == 2) {

@@ -157,6 +157,8 @@ class SimuloViewer {
             window.requestAnimationFrame(this.loop);
         }
     }
+    private lastTouchX = 0;
+    private lastTouchY = 0;
     constructor(canvas: HTMLCanvasElement) {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
@@ -176,6 +178,8 @@ class SimuloViewer {
         this.canvas.addEventListener('touchstart', (e) => {
             this.mouseTouchDown++;
             this.touchStartElement = e.target as HTMLElement;
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
             this.canvas.focus();
         });
         /*this.canvas.addEventListener('touchend', (e) => {
@@ -225,13 +229,17 @@ class SimuloViewer {
         });
         var documentElement = this.canvas.ownerDocument; // we could do .documentElement, but document.addEventListener is more common practice, i just named it documentElement to avoid conflict with the document variable
         documentElement.addEventListener('touchend', (e) => {
-            if (this.mouseTouchDown <= 0) { return; } // its not from us
+            if (this.mouseTouchDown <= 0) {
+                return;
+            } // its not from us
             this.mouseTouchDown--;
             this.handleTouch(e, this.onPointerUp);
             // on all of these we will allow propagation so UI works EXCEPT scroll
         });
         documentElement.addEventListener('touchmove', (e) => {
             if (this.mouseTouchDown <= 0) { return; } // its not from us
+            this.lastTouchX = e.touches[0].clientX;
+            this.lastTouchY = e.touches[0].clientY;
             this.handleTouch(e, this.onPointerMove);
         });
         documentElement.addEventListener('mousemove', (e) => {
@@ -362,7 +370,7 @@ class SimuloViewer {
 
 
 
-    onPointerDown(e: MouseEvent | TouchEvent) {
+    onPointerDown = (e: MouseEvent | TouchEvent) => {
         var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
         if (window.TouchEvent && e instanceof TouchEvent) {
             this.emit("mouseDown", {
@@ -392,10 +400,10 @@ class SimuloViewer {
         }
     }
 
-    onPointerUp(e: MouseEvent | TouchEvent) {
+    onPointerUp = (e: MouseEvent | TouchEvent) => {
         if (window.TouchEvent && e instanceof TouchEvent) {
             this.pointerDown = false;
-            var mousePos = this.transformPoint(getEventLocation(e).x, getEventLocation(e).y);
+            var mousePos = this.transformPoint(this.lastTouchX, this.lastTouchY);
             this.emit("mouseUp", {
                 x: mousePos.x,
                 y: mousePos.y
@@ -421,10 +429,11 @@ class SimuloViewer {
 
     handleTouch(e: TouchEvent, singleTouchHandler: (e: TouchEvent) => void) {
         if (this.touchStartElement != this.canvas) {
+            console.log('it didnt start on canvas')
             return;
         }
 
-        if (e.touches.length == 1) {
+        if (e.touches.length <= 1) {
             singleTouchHandler(e);
         }
         else if (e.type == "touchmove" && e.touches.length == 2) {
