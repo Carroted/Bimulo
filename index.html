@@ -33,34 +33,94 @@
         <a src="https://carroted.github.io/Simulo/"><img src="media/logo.svg" alt="Simulo logo"></a>
         <nav>
             <a href="https://carroted.github.io/Simulo/">Home</a>
-            <a href="https://carroted.github.io/Simulo/client/">Play</a>
+            <a href="javascript:void(0)" onclick="play();">Play</a>
             <a href="https://discord.gg/5Q7AAvRp8H">Discord</a>
         </nav>
     </header>
-    Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game
-    releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon
-    haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases soon haah!Game releases
-    soon haah!
+    <div class="background">
+        <img src="bg.png" alt="background">
+    </div>
+    <div class="section main-content">
+        <h1>
+            Online 2D physics sandbox
+        </h1>
+        <h2>
+            Build and share anything in an infinite 2D world with no ads or paywalls.
+        </h2>
+        <div class="buttons">
+            <a href="javascript:void(0)" class="play" onclick="play();">Play</a>
+            <a href="https://discord.gg/5Q7AAvRp8H" class="discord">Discord</a>
+        </div>
+    </div>
+    <div class="section open-source">
+        <h1>
+            It's free and open-source!
+        </h1>
+        <h2>
+            Check out our GitHub!
+        </h2>
+        <div class="buttons">
+            <a href="https://github.com/Carroted/Simulo" class="play">GitHub Repo</a>
+        </div>
+        <h3>What's open-source?</h3>
+        <p>
+            Open-source means that anyone can view and edit the code that makes up Simulo. This means that anyone can
+            contribute to the project and make it better for everyone!
+        </p>
+    </div>
+
+    <div id="page-mask" class="hidden">
+        <div id="play-dialog">
+            <div class="dialog-content">
+                <h1>Note: Simulo is currently in Alpha</h1>
+                <p>
+                    Please note that Simulo is currently in Alpha, which means that it is not yet complete. Treat it not
+                    as
+                    a finished game/app, but instead as an engine demo.</p>
+                <p>We are building a custom game engine for Simulo, so treat this only as a test of that engine.
+                </p>
+                <p>
+                    Finally, if you are on Firefox, please use a Chromium browser for this game! Firefox is not yet
+                    supported and is extremely slow.
+                </p>
+                <div class="buttons">
+                    <a href="https://carroted.github.io/Simulo/client/" class="play">Play</a>
+                    <a href="javascript:void(0)" class="discord" onclick="closeDialog();">Nevermind</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // if not at the top of the page, show the header
+        var header = document.querySelector("header");
+        function checkScroll() {
+            var scrollPos = window.scrollY;
+            if (scrollPos > 0 && window.innerWidth < 1410) {
+                header.classList.add("scrolled");
+            } else {
+                header.classList.remove("scrolled");
+            }
+        }
+        checkScroll();
+        window.addEventListener("scroll", checkScroll);
+        // on resize, check if the header should be shown
+        window.addEventListener("resize", checkScroll);
+
+        var playDialog = document.getElementById("play-dialog");
+        var pageMask = document.getElementById("page-mask");
+        function play() {
+            pageMask.classList.add("visible");
+            pageMask.addEventListener("click", closeDialog);
+            pageMask.addEventListener("touchstart", closeDialog);
+            pageMask.classList.remove("hidden");
+        }
+        function closeDialog() {
+            pageMask.classList.remove("visible");
+            pageMask.removeEventListener("click", closeDialog);
+            pageMask.removeEventListener("touchstart", closeDialog);
+            pageMask.classList.add("hidden");
+        }
+    </script>
 </body>
 
 </html>

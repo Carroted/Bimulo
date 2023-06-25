@@ -155,7 +155,12 @@ class SimuloViewer {
         this.shapes = [];
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
+        var dpr = window.devicePixelRatio || 1;
+        var rect = canvas.getBoundingClientRect();
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
         this.ctx = this.canvas.getContext('2d');
+        this.ctx.scale(dpr, dpr);
         // if no tabindex, set to 1
         if (this.canvas.tabIndex == -1) {
             this.canvas.tabIndex = 1;
@@ -590,8 +595,10 @@ class SimuloViewer {
         // if the classlist contains .fullscreen
         if (this.canvas.classList.contains('fullscreen')) {
             // set the canvas size to the window size
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+            // check the dpr
+            var dpr = window.devicePixelRatio || 1;
+            this.canvas.width = window.innerWidth * dpr;
+            this.canvas.height = window.innerHeight * dpr;
         }
         // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
         this.ctx.setTransform(this.cameraZoom, 0, 0, this.cameraZoom, this.cameraOffset.x, this.cameraOffset.y);
