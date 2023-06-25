@@ -70,17 +70,17 @@ class SimuloServerController {
             this.localClients.push(new SimuloLocalClient(this, id));
             this.tools[id] = "drag";
         }
-        /*setInterval(() => {
+        setInterval(() => {
             this.loop(this.frameRate);
-        }, this.frameRate);*/
-        let handle;
-        var loop = (prevMs) => {
+        }, this.frameRate);
+        //let handle: number;
+        /*var loop = (prevMs: number) => {
             const nowMs = window.performance.now();
             handle = requestAnimationFrame(loop.bind(null, nowMs));
             const deltaMs = nowMs - prevMs;
             this.loop(deltaMs);
-        };
-        loop(window.performance.now());
+        }
+        loop(window.performance.now());*/
     }
     sendAll(type, data) {
         if (this.networkServer) {
@@ -190,6 +190,8 @@ class SimuloServerController {
                                 if (this.previousStep) {
                                     // edit the shape
                                     let shape = this.previousStep.shapes.find((shape) => shape.id == obj.id);
+                                    // console.log the amount of shapes that have that id
+                                    console.log('shapes with same ID:', this.previousStep.shapes.filter((shape) => shape.id == obj.id).length);
                                     if (shape) {
                                         shape.x = obj.position.x;
                                         shape.y = obj.position.y;

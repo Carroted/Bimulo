@@ -138,8 +138,10 @@ media/icon_small.png
 media/icon_smaller.png
 media/icon_square.png
 media/icon_square.svg
-media/icon_square_new.svg
 media/icon_square_new.svg.2023_06_22_21_50_31.0.svg
+media/icon_square_old.png
+media/icon_square_old.svg
+media/logo.png
 media/logo.svg
 media/maskable_icon_x128.png
 media/maskable_icon_x192.png
