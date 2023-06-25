@@ -1,6 +1,6 @@
 {
   "name": "simulo",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "main": "dist/server/src/index.js",
   "scripts": {
     "start": "node dist/server/src/index.js",

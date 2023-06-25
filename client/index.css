@@ -258,6 +258,8 @@ details summary {
   background: linear-gradient(180deg, #0f1130 0%, #553f90 180%);
   animation: bg 30s ease-in-out infinite;
   background-size: 100% 100%;
+  height: 100%;
+  width: 100%;
 }
 
 @keyframes bg {
