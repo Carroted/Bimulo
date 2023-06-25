@@ -114,7 +114,8 @@
             pageMask.addEventListener("touchstart", closeDialog);
             pageMask.classList.remove("hidden");
         }
-        function closeDialog() {
+        function closeDialog(e) {
+            if (e && e.target != pageMask) return;
             pageMask.classList.remove("visible");
             pageMask.removeEventListener("click", closeDialog);
             pageMask.removeEventListener("touchstart", closeDialog);
