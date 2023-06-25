@@ -73,6 +73,16 @@ var steps = [
         });
         copyFolderRecursiveSync(nmIcons, clientIcons);
     },
+    // copy website to dist/
+    async (stepInfo) => {
+        console.log(stepInfo, 'Copying website...');
+        copyFolderRecursiveSync(path.join(__dirname, 'website'), path.join(__dirname, 'dist'));
+    },
+    // copy client/assets to dist/assets so website can use it
+    async (stepInfo) => {
+        console.log(stepInfo, 'Copying assets...');
+        copyFolderRecursiveSync(path.join(__dirname, 'dist', 'client', 'assets'), path.join(__dirname, 'dist', 'assets'));
+    },
     // deploy to gh-pages
     async (stepInfo) => {
         console.log(stepInfo, 'Deploying to GitHub Pages...');
