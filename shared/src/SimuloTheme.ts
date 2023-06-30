@@ -25,6 +25,8 @@ interface SimuloTheme {
         borderScaleWithZoom: boolean;
         circleCake: boolean;
         springImage: string | null;
+        axleImage: string | null;
+        boltImage: string | null;
     };
     toolIcons: { [key: string]: string | null };
     systemCursor: boolean;

@@ -45,7 +45,6 @@
   <div class="version-info" id="version-info">Simulo Alpha</div>
   <div id="pause-overlay">
     <svg data-src="icons/pause.svg"></svg>
-    Note: the select/move tool and the drag tool are currently unstable when paused!
   </div>
   <div class="popup-container">
     <div class="starting-popup">
@@ -55,7 +54,7 @@
       </div>
       <h4>Reminder:</h4>
       <ul>
-        <li>This Alpha version is not stable enough to build anything serious with, treat it only as a demo of the
+        <li>This Alpha version is not stable enough to build anything serious with, treat it mostly as a demo of the
           Simulo
           game
           engine.</li>
@@ -71,6 +70,9 @@
         </li>
         <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
           toolbars. If a toolbar is disabled, you won't be able to open it.</li>
+        <li>You can save objects by dragging them to the Objects tab of the toolbar. You can also copy-paste objects
+          with
+          CTRL+C and CTRL+V after selecting them with the Move Tool.</li>
       </ul>
       <h4>Pick a theme!</h4>
       <div class="themes"></div>
@@ -184,7 +186,7 @@
     <div class="tool" data-tool="addAxle">
       <svg data-src="icons/axle.svg"></svg>
     </div>
-    <div class="tool" data-tool="addFixedJoint">
+    <div class="tool" data-tool="addBolt">
       <svg data-src="icons/bolt.svg"></svg>
     </div>
   </div>
@@ -209,25 +211,40 @@
     </div>
   </div>
 
-  <div class="toolbar file">
-    <div class="file-menu" data-file="file">File<div class="file-menu-content" id="file">
-        <ul>
-          <li class="button">Joe</li>
-          <li class="button">Joe</li>
-        </ul>
+  <div class="toolbar save-list" id="save-list" style="display: none;">
+    <div class="top-bar"><span>Scenes</span>
+      <div class="close" onclick="closeSaveList()">
+        <svg data-src="icons/close.svg"></svg>
       </div>
     </div>
-    <div class="file-menu" data-file="settings">Settings<div class="file-menu-content" id="settings">
-        <ul>
-          <li class="button">Joe</li>
-          <li class="button">Joe</li>
-        </ul>
-      </div>
-    </div>
+    <div class="save-grid"></div>
+    <script>
+      let saveList = document.getElementById("save-list");
+      function closeSaveList() {
+        saveList.style.display = "none";
+      }
+    </script>
   </div>
 
+  <div class="toolbar file">
+    <div class="file-menu" data-file="file">File</div>
+    <div class="file-menu" data-file="settings">Settings</div>
+  </div>
 
-
+  <div class="file-menu-content" id="file">
+    <ul>
+      <li class="button" data-file="new-scene"><svg data-src="icons/plus-box.svg"></svg>New scene</li>
+      <li class="button" data-file="save-scene"><svg data-src="icons/content-save.svg"></svg>Save scene</li>
+      <li class="button" data-file="load-scene"><svg data-src="icons/folder.svg"></svg>Load scene</li>
+      <li class="button" data-file="import"><svg data-src="icons/upload.svg"></svg>Import</li>
+      <li class="button" data-file="export-scene"><svg data-src="icons/download.svg"></svg>Export scene</li>
+    </ul>
+  </div>
+  <div class="file-menu-content" id="settings">
+    <ul>
+      <li class="button">Coming soon!</li>
+    </ul>
+  </div>
 
 
   <div class="chat" style="display: none;">

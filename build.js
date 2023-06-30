@@ -154,7 +154,7 @@ var steps = [
         console.log(stepInfo, 'Installing node_modules...');
         // install node_modules in dist
         await new Promise((resolve, reject) => {
-            const child = exec('npm install --production', { cwd: path.join(__dirname, 'dist') });
+            const child = exec('npm install --omit=dev', { cwd: path.join(__dirname, 'dist') });
             child.stdout.on('data', (data) => {
                 console.log(indentLines(data.toString(), 4));
             });

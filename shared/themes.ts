@@ -35,7 +35,9 @@ export default {
       "borderWidth": null,
       "borderScaleWithZoom": false,
       "circleCake": false,
-      "springImage": "assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
     },
     "toolIcons": {
       "drag": null,
@@ -45,7 +47,7 @@ export default {
       "addPolygon": "assets/textures/add_polygon.png",
       "addSpring": "assets/textures/add_spring.png",
       "addAxle": "assets/textures/add_axle.png",
-      "addFixedJoint": "assets/textures/add_fixed_joint.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
       "addParticle": "assets/textures/add_particle.png"
     },
@@ -85,7 +87,9 @@ export default {
       "borderWidth": null,
       "borderScaleWithZoom": false,
       "circleCake": false,
-      "springImage": "assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
     },
     "toolIcons": {
       "drag": null,
@@ -95,7 +99,7 @@ export default {
       "addPolygon": "assets/textures/add_polygon.png",
       "addSpring": "assets/textures/add_spring.png",
       "addAxle": "assets/textures/add_axle.png",
-      "addFixedJoint": "assets/textures/add_fixed_joint.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
       "addParticle": "assets/textures/add_particle.png"
     },
@@ -135,7 +139,9 @@ export default {
       "borderWidth": null,
       "borderScaleWithZoom": false,
       "circleCake": false,
-      "springImage": "assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
     },
     "toolIcons": {
       "drag": null,
@@ -145,7 +151,7 @@ export default {
       "addPolygon": "assets/textures/add_polygon.png",
       "addSpring": "assets/textures/add_spring.png",
       "addAxle": "assets/textures/add_axle.png",
-      "addFixedJoint": "assets/textures/add_fixed_joint.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
       "select": "assets/textures/select.png",
       "addParticle": "assets/textures/add_particle.png"
     },
@@ -185,7 +191,9 @@ export default {
       "borderWidth": 1,
       "borderScaleWithZoom": true,
       "circleCake": true,
-      "springImage": "assets/textures/spring.png"
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/tools/axle.png",
+      "boltImage": "assets/textures/tools/bolt.png"
     },
     "toolIcons": {
       "drag": "assets/textures/tools/drag.png",
@@ -195,7 +203,7 @@ export default {
       "addPolygon": "assets/textures/tools/polygon.png",
       "addSpring": "assets/textures/tools/spring.png",
       "addAxle": "assets/textures/tools/hinge.png",
-      "addFixedJoint": "assets/textures/tools/fixjoint.png",
+      "addBolt": "assets/textures/tools/fixjoint.png",
       "select": "assets/textures/tools/move.png",
       "addParticle": "assets/textures/add_particle.png"
     },

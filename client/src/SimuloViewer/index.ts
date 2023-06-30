@@ -63,7 +63,7 @@ class SimuloViewer {
     ctx: CanvasRenderingContext2D;
     /** The canvas that the viewer is drawing to. You can update this along with `ctx` to change the canvas mid-run. */
     canvas: HTMLCanvasElement;
-    cameraOffset: { x: number, y: number };
+    cameraOffset: { x: number, y: number } = { x: 0, y: 0 };
     cameraZoom = 30;
     private lastX: number;
     private lastY: number;
@@ -159,6 +159,10 @@ class SimuloViewer {
     }
     private lastTouchX = 0;
     private lastTouchY = 0;
+    resetCamera() {
+        this.cameraOffset = { x: window.innerWidth / 2, y: (window.innerHeight / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
+        this.cameraZoom = 30;
+    }
     constructor(canvas: HTMLCanvasElement) {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
@@ -173,9 +177,7 @@ class SimuloViewer {
         if (this.canvas.tabIndex == -1) {
             this.canvas.tabIndex = 1;
         }
-        var windowEnd = this.transformPoint(window.innerWidth, window.innerHeight);
-        this.cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
-
+        this.resetCamera();
         this.lastX = window.innerWidth / 2;
         this.lastY = window.innerHeight / 2;
         this.lastMouseX = this.lastX;

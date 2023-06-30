@@ -256,8 +256,18 @@ class SimuloObject {
         this._body.ApplyAngularImpulse(impulse, true);
     }
     destroy() {
-        this._body.GetWorld().DestroyBody(this._body);
+        //this._body.GetWorld().DestroyBody(this._body);
         // No longer real
+        this._physicsServer.deleteObjects.push(this._body);
+        let promise = new Promise((resolve, reject) => {
+            this._physicsServer.deletePromises.push({
+                resolve: () => {
+                    resolve(null);
+                },
+                reject: reject
+            });
+        });
+        return promise;
     }
 }
 
@@ -472,6 +482,16 @@ interface SimuloSavedObject {
     // TODO: when scripting is added, add script here and have it call save() on script and push the return value here if it isnt circular
 }
 
+interface SimuloParticle {
+    x: number;
+    y: number;
+    color: string;
+    radius: number;
+    index: number;
+    colorValues: number[];
+    velocity: { x: number, y: number };
+}
+
 interface SimuloSavedJoint {
 
 }
@@ -587,7 +607,8 @@ class SimuloPhysicsServer {
         }
         return object;
     }
-    addAxle(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject) {
+    // axle = revolute joint
+    addAxle(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, image: string | null = null) {
         const jd = new box2D.b2RevoluteJointDef();
         jd.set_bodyA(objectA._body);
         jd.set_bodyB(objectB._body);
@@ -602,6 +623,26 @@ class SimuloPhysicsServer {
         jointData.zDepth = this.highestZDepth++;
         jointData.anchorA = anchorA;
         jointData.anchorB = anchorB;
+        jointData.image = image;
+    }
+    // bolt = weld joint
+    addBolt(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, image: string | null = null) {
+        const jd = new box2D.b2WeldJointDef();
+        jd.set_bodyA(objectA._body);
+        jd.set_bodyB(objectB._body);
+        jd.set_localAnchorA(new box2D.b2Vec2(anchorA[0], anchorA[1]));
+        jd.set_localAnchorB(new box2D.b2Vec2(anchorB[0], anchorB[1]));
+        // no collide
+        jd.set_collideConnected(false);
+        jd.set_referenceAngle(objectB._body.GetAngle() - objectA._body.GetAngle());
+        // set id and zdepth
+        let joint = this.world.CreateJoint(jd);
+        let jointData = joint.GetUserData() as SimuloJointData;
+        jointData.id = this.currentID++;
+        jointData.zDepth = this.highestZDepth++;
+        jointData.anchorA = anchorA;
+        jointData.anchorB = anchorB;
+        jointData.image = image;
     }
     getProxy(body: SimuloObject) {
         return createSandboxedInstance(body);
@@ -609,6 +650,13 @@ class SimuloPhysicsServer {
     getLocalPoint(body: SimuloObject, point: [x: number, y: number]) {
         var p = body._body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
         return [p.get_x(), p.get_y()];
+    }
+    getWorldPoint(body: SimuloObject, point: [x: number, y: number]) {
+        var p = body._body.GetWorldPoint(new box2D.b2Vec2(point[0], point[1]));
+        return [p.get_x(), p.get_y()];
+    }
+    getGroundBody() {
+        return new SimuloObject(this, this.ground);
     }
     addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, width: number, image?: string, line?: { color: string, scale_with_zoom: boolean }) {
         // distance joint
@@ -763,6 +811,7 @@ class SimuloPhysicsServer {
         return object;
     }
     deleteObjects: (Box2D.b2Body | Box2D.b2Joint | Box2D.b2Fixture)[] = [];
+    deletePromises: { resolve: () => void, reject: () => void }[] = [];
     destroy(object: SimuloObject | SimuloJoint) {
         if (object instanceof SimuloObject) {
             this.deleteObjects.push(object._body);
@@ -770,6 +819,26 @@ class SimuloPhysicsServer {
         else if (object instanceof SimuloJoint) {
             this.deleteObjects.push(object._joint);
         }
+    }
+    destroyPhysicsServer() {
+        // @ts-ignore
+        this.world.SetContactListener(null);
+        // @ts-ignore
+        this.world.SetContactFilter(null);
+        // @ts-ignore
+        this.world.SetDestructionListener(null);
+        // @ts-ignore
+        this.world.SetDebugDraw(null);
+        // @ts-ignore
+        this.ground = null;
+        // @ts-ignore
+        this.deleteObjects = null;
+        // @ts-ignore
+        this.deletePromises = null;
+        // @ts-ignore
+        this.bodies = null;
+        // @ts-ignore
+        this.world = null;
     }
 
     // distancejoints and mousejoints are considered springs.
@@ -944,21 +1013,46 @@ class SimuloPhysicsServer {
         const g = box2D.HEAPU8[color_p + 1];
         const b = box2D.HEAPU8[color_p + 2];
         const a = box2D.HEAPU8[color_p + 3];
-        console.log(`particle rgba(${r},${g},${b},${a / 255})`);
+        const velocityBuffer = particleSystem.GetVelocityBuffer();
+        const velocity_p = box2D.getPointer(velocityBuffer) + index * 8;
+        const vx = box2D.HEAPF32[velocity_p >> 2];
+        const vy = box2D.HEAPF32[(velocity_p + 4) >> 2];
+        //console.log(`particle rgba(${r},${g},${b},${a / 255})`);
         return {
-            x, y, color: `rgba(${r},${g},${b},${a / 255})`, radius: 0.1
-        };
+            x, y, color: `rgba(${r},${g},${b},${a / 255})`, radius: 0.1, index, colorValues: [r, g, b, a], velocity: { x: vx, y: vy }
+        } as SimuloParticle;
     };
+
+    addParticle(particle: SimuloParticle) {
+        const particleSystem = this.particleSystem;
+        const pd = new box2D.b2ParticleDef();
+        pd.set_position(new box2D.b2Vec2(particle.x, particle.y));
+        pd.set_color(new box2D.b2ParticleColor(particle.colorValues[0], particle.colorValues[1], particle.colorValues[2], particle.colorValues[3]));
+        pd.set_velocity(new box2D.b2Vec2(particle.velocity.x, particle.velocity.y));
+        particleSystem.CreateParticle(pd);
+    }
+
     private getAllParticles = (particleSystem: Box2D.b2ParticleSystem) => {
         // we use getParticlePosition
 
         // first, get count:
         const count = particleSystem.GetParticleCount();
-        const particles: { x: number, y: number, color: string, radius: number }[] = [];
+        const particles: SimuloParticle[] = [];
         for (let i = 0; i < count; i++) {
             particles.push(this.getParticle(particleSystem, i));
         }
         return particles;
+    }
+    deleteAllParticles() {
+        const particleSystem = this.particleSystem;
+        const count = particleSystem.GetParticleCount();
+        for (let i = 0; i < count; i++) {
+            particleSystem.DestroyParticle(i);
+        }
+    }
+    deleteParticle(index: number) {
+        const particleSystem = this.particleSystem;
+        particleSystem.DestroyParticle(index);
     }
 
     getObjectsAtPoint(point: [x: number, y: number]) {
@@ -1000,7 +1094,7 @@ class SimuloPhysicsServer {
             return new SimuloObject(this, b);
         }).sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
-        }).reverse();
+        });
     }
     addParticleBox(x: number, y: number, width: number, height: number) {
         const particleGroupDef = new box2D.b2ParticleGroupDef();
@@ -1013,34 +1107,38 @@ class SimuloPhysicsServer {
         box2D.destroy(boxShape);
         box2D.destroy(particleGroupDef);
     }
+
+    filterDuplicates(objects: SimuloObject[]) {
+        // all we check for is unique IDs
+        var ids: number[] = [];
+        var filtered: SimuloObject[] = [];
+        for (var i = 0; i < objects.length; i++) {
+            var obj = objects[i];
+            if (ids.indexOf(obj.id) == -1) {
+                ids.push(obj.id);
+                filtered.push(obj);
+            }
+        }
+        return filtered;
+    }
+
     getAllObjects() {
         var bodies: Box2D.b2Body[] = [];
         var node = this.world.GetBodyList();
         while (box2D.getPointer(node)) {
             var b = node;
             node = node.GetNext();
-
-            var position = b.GetPosition();
-
-            var fl = b.GetFixtureList();
-            if (!fl) {
-                continue;
-            }
-            while (box2D.getPointer(fl)) {
-                var shape = fl.GetShape();
-                bodies.push(b);
-                fl = fl.GetNext();
-            }
+            bodies.push(b);
         }
-        return bodies.map((b) => {
+        return this.filterDuplicates(bodies.map((b) => {
             return new SimuloObject(this, b);
         }).sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
-        }).reverse();
+        }));
     }
 
     /** Saves a collection of `SimuloObject`s to a `SimuloSavedObject`s you can restore with `load()` */
-    save(stuff: SimuloObject[]): SimuloSavedObject[] {
+    save(stuff: SimuloObject[], groundBodyOffset: { x: number, y: number } = { x: 0, y: 0 }): SimuloSavedObject[] {
         var savedStuff: SimuloSavedObject[] = stuff.map((o) => {
             // get joints of object
             var joints: SimuloSavedJoint[] = [];
@@ -1060,6 +1158,14 @@ class SimuloPhysicsServer {
                 let jointTypeParsed: string;
                 let localAnchorA = jointData.anchorA;
                 let localAnchorB = jointData.anchorB;
+                // if bodyAID is 0, its ground, subtract groundBodyOffset
+                if (bodyAID === 0) {
+                    localAnchorA = [localAnchorA[0] - groundBodyOffset.x, localAnchorA[1] - groundBodyOffset.y];
+                }
+                // if bodyBID is 0, its ground, subtract groundBodyOffset
+                if (bodyBID === 0) {
+                    localAnchorB = [localAnchorB[0] - groundBodyOffset.x, localAnchorB[1] - groundBodyOffset.y];
+                }
                 let baseObject = {
                     id: jointData.id,
                     bodyA: bodyAID,
@@ -1068,6 +1174,7 @@ class SimuloPhysicsServer {
                     anchorB: localAnchorB,
                     collideConnected: joint.GetCollideConnected(),
                     zDepth: jointData.zDepth,
+                    image: jointData.image,
                 };
                 if (jointType === box2D.e_revoluteJoint) {
                     jointTypeParsed = "axle";
@@ -1152,7 +1259,7 @@ class SimuloPhysicsServer {
                         enableMotor: wheelJoint.IsMotorEnabled(),
                     });
                 } else if (jointType === box2D.e_weldJoint) {
-                    jointTypeParsed = "weld";
+                    jointTypeParsed = "bolt";
                     let weldJoint = box2D.castObject(joint, box2D.b2WeldJoint);
                     joints.push({
                         ...baseObject,
@@ -1204,8 +1311,47 @@ class SimuloPhysicsServer {
         });
         return savedStuff;
     }
+
+    saveWorld(): { objects: SimuloSavedObject[]; particles: SimuloParticle[], theme: SimuloTheme } {
+        // get all objects
+        let objects: SimuloObject[] = this.getAllObjects();
+        // filter out object 0, which is the ground body
+        objects = objects.filter((o) => o.id !== 0);
+        let particles = this.getAllParticles(this.particleSystem);
+        // save them with save()
+        return {
+            objects: this.save(objects),
+            particles,
+            theme: this.theme,
+        };
+    }
+    async loadWorld(stuff: { objects: SimuloSavedObject[]; particles: SimuloParticle[], theme: SimuloTheme }) {
+        // get all objects
+        let objects: SimuloObject[] = this.getAllObjects();
+        // filter out object 0, which is the ground body
+        objects = objects.filter((o) => o.id !== 0);
+        // delete them
+        for (let i = 0; i < objects.length; i++) {
+            await objects[i].destroy();
+        }
+        this.theme = stuff.theme;
+        this.emit("themeChange", this.theme);
+        // delete all particles
+        this.deleteAllParticles();
+        this.currentID = 1;
+        // load them with load()
+        this.load(stuff.objects);
+        this.loadParticles(stuff.particles);
+    }
+
+    loadParticles(particles: SimuloParticle[]) {
+        particles.forEach((p) => {
+            this.addParticle(p);
+        });
+    }
+
     /** Spawns in some `SimuloObject`s from a `SimuloSavedObject[]` you saved with `save()`, doesn't replace anything, just adds to the world */
-    load(stuff: SimuloSavedObject[]) {
+    load(stuff: SimuloSavedObject[], groundBodyOffset: { x: number, y: number } = { x: 0, y: 0 }) {
         let jointsToAdd: any[] = [];
         let realIDs: { [key: number]: number } = {};
 
@@ -1255,18 +1401,38 @@ class SimuloPhysicsServer {
         jointsToAdd.forEach((j) => {
             let objectAID = realIDs[j.bodyA];
             let objectBID = realIDs[j.bodyB];
+
+            // ground body support
+            if (j.bodyA === 0) objectAID = 0;
+            if (j.bodyB === 0) objectBID = 0;
+
             let objectA = this.getObjectByID(objectAID) as SimuloObject;
             let objectB = this.getObjectByID(objectBID) as SimuloObject;
+
+            let anchorA = j.anchorA;
+            let anchorB = j.anchorB;
+
+            if (j.bodyA === 0) {
+                anchorA[0] += groundBodyOffset.x;
+                anchorA[1] += groundBodyOffset.y;
+            }
+            if (j.bodyB === 0) {
+                anchorB[0] += groundBodyOffset.x;
+                anchorB[1] += groundBodyOffset.y;
+            }
+
             // for now, lets only re-add axle (revolute) and spring (distance) joints since we dont use others
             if (j.type === "axle") {
-                this.addAxle(j.anchorA, j.anchorB, objectA, objectB);
+                this.addAxle(anchorA, anchorB, objectA, objectB, j.image);
             }
             else if (j.type === "spring") {
-                this.addSpring(j.anchorA, j.anchorB, objectA, objectB, j.frequencyHz, j.length, j.dampingRatio, j.width, j.image, j.line);
+                this.addSpring(anchorA, anchorB, objectA, objectB, j.frequencyHz, j.length, j.dampingRatio, j.width, j.image, j.line);
+            }
+            else if (j.type === "bolt") {
+                this.addBolt(anchorA, anchorB, objectA, objectB, j.image);
             }
         });
     }
-
 
     getObjectByID(id: number) {
         var node = this.world.GetBodyList();
@@ -1318,7 +1484,7 @@ class SimuloPhysicsServer {
         );
         return selectedObjects.sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
-        }).reverse();
+        });
     }
 
     getObjectsInRect(pointA: [x: number, y: number], pointB: [x: number, y: number]) {
@@ -1381,30 +1547,10 @@ class SimuloPhysicsServer {
 
         return selectedObjects.sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
-        }).reverse();
+        });
     }
 
-    step(delta: number, velocityIterations: number, positionIterations: number) {
-        try {
-            this.world.Step(delta, velocityIterations, positionIterations);
-        } catch (e) {
-            console.error('Error in world.Step', e);
-            //alert('Uh oh! We did an oopsie and there was an error updating the world! Try changing the simulation speed. If you see this message nonstop, rip your world and we are sorry lol.')
-            return null;
-        }
-        this.deleteObjects.forEach((obj) => {
-            if (obj instanceof box2D.b2Body) {
-                this.world.DestroyBody(obj);
-            }
-            if (obj instanceof box2D.b2Joint) {
-                this.world.DestroyJoint(obj);
-            }
-            if (obj instanceof box2D.b2Fixture) {
-                obj.GetBody().DestroyFixture(obj);
-            }
-        });
-        this.deleteObjects = [];
-
+    render() {
         let particles = this.getAllParticles(this.particleSystem);
 
 
@@ -1435,108 +1581,113 @@ class SimuloPhysicsServer {
             if (!fl) {
                 continue;
             }
-            while (box2D.getPointer(fl)) {
-                var shape = fl.GetShape();
-                var shapeType = shape.GetType();
-                if (shapeType == box2D.b2Shape.e_circle) {
-                    const circleShape = box2D.castObject(shape, box2D.b2CircleShape);
-                    //console.log("circle of radius " + circleShape.get_m_radius() + " at " + position.x + ", " + position.y);
-                    shapes.push({
-                        x: position.x,
-                        y: position.y,
-                        type: "circle",
-                        radius: circleShape.get_m_radius(),
-                        angle: b.GetAngle(),
-                        color: color,
-                        border: bodyData.border,
-                        borderWidth: bodyData.borderWidth,
-                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                        circleCake: bodyData.circleCake,
-                        image: bodyData.image,
-                        id: bodyData.id,
-                        zDepth: bodyData.zDepth,
-                    } as SimuloCircle);
-                } else if (shapeType == box2D.b2Shape.e_polygon) {
-                    const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
-                    var vertexCount = polygonShape.get_m_count();
-                    var verts: { x: number, y: number }[] = [];
-                    // iterate over vertices
-                    for (let i = 0; i < vertexCount; i++) {
-                        const vertex = polygonShape.get_m_vertices(i);
-                        //console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
-                        verts.push({
-                            x: vertex.x,
-                            y: vertex.y,
-                        });
-                    }
-                    if (bodyData.points != null) {
-                        shapes.push({
-                            x: position.x,
-                            y: position.y,
-                            type: "polygon",
-                            vertices: verts,
-                            angle: b.GetAngle(),
-                            color: color,
-                            border: bodyData.border,
-                            borderWidth: bodyData.borderWidth,
-                            borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                            points: bodyData.points.map((p) => {
-                                return { x: p[0], y: p[1] };
-                            }),
-                            image: bodyData.image,
-                            id: bodyData.id,
-                            zDepth: bodyData.zDepth,
-                        } as SimuloPolygon);
-                    }
-                    else {
-                        shapes.push({
-                            x: position.x,
-                            y: position.y,
-                            type: "polygon",
-                            vertices: verts,
-                            angle: b.GetAngle(),
-                            color: color,
-                            border: bodyData.border,
-                            borderWidth: bodyData.borderWidth,
-                            borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                            image: bodyData.image,
-                            id: bodyData.id,
-                            zDepth: bodyData.zDepth,
-                        } as SimuloPolygon);
-                    }
-                } else if (shapeType == box2D.b2Shape.e_edge) {
-                    const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
-                    var vertices = [
-                        {
-                            x: edgeShape.get_m_vertex1().get_x(),
-                            y: edgeShape.get_m_vertex1().get_y(),
-                        },
-                        {
-                            x: edgeShape.get_m_vertex2().get_x(),
-                            y: edgeShape.get_m_vertex2().get_y(),
-                        },
-                    ];
-                    //console.log("edge: ");
-                    //console.log(vertices);
-                    shapes.push({
-                        x: position.x,
-                        y: position.y,
-                        type: "edge",
-                        vertices: vertices,
-                        angle: b.GetAngle(),
-                        color: color,
-                        border: bodyData.border,
-                        borderWidth: bodyData.borderWidth,
-                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                        image: bodyData.image,
-                        id: bodyData.id,
-                        zDepth: bodyData.zDepth,
-                    } as SimuloEdge);
-                } else {
-                    //console.log("unknown shape type");
-                }
-                fl = fl.GetNext();
+            //while (box2D.getPointer(fl)) {
+            var shape = fl.GetShape();
+            var shapeType: number;
+            try {
+                shapeType = shape.GetType();
+            } catch (e) {
+                continue;
             }
+            if (shapeType == box2D.b2Shape.e_circle) {
+                const circleShape = box2D.castObject(shape, box2D.b2CircleShape);
+                //console.log("circle of radius " + circleShape.get_m_radius() + " at " + position.x + ", " + position.y);
+                shapes.push({
+                    x: position.x,
+                    y: position.y,
+                    type: "circle",
+                    radius: circleShape.get_m_radius(),
+                    angle: b.GetAngle(),
+                    color: color,
+                    border: bodyData.border,
+                    borderWidth: bodyData.borderWidth,
+                    borderScaleWithZoom: bodyData.borderScaleWithZoom,
+                    circleCake: bodyData.circleCake,
+                    image: bodyData.image,
+                    id: bodyData.id,
+                    zDepth: bodyData.zDepth,
+                } as SimuloCircle);
+            } else if (shapeType == box2D.b2Shape.e_polygon) {
+                const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
+                var vertexCount = polygonShape.get_m_count();
+                var verts: { x: number, y: number }[] = [];
+                // iterate over vertices
+                for (let i = 0; i < vertexCount; i++) {
+                    const vertex = polygonShape.get_m_vertices(i);
+                    //console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
+                    verts.push({
+                        x: vertex.x,
+                        y: vertex.y,
+                    });
+                }
+                if (bodyData.points != null) {
+                    shapes.push({
+                        x: position.x,
+                        y: position.y,
+                        type: "polygon",
+                        vertices: verts,
+                        angle: b.GetAngle(),
+                        color: color,
+                        border: bodyData.border,
+                        borderWidth: bodyData.borderWidth,
+                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
+                        points: bodyData.points.map((p) => {
+                            return { x: p[0], y: p[1] };
+                        }),
+                        image: bodyData.image,
+                        id: bodyData.id,
+                        zDepth: bodyData.zDepth,
+                    } as SimuloPolygon);
+                }
+                else {
+                    shapes.push({
+                        x: position.x,
+                        y: position.y,
+                        type: "polygon",
+                        vertices: verts,
+                        angle: b.GetAngle(),
+                        color: color,
+                        border: bodyData.border,
+                        borderWidth: bodyData.borderWidth,
+                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
+                        image: bodyData.image,
+                        id: bodyData.id,
+                        zDepth: bodyData.zDepth,
+                    } as SimuloPolygon);
+                }
+            } else if (shapeType == box2D.b2Shape.e_edge) {
+                const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
+                var vertices = [
+                    {
+                        x: edgeShape.get_m_vertex1().get_x(),
+                        y: edgeShape.get_m_vertex1().get_y(),
+                    },
+                    {
+                        x: edgeShape.get_m_vertex2().get_x(),
+                        y: edgeShape.get_m_vertex2().get_y(),
+                    },
+                ];
+                //console.log("edge: ");
+                //console.log(vertices);
+                shapes.push({
+                    x: position.x,
+                    y: position.y,
+                    type: "edge",
+                    vertices: vertices,
+                    angle: b.GetAngle(),
+                    color: color,
+                    border: bodyData.border,
+                    borderWidth: bodyData.borderWidth,
+                    borderScaleWithZoom: bodyData.borderScaleWithZoom,
+                    image: bodyData.image,
+                    id: bodyData.id,
+                    zDepth: bodyData.zDepth,
+                } as SimuloEdge);
+            } else {
+                //console.log("unknown shape type");
+            }
+            //fl = fl.GetNext();
+            //}
         }
 
         /*var springsFormatted: { p1: number[], p2: number[] }[] = [];
@@ -1605,23 +1756,151 @@ class SimuloPhysicsServer {
                     zDepth: mData.zDepth,
                 });
             }
+            else if (j.GetType() == box2D.e_revoluteJoint) {
+                try {
+                    let r = box2D.castObject(j, box2D.b2RevoluteJoint);
+                    let rData = r.GetUserData() as SimuloJointData;
+                    let anchorRaw = rData.anchorA;
+                    if (anchorRaw == null || anchorRaw == undefined) {
+                        anchorRaw = rData.anchorB;
+                    }
+                    if (anchorRaw == null || anchorRaw == undefined) {
+                        anchorRaw = [0, 0];
+                    }
+                    let bodyARot = r.GetBodyA().GetAngle();
+                    let bodyBRot = r.GetBodyB().GetAngle();
+                    // figure out which body is on top (higher zDepth)
+                    let bodyRot: number;
+                    if (new SimuloObject(this, r.GetBodyA()).zDepth > new SimuloObject(this, r.GetBodyB()).zDepth) {
+                        bodyRot = bodyARot;
+                    }
+                    else {
+                        bodyRot = bodyBRot;
+                    }
+                    let anchor = this.getWorldPoint(new SimuloObject(this, r.GetBodyA()), anchorRaw);
+                    let image: string | null;
+                    if (rData.image != null) {
+                        image = rData.image;
+                    }
+                    else {
+                        image = null;
+                    }
+                    shapes.push({
+                        x: anchor[0],
+                        y: anchor[1],
+                        type: "circle",
+                        vertices: [],
+                        angle: bodyRot,
+                        color: "#00000000",
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        image: image,
+                        id: rData.id,
+                        zDepth: rData.zDepth,
+                        circleCake: false,
+                        radius: 0.1,
+                    } as SimuloCircle);
+                }
+                catch (e) {
+                    console.error('Error in axle joint rendering:', e);
+                }
+            }
+            else if (j.GetType() == box2D.e_weldJoint) {
+                try {
+                    let w = box2D.castObject(j, box2D.b2WeldJoint);
+                    let wData = w.GetUserData() as SimuloJointData;
+                    let anchorRaw = wData.anchorA;
+                    if (anchorRaw == null || anchorRaw == undefined) {
+                        anchorRaw = wData.anchorB;
+                    }
+                    if (anchorRaw == null || anchorRaw == undefined) {
+                        anchorRaw = [0, 0];
+                    }
+                    let bodyARot = w.GetBodyA().GetAngle();
+                    let bodyBRot = w.GetBodyB().GetAngle();
+                    // figure out which body is on top (higher zDepth)
+                    let bodyRot: number;
+                    if (new SimuloObject(this, w.GetBodyA()).zDepth > new SimuloObject(this, w.GetBodyB()).zDepth) {
+                        bodyRot = bodyARot;
+                    }
+                    else {
+                        bodyRot = bodyBRot;
+                    }
+                    let anchor = this.getWorldPoint(new SimuloObject(this, w.GetBodyA()), anchorRaw);
+                    let image: string | null;
+                    if (wData.image != null) {
+                        image = wData.image;
+                    }
+                    else {
+                        image = null;
+                    }
+                    shapes.push({
+                        x: anchor[0],
+                        y: anchor[1],
+                        type: "circle",
+                        vertices: [],
+                        angle: bodyRot,
+                        color: "#00000000",
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                        image: image,
+                        id: wData.id,
+                        zDepth: wData.zDepth,
+                        circleCake: false,
+                        radius: 0.1,
+                    } as SimuloCircle);
+                }
+                catch (e) {
+                    console.error('Error in weld joint rendering:', e);
+                }
+            }
         }
 
         var thisStep: SimuloStep = {
             shapes: shapes.sort((a, b) => {
                 return a.zDepth - b.zDepth;
-            }).reverse(),
+            }),
             background: this.theme.background,
             springs: springs.sort((a, b) => {
                 return a.zDepth - b.zDepth;
-            }).reverse(),
+            }),
             mouseSprings: mouseSprings.sort((a, b) => {
                 return a.zDepth - b.zDepth;
-            }).reverse(),
-            particles: particles
+            }),
+            particles
         };
 
         return thisStep;
+    }
+
+    step(delta: number, velocityIterations: number, positionIterations: number) {
+        try {
+            this.world.Step(delta, velocityIterations, positionIterations);
+        } catch (e) {
+            console.error('Error in world.Step', e);
+            return false;
+        }
+
+        this.deleteObjects.forEach((obj) => {
+            if (obj instanceof box2D.b2Body) {
+                this.world.DestroyBody(obj);
+            }
+            if (obj instanceof box2D.b2Joint) {
+                this.world.DestroyJoint(obj);
+            }
+            if (obj instanceof box2D.b2Fixture) {
+                obj.GetBody().DestroyFixture(obj);
+            }
+        });
+        this.deleteObjects = [];
+        this.deletePromises.forEach((promise) => {
+            promise.resolve();
+        });
+        this.deletePromises = [];
+
+        return true;
     }
     getAllSprings() {
         var joint: Box2D.b2Joint = this.world.GetJointList();
