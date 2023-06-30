@@ -35,6 +35,7 @@ assets/textures/add_rectangle.png
 assets/textures/add_rectangle_old.png
 assets/textures/add_spring.png
 assets/textures/add_spring_old.png
+assets/textures/basic_car.png
 assets/textures/body.png
 assets/textures/body_purple.png
 assets/textures/car.png
@@ -44,6 +45,8 @@ assets/textures/person_purple.png
 assets/textures/select.png
 assets/textures/spring.png
 assets/textures/spring.svg
+assets/textures/tools/axle.png
+assets/textures/tools/bolt.png
 assets/textures/tools/box.png
 assets/textures/tools/brush.png
 assets/textures/tools/chain.png
@@ -141,11 +144,15 @@ media/icon_square.svg
 media/icon_square_new.svg.2023_06_22_21_50_31.0.svg
 media/icon_square_old.png
 media/icon_square_old.svg
+media/imulo.png
+media/imulo.svg
+media/limegreen.svg
 media/logo.png
 media/logo.svg
 media/maskable_icon_x128.png
 media/maskable_icon_x192.png
 media/maskable_icon_x512.png
+media/urple.svg
 node_modules/box2d-wasm/dist/es/Box2D.js
 node_modules/box2d-wasm/dist/es/Box2D.simd.js
 node_modules/box2d-wasm/dist/es/Box2D.simd.wasm

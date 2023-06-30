@@ -55,6 +55,7 @@ class SimuloViewer {
     constructor(canvas) {
         /** Whether the viewer is currently running, should only be altered by `start()` and `stop()` */
         this.running = false;
+        this.cameraOffset = { x: 0, y: 0 };
         this.cameraZoom = 30;
         this.touchStartElement = null;
         this.isDragging = false;
@@ -165,8 +166,7 @@ class SimuloViewer {
         if (this.canvas.tabIndex == -1) {
             this.canvas.tabIndex = 1;
         }
-        var windowEnd = this.transformPoint(window.innerWidth, window.innerHeight);
-        this.cameraOffset = { x: windowEnd.x / 2, y: (windowEnd.y / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
+        this.resetCamera();
         this.lastX = window.innerWidth / 2;
         this.lastY = window.innerHeight / 2;
         this.lastMouseX = this.lastX;
@@ -346,6 +346,10 @@ class SimuloViewer {
     /** Stop the loop that calls `draw()`, can be restarted with `start()` */
     stop() {
         this.running = false;
+    }
+    resetCamera() {
+        this.cameraOffset = { x: window.innerWidth / 2, y: (window.innerHeight / 2) - 700 }; // start at center, offset by 700. can be changed later by controller
+        this.cameraZoom = 30;
     }
     drawVertsAt(x, y, verts, rotation = 0) {
         this.ctx.beginPath();

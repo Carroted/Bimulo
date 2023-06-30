@@ -32,7 +32,7 @@ class SimuloServerController {
     constructor(theme, server, localClient) {
         this.networkServer = null;
         this.tools = {};
-        this.previousStep = null;
+        //previousStep: SimuloStepExtended | null = null;
         this.timeScale = 1 / 500;
         this.frameRate = 1000 / 60;
         this.velocityIterations = 3;
@@ -44,16 +44,9 @@ class SimuloServerController {
         this.paused = false;
         this.localClients = [];
         this.selectedObjects = {};
+        this.savedWorld = {};
         this.theme = theme;
-        this.physicsServer = new SimuloPhysicsServer(this.theme);
-        this.physicsServer.on('collision', (data) => {
-            // .sound, .volume and .pitch. we can just send it as-is through network
-            this.sendAll('collision', {
-                sound: data.sound,
-                volume: data.volume,
-                pitch: data.pitch * this.timeScaleMultiplier
-            });
-        });
+        this.physicsServer = this.setupPhysicsServer();
         if (server) {
             this.networkServer = new SimuloNetworkServer(server);
             this.networkServer.on("connect", (uuid) => {
@@ -102,20 +95,33 @@ class SimuloServerController {
     }
     loop(delta) {
         // step physics
-        if (this.paused) {
+        /*if (this.paused) {
             if (this.previousStep) {
                 this.sendAll("world_update", this.previousStep);
             }
             return;
+        }*/
+        if (!this.paused) {
+            var succeeded = false;
+            try {
+                succeeded = this.physicsServer.step(delta * this.timeScale * this.timeScaleMultiplier, this.velocityIterations, this.positionIterations);
+            }
+            catch (e) {
+                console.log(e);
+            }
+            if (!succeeded) {
+                console.log("step failed");
+                this.sendAll("world_update_failed", null);
+                this.physicsServer = this.setupPhysicsServer(); // reset the server
+                this.physicsServer.loadWorld(this.savedWorld);
+                console.log("reverted to last step");
+            }
+            else {
+                this.savedWorld = this.physicsServer.saveWorld();
+            }
         }
-        var step = this.physicsServer.step(delta * this.timeScale * this.timeScaleMultiplier, this.velocityIterations, this.positionIterations);
-        if (!step) {
-            console.log("step failed");
-            this.sendAll("world_update_failed", null);
-            return;
-        }
-        step = step;
-        var springs1 = step.springs;
+        var render = this.physicsServer.render();
+        var springs1 = render.springs;
         var springs2 = this.springs.map((s) => {
             return {
                 p1: s.target,
@@ -127,7 +133,7 @@ class SimuloServerController {
         });
         var springs3 = springs1.concat(springs2);
         var thisStep = {
-            shapes: step.shapes,
+            shapes: render.shapes,
             creating_objects: this.creatingObjects,
             background: this.theme.background,
             springs: springs3,
@@ -135,17 +141,18 @@ class SimuloServerController {
             paused: this.paused,
             mouseSprings: [],
             creating_springs: this.creatingSprings,
-            selected_objects: // map to { userid: [objectID, objectID, objectID] }
-            // lets use object. methods
-            Object.keys(this.selectedObjects).reduce((acc, key) => {
-                acc[key] = this.selectedObjects[key].map((obj) => obj.id.toString());
-                return acc;
-            }, {}),
-            particles: step.particles
+            selected_objects: this.selectedObjectIDs(),
+            particles: render.particles
         };
         this.sendAll("world_update", thisStep);
-        this.previousStep = thisStep;
+        //this.previousStep = thisStep;
         //console.log("vomit");
+    }
+    selectedObjectIDs() {
+        return Object.keys(this.selectedObjects).reduce((acc, key) => {
+            acc[key] = this.selectedObjects[key].map((obj) => obj.id.toString());
+            return acc;
+        }, {});
     }
     handleData(formatted, uuid) {
         if (formatted.type == "player mouse") {
@@ -187,16 +194,6 @@ class SimuloServerController {
                                     x: obj.position.x + dx,
                                     y: obj.position.y + dy
                                 };
-                                if (this.previousStep) {
-                                    // edit the shape
-                                    let shape = this.previousStep.shapes.find((shape) => shape.id == obj.id);
-                                    // console.log the amount of shapes that have that id
-                                    console.log('shapes with same ID:', this.previousStep.shapes.filter((shape) => shape.id == obj.id).length);
-                                    if (shape) {
-                                        shape.x = obj.position.x;
-                                        shape.y = obj.position.y;
-                                    }
-                                }
                                 select.initialVelocity = {
                                     x: dx * 10,
                                     y: dy * 10
@@ -226,7 +223,7 @@ class SimuloServerController {
                 y: formatted.data.y,
                 springs: springsFormatted2,
                 creating_objects: this.creatingObjects,
-                selected_objects: this.selectedObjects
+                selected_objects: this.selectedObjectIDs(),
             });
             // 👍 we did it, yay, we're so cool
         }
@@ -349,14 +346,50 @@ class SimuloServerController {
                 };
             }
             else if (this.tools[uuid] == "addParticle") {
-                this.physicsServer.addParticleBox(formatted.data.x, formatted.data.y, 0.2, 0.2);
+                this.physicsServer.addParticleBox(formatted.data.x, formatted.data.y, 0.5, 0.5);
+            }
+            else if (this.tools[uuid] == "addAxle") {
+                // get 2 objects at point
+                var bodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                if (bodies.length >= 2) {
+                    let bodyA = bodies[0];
+                    let bodyB = bodies[1];
+                    let bodyALocalPoint = this.physicsServer.getLocalPoint(bodyA, [formatted.data.x, formatted.data.y]);
+                    let bodyBLocalPoint = this.physicsServer.getLocalPoint(bodyB, [formatted.data.x, formatted.data.y]);
+                    this.physicsServer.addAxle(bodyALocalPoint, bodyBLocalPoint, bodyA, bodyB, this.theme.newObjects.axleImage);
+                }
+                else if (bodies.length == 1) {
+                    // get ground body
+                    let groundBody = this.physicsServer.getGroundBody();
+                    let bodyA = bodies[0];
+                    let bodyB = groundBody;
+                    let bodyALocalPoint = this.physicsServer.getLocalPoint(bodyA, [formatted.data.x, formatted.data.y]);
+                    let bodyBLocalPoint = this.physicsServer.getLocalPoint(bodyB, [formatted.data.x, formatted.data.y]);
+                    this.physicsServer.addAxle(bodyALocalPoint, bodyBLocalPoint, bodyA, bodyB, this.theme.newObjects.axleImage);
+                }
+            }
+            else if (this.tools[uuid] == "addBolt") {
+                // get 2 objects at point
+                var bodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                if (bodies.length >= 2) {
+                    let bodyA = bodies[0];
+                    let bodyB = bodies[1];
+                    let bodyALocalPoint = this.physicsServer.getLocalPoint(bodyA, [formatted.data.x, formatted.data.y]);
+                    let bodyBLocalPoint = this.physicsServer.getLocalPoint(bodyB, [formatted.data.x, formatted.data.y]);
+                    this.physicsServer.addBolt(bodyALocalPoint, bodyBLocalPoint, bodyA, bodyB, this.theme.newObjects.boltImage);
+                }
+                else if (bodies.length == 1) {
+                    // get ground body
+                    let groundBody = this.physicsServer.getGroundBody();
+                    let bodyA = bodies[0];
+                    let bodyB = groundBody;
+                    let bodyALocalPoint = this.physicsServer.getLocalPoint(bodyA, [formatted.data.x, formatted.data.y]);
+                    let bodyBLocalPoint = this.physicsServer.getLocalPoint(bodyB, [formatted.data.x, formatted.data.y]);
+                    this.physicsServer.addBolt(bodyALocalPoint, bodyBLocalPoint, bodyA, bodyB, this.theme.newObjects.boltImage);
+                }
             }
             else {
                 console.log("Unknown tool: " + this.tools[uuid]);
-            }
-            if (this.previousStep) {
-                this.previousStep.creating_objects = this.creatingObjects;
-                this.previousStep.selected_objects = this.selectedObjects;
             }
         }
         else if (formatted.type == "player mouse up") {
@@ -367,7 +400,13 @@ class SimuloServerController {
             if (this.creatingSprings[uuid]) {
                 var pointABodies = this.physicsServer.getObjectsAtPoint(this.creatingSprings[uuid].start);
                 var pointBBodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
-                if (pointABodies.length > 0 && pointBBodies.length > 0) {
+                if (pointABodies.length > 0 || pointBBodies.length > 0) {
+                    if (pointABodies.length === 0) {
+                        pointABodies = [this.physicsServer.getGroundBody()];
+                    }
+                    if (pointBBodies.length === 0) {
+                        pointBBodies = [this.physicsServer.getGroundBody()];
+                    }
                     /*// Calculate rotated anchor points
                     var anchorAPosition = [
                         this.creatingSprings[uuid][0] - pointABodies[0].position[0],
@@ -389,30 +428,12 @@ class SimuloServerController {
                         // Calculate the distance between the two points using the Pythagorean theorem
                         Math.sqrt(Math.pow(this.creatingSprings[uuid].start[0] - formatted.data.x, 2) +
                             Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)), 0, 4 / formatted.data.zoom);
-                        if (this.previousStep) {
-                            this.previousStep.springs.push({
-                                p1: this.creatingSprings[uuid].start,
-                                p2: [formatted.data.x, formatted.data.y],
-                                width: 4 / formatted.data.zoom,
-                                line: null,
-                                image: null,
-                            });
-                        }
                     }
                     else {
                         var spring = this.physicsServer.addSpring(rotatedAnchorA, rotatedAnchorB, pointABodies[0], pointBBodies[0], 30, 
                         // Calculate the distance between the two points using the Pythagorean theorem
                         Math.sqrt(Math.pow(this.creatingSprings[uuid].start[0] - formatted.data.x, 2) +
                             Math.pow(this.creatingSprings[uuid].start[1] - formatted.data.y, 2)), 0, this.creatingSprings[uuid].width, this.creatingSprings[uuid].image);
-                        if (this.previousStep) {
-                            this.previousStep.springs.push({
-                                p1: this.creatingSprings[uuid].start,
-                                p2: [formatted.data.x, formatted.data.y],
-                                width: this.creatingSprings[uuid].width,
-                                line: null,
-                                image: this.creatingSprings[uuid].image,
-                            });
-                        }
                     }
                 }
                 delete this.creatingSprings[uuid];
@@ -446,22 +467,6 @@ class SimuloServerController {
                         [-width / 2, height / 2],
                     ];
                     let rectangle = this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false);
-                    if (this.previousStep) {
-                        this.previousStep.shapes.push({
-                            type: "rectangle",
-                            angle: 0,
-                            color: this.creatingObjects[uuid].color,
-                            border: this.theme.newObjects.border,
-                            borderWidth: this.theme.newObjects.borderWidth,
-                            borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
-                            image: null,
-                            x: this.creatingObjects[uuid].x,
-                            y: this.creatingObjects[uuid].y,
-                            id: rectangle.id,
-                            width: width,
-                            height: height,
-                        });
-                    }
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
                 }
@@ -484,10 +489,6 @@ class SimuloServerController {
                         }*/
                         this.selectedObjects[uuid] = bodies;
                         delete this.creatingObjects[uuid]; // void
-                        if (this.previousStep) {
-                            this.previousStep.creating_objects = this.creatingObjects;
-                            this.previousStep.selected_objects = this.selectedObjects;
-                        }
                     }
                     else {
                         let wasStatic = this.creatingObjects[uuid].wasStatic;
@@ -516,10 +517,6 @@ class SimuloServerController {
                             this.selectedObjects[uuid] = bodies;
                         }
                         delete this.creatingObjects[uuid];
-                        if (this.previousStep) {
-                            this.previousStep.creating_objects = this.creatingObjects;
-                            this.previousStep.selected_objects = this.selectedObjects;
-                        }
                     }
                 }
                 else if (this.creatingObjects[uuid].shape == "square") {
@@ -549,22 +546,6 @@ class SimuloServerController {
                         circleCake: this.creatingObjects[uuid].circleCake
                     };
                     let circle = this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0.5, bodyData, false);
-                    if (this.previousStep) {
-                        this.previousStep.shapes.push({
-                            type: "circle",
-                            angle: 0,
-                            color: this.creatingObjects[uuid].color,
-                            border: this.theme.newObjects.border,
-                            borderWidth: this.theme.newObjects.borderWidth,
-                            borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
-                            image: null,
-                            x: this.creatingObjects[uuid].x + radius,
-                            y: this.creatingObjects[uuid].y + radius,
-                            id: circle.id,
-                            circleCake: this.creatingObjects[uuid].circleCake,
-                            radius: radius,
-                        });
-                    }
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
                 }
@@ -584,32 +565,8 @@ class SimuloServerController {
                         sound: 'impact.wav',
                         image: null,
                     }, false);
-                    if (this.previousStep) {
-                        this.previousStep.shapes.push({
-                            type: "polygon",
-                            vertices: pointsLocal.map((point) => {
-                                return { x: point[0], y: point[1] };
-                            }),
-                            points: pointsLocal.map((point) => {
-                                return { x: point[0], y: point[1] };
-                            }),
-                            angle: 0,
-                            color: this.creatingObjects[uuid].color,
-                            border: this.theme.newObjects.border,
-                            borderWidth: this.theme.newObjects.borderWidth,
-                            borderScaleWithZoom: this.theme.newObjects.borderScaleWithZoom,
-                            image: null,
-                            x: this.creatingObjects[uuid].x,
-                            y: this.creatingObjects[uuid].y,
-                            id: createdPolygon.id,
-                        });
-                    }
                     delete this.creatingObjects[uuid];
                 }
-            }
-            if (this.previousStep) {
-                this.previousStep.creating_objects = this.creatingObjects;
-                this.previousStep.selected_objects = this.selectedObjects;
             }
         }
         else if (formatted.type == "set_theme") {
@@ -635,6 +592,7 @@ class SimuloServerController {
                         part.image = null;
                     }
                 });
+                this.physicsServer.theme = this.theme;
                 this.sendAll("set_theme", this.theme);
             }
         }
@@ -670,7 +628,7 @@ class SimuloServerController {
                         key: formatted.data.key,
                         data: JSON.stringify(this.physicsServer.save(selectedObjects.filter((object) => {
                             return object instanceof SimuloObject;
-                        })).map((object) => {
+                        }), { x: formatted.data.x, y: formatted.data.y }).map((object) => {
                             // subtract mouse pos
                             let position = { x: object.position.x, y: object.position.y };
                             position.x -= formatted.data.x;
@@ -695,7 +653,7 @@ class SimuloServerController {
                 objectPosition.y += position.y;
                 savedObjects[i].position = objectPosition;
             }
-            this.physicsServer.load(savedObjects);
+            this.physicsServer.load(savedObjects, position);
         }
         else if (formatted.type == "delete_selection") {
             var selectedObjects = this.selectedObjects[uuid];
@@ -704,6 +662,26 @@ class SimuloServerController {
                     this.physicsServer.destroy(object);
                 });
             }
+        }
+        else if (formatted.type == "save_world") {
+            let world = this.physicsServer.saveWorld();
+            if (formatted.data.key !== undefined) {
+                this.send(uuid, "save_world", {
+                    key: formatted.data.key,
+                    data: JSON.stringify(world)
+                });
+            }
+        }
+        else if (formatted.type == "load_world") {
+            let world = JSON.parse(formatted.data.data);
+            this.physicsServer.loadWorld(world).then(() => {
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, "load_world", {
+                        key: formatted.data.key,
+                        data: 'Loaded scene'
+                    });
+                }
+            });
         }
     }
     addScript(code) {
@@ -817,6 +795,25 @@ class SimuloServerController {
             type: 'startScript',
             value: code
         });
+    }
+    setupPhysicsServer() {
+        if (this.physicsServer) {
+            this.physicsServer.destroyPhysicsServer();
+        }
+        let physicsServer = new SimuloPhysicsServer(this.theme);
+        physicsServer.on('collision', (data) => {
+            // .sound, .volume and .pitch. we can just send it as-is through network
+            this.sendAll('collision', {
+                sound: data.sound,
+                volume: data.volume,
+                pitch: data.pitch * this.timeScaleMultiplier
+            });
+        });
+        physicsServer.on('themeChange', (data) => {
+            this.theme = data;
+            this.sendAll("set_theme", data);
+        });
+        return physicsServer;
     }
 }
 export default SimuloServerController;

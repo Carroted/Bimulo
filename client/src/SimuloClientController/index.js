@@ -73,26 +73,38 @@ const defaultSavedObjects = [{
         author: "asour",
         data: `[{"id":3,"type":"CIRCLE","position":{"x":0.027060299522868793,"y":-0.6546055597719658},"rotation":3.1736624240875244,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x":0.007093784741751354,"y":0.09707290702490923},"rotation":3.141267776489258,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]}]`,
         description: "A ragdoll, mascot, crash test dummy, size reference and more all in one.",
-        image: "assets/textures/person.png"
+        image: "assets/textures/person.png",
+        date: new Date().toISOString(),
+        version: "0.6.0",
+        versionTimestamp: new Date().getTime() / 1000,
+        type: 'objects'
     }, {
         name: "Purple Person",
         author: "asour",
         data: `[{"id":3,"type":"CIRCLE","position":{"x":0.027060299522868793,"y":-0.6546055597719658},"rotation":3.1736624240875244,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#8c67f2","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x":0.007093784741751354,"y":0.09707290702490923},"rotation":3.141267776489258,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body_purple.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]}]`,
         description: "Same as person, but purple",
-        image: "assets/textures/person_purple.png"
+        image: "assets/textures/person_purple.png",
+        date: new Date().toISOString(),
+        version: "0.6.0",
+        versionTimestamp: new Date().getTime() / 1000,
+        type: 'objects'
     }, {
         name: "Basic Car",
         author: "asour",
-        data: `[{"id":16,"type":"CIRCLE","position":{"x":2.996374755454317,"y":2.329615572353532},"rotation":10.404781341552734,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(211.64599036813416, 116.3114585334254, 128.11140656073175, 1)","isStatic":false,"mass":1.3809078931808472,"joints":[{"id":35,"bodyA":16,"bodyB":14,"anchorA":[-0.06215667724609375,-0.031076431274414062],"anchorB":[2.0718441009521484,-0.04247474670410156],"collideConnected":true,"zDepth":35,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.8930270671844482,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":34,"bodyA":14,"bodyB":16,"anchorA":[2.2168750762939453,0.05075836181640625],"anchorB":[-0.06215667724609375,-0.031076431274414062],"collideConnected":true,"zDepth":34,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.7762930393218994,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":33,"bodyA":16,"bodyB":14,"anchorA":[-0.07251548767089844,-0.13467025756835938],"anchorB":[2.2168750762939453,0.05075836181640625],"collideConnected":true,"zDepth":33,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6723198890686035,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":32,"bodyA":14,"bodyB":16,"anchorA":[-0.1035928726196289,0.14399147033691406],"anchorB":[-0.07251548767089844,-0.13467025756835938],"collideConnected":true,"zDepth":32,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7305455207824707,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":31,"bodyA":16,"bodyB":14,"anchorA":[0.010358810424804688,-0.09323310852050781],"anchorB":[-0.1035928726196289,0.14399147033691406],"collideConnected":true,"zDepth":31,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.8194663524627686,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":30,"bodyA":14,"bodyB":16,"anchorA":[-9.5367431640625e-7,0.1129150390625],"anchorB":[0.010358810424804688,-0.09323310852050781],"collideConnected":true,"zDepth":30,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.76554799079895,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":23,"bodyA":14,"bodyB":16,"anchorA":[3.573932647705078,0.009321212768554688],"anchorB":[0.010358810424804688,-0.05179595947265625],"collideConnected":true,"zDepth":23,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.899566650390625,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":22,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,-0.020717620849609375],"anchorB":[3.573932647705078,0.009321212768554688],"collideConnected":true,"zDepth":22,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.9386088848114014,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":21,"bodyA":14,"bodyB":16,"anchorA":[3.5842933654785156,-0.03211402893066406],"anchorB":[-0.020719528198242188,-0.020717620849609375],"collideConnected":true,"zDepth":21,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.981227159500122,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":20,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,0.010358810424804688],"anchorB":[3.5842933654785156,-0.03211402893066406],"collideConnected":true,"zDepth":20,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.010831356048584,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":19,"bodyA":15,"bodyB":16,"anchorA":[-0.005179405212402344,-0.03625679016113281],"anchorB":[-0.020719528198242188,0.010358810424804688],"collideConnected":true,"zDepth":19,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.5032477378845215,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":18,"bodyA":16,"bodyB":15,"anchorA":[-0.020719528198242188,0],"anchorB":[-0.005179405212402344,-0.03625679016113281],"collideConnected":true,"zDepth":18,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.502945423126221,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":17,"bodyA":15,"bodyB":16,"anchorA":[0.03625774383544922,-0.07769393920898438],"anchorB":[-0.020719528198242188,0],"collideConnected":true,"zDepth":17,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.462861061096191,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"radius":0.6629906892776489},{"id":15,"type":"CIRCLE","position":{"x":-2.536483377861723,"y":2.2748746665918134},"rotation":-10.279982566833496,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(201.94351491912954, 233.1177873741904, 196.43321536487724, 1)","isStatic":false,"mass":1.6284500360488892,"joints":[{"id":38,"bodyA":15,"bodyB":14,"anchorA":[0.005179405212402344,-0.11913108825683594],"anchorB":[-2.134002685546875,0.04039955139160156],"collideConnected":true,"zDepth":38,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6384940147399902,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":37,"bodyA":14,"bodyB":15,"anchorA":[-2.123642921447754,0.04039955139160156],"anchorB":[0.005179405212402344,-0.10877227783203125],"collideConnected":true,"zDepth":37,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.651193857192993,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":36,"bodyA":15,"bodyB":14,"anchorA":[-0.005179405212402344,-0.21236419677734375],"anchorB":[-2.123642921447754,0.04039955139160156],"collideConnected":true,"zDepth":36,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.5541961193084717,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":29,"bodyA":15,"bodyB":14,"anchorA":[-0.046616554260253906,-0.1605682373046875],"anchorB":[-9.5367431640625e-7,0.1129150390625],"collideConnected":true,"zDepth":29,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7630393505096436,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":28,"bodyA":14,"bodyB":15,"anchorA":[0.08287239074707031,0.14399147033691406],"anchorB":[-0.046616554260253906,-0.1605682373046875],"collideConnected":true,"zDepth":28,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.806914806365967,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":27,"bodyA":15,"bodyB":14,"anchorA":[-0.015539169311523438,-0.18128585815429688],"anchorB":[0.08287239074707031,0.14399147033691406],"collideConnected":true,"zDepth":27,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.769735097885132,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":26,"bodyA":15,"bodyB":14,"anchorA":[0.03625774383544922,-0.1605682373046875],"anchorB":[-3.5532169342041016,-0.011396408081054688],"collideConnected":true,"zDepth":26,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6710948944091797,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":25,"bodyA":14,"bodyB":15,"anchorA":[-3.522139549255371,0.009321212768554688],"anchorB":[0.03625774383544922,-0.1605682373046875],"collideConnected":true,"zDepth":25,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6424362659454346,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":24,"bodyA":15,"bodyB":14,"anchorA":[0.015539169311523438,-0.11913108825683594],"anchorB":[-3.522139549255371,0.009321212768554688],"collideConnected":true,"zDepth":24,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6766533851623535,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":19,"bodyA":15,"bodyB":16,"anchorA":[-0.005179405212402344,-0.03625679016113281],"anchorB":[-0.020719528198242188,0.010358810424804688],"collideConnected":true,"zDepth":19,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.5032477378845215,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":18,"bodyA":16,"bodyB":15,"anchorA":[-0.020719528198242188,0],"anchorB":[-0.005179405212402344,-0.03625679016113281],"collideConnected":true,"zDepth":18,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.502945423126221,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":17,"bodyA":15,"bodyB":16,"anchorA":[0.03625774383544922,-0.07769393920898438],"anchorB":[-0.020719528198242188,0],"collideConnected":true,"zDepth":17,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":5.462861061096191,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"radius":0.719966471195221},{"id":14,"type":"POLYGON","position":{"x":0.3676232391121541,"y":-0.1269903389013507},"rotation":-0.034425824880599976,"velocity":{"x":0.18822121620178223,"y":-0.18822121620178223},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(213.87663392405085, 183.03583592500704, 86.46282192908527, 1)","isStatic":false,"mass":9.236974716186523,"joints":[{"id":38,"bodyA":15,"bodyB":14,"anchorA":[0.005179405212402344,-0.11913108825683594],"anchorB":[-2.134002685546875,0.04039955139160156],"collideConnected":true,"zDepth":38,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6384940147399902,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":37,"bodyA":14,"bodyB":15,"anchorA":[-2.123642921447754,0.04039955139160156],"anchorB":[0.005179405212402344,-0.10877227783203125],"collideConnected":true,"zDepth":37,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.651193857192993,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":36,"bodyA":15,"bodyB":14,"anchorA":[-0.005179405212402344,-0.21236419677734375],"anchorB":[-2.123642921447754,0.04039955139160156],"collideConnected":true,"zDepth":36,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.5541961193084717,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":35,"bodyA":16,"bodyB":14,"anchorA":[-0.06215667724609375,-0.031076431274414062],"anchorB":[2.0718441009521484,-0.04247474670410156],"collideConnected":true,"zDepth":35,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.8930270671844482,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":34,"bodyA":14,"bodyB":16,"anchorA":[2.2168750762939453,0.05075836181640625],"anchorB":[-0.06215667724609375,-0.031076431274414062],"collideConnected":true,"zDepth":34,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.7762930393218994,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":33,"bodyA":16,"bodyB":14,"anchorA":[-0.07251548767089844,-0.13467025756835938],"anchorB":[2.2168750762939453,0.05075836181640625],"collideConnected":true,"zDepth":33,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6723198890686035,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":32,"bodyA":14,"bodyB":16,"anchorA":[-0.1035928726196289,0.14399147033691406],"anchorB":[-0.07251548767089844,-0.13467025756835938],"collideConnected":true,"zDepth":32,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7305455207824707,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":31,"bodyA":16,"bodyB":14,"anchorA":[0.010358810424804688,-0.09323310852050781],"anchorB":[-0.1035928726196289,0.14399147033691406],"collideConnected":true,"zDepth":31,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.8194663524627686,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":30,"bodyA":14,"bodyB":16,"anchorA":[-9.5367431640625e-7,0.1129150390625],"anchorB":[0.010358810424804688,-0.09323310852050781],"collideConnected":true,"zDepth":30,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.76554799079895,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":29,"bodyA":15,"bodyB":14,"anchorA":[-0.046616554260253906,-0.1605682373046875],"anchorB":[-9.5367431640625e-7,0.1129150390625],"collideConnected":true,"zDepth":29,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.7630393505096436,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":28,"bodyA":14,"bodyB":15,"anchorA":[0.08287239074707031,0.14399147033691406],"anchorB":[-0.046616554260253906,-0.1605682373046875],"collideConnected":true,"zDepth":28,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.806914806365967,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":27,"bodyA":15,"bodyB":14,"anchorA":[-0.015539169311523438,-0.18128585815429688],"anchorB":[0.08287239074707031,0.14399147033691406],"collideConnected":true,"zDepth":27,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.769735097885132,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":26,"bodyA":15,"bodyB":14,"anchorA":[0.03625774383544922,-0.1605682373046875],"anchorB":[-3.5532169342041016,-0.011396408081054688],"collideConnected":true,"zDepth":26,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6710948944091797,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":25,"bodyA":14,"bodyB":15,"anchorA":[-3.522139549255371,0.009321212768554688],"anchorB":[0.03625774383544922,-0.1605682373046875],"collideConnected":true,"zDepth":25,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6424362659454346,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":24,"bodyA":15,"bodyB":14,"anchorA":[0.015539169311523438,-0.11913108825683594],"anchorB":[-3.522139549255371,0.009321212768554688],"collideConnected":true,"zDepth":24,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.6766533851623535,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":23,"bodyA":14,"bodyB":16,"anchorA":[3.573932647705078,0.009321212768554688],"anchorB":[0.010358810424804688,-0.05179595947265625],"collideConnected":true,"zDepth":23,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.899566650390625,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":22,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,-0.020717620849609375],"anchorB":[3.573932647705078,0.009321212768554688],"collideConnected":true,"zDepth":22,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.9386088848114014,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":21,"bodyA":14,"bodyB":16,"anchorA":[3.5842933654785156,-0.03211402893066406],"anchorB":[-0.020719528198242188,-0.020717620849609375],"collideConnected":true,"zDepth":21,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":2.981227159500122,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null},{"id":20,"bodyA":16,"bodyB":14,"anchorA":[-0.020719528198242188,0.010358810424804688],"anchorB":[3.5842933654785156,-0.03211402893066406],"collideConnected":true,"zDepth":20,"type":"spring","dampingRatio":0,"frequencyHz":30,"length":3.010831356048584,"image":"assets/textures/spring.png","width":0.5179615005663617,"line":null}],"points":[[-3.8971424656729177,-0.5925479772368174],[3.8971424656729177,-0.5925479772368174],[3.8971424656729177,0.5925479772368174],[-3.8971424656729177,0.5925479772368174]]}]`,
-        description: 'Car which uses spring to connect everything, demonstrating how you can make a car without axles',
-        image: "assets/textures/car.png"
-    }];
+        data: `[{"id":6,"type":"POLYGON","position":{"x":-0.10459689170170705,"y":-0.09242571270430133},"rotation":-0.015004868619143963,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(200.75395266999493, 111.86416349533515, 245.34356609147244, 1)","isStatic":false,"mass":19.535001754760742,"joints":[{"id":10,"bodyA":6,"bodyB":7,"anchorA":[-2.537543296813965,0.8796977996826172],"anchorB":[0.06229686737060547,-0.017383575439453125],"collideConnected":false,"zDepth":315,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false},{"id":9,"bodyA":6,"bodyB":8,"anchorA":[2.781675338745117,0.9739360809326172],"anchorB":[0.06229591369628906,0.05590629577636719],"collideConnected":false,"zDepth":314,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[-4.540955784646452,-1.0754895279425813],[4.540955784646452,-1.0754895279425813],[4.540955784646452,1.0754895279425813],[-4.540955784646452,1.0754895279425813]]},{"id":7,"type":"CIRCLE","position":{"x":-2.6603582289819805,"y":0.7688738020662065},"rotation":1.3306092023849487,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(145.55794505797627, 187.6814023272608, 225.86153190870866, 1)","isStatic":false,"mass":6.182457447052002,"joints":[{"id":10,"bodyA":6,"bodyB":7,"anchorA":[-2.537543296813965,0.8796977996826172],"anchorB":[0.06229686737060547,-0.017383575439453125],"collideConnected":false,"zDepth":315,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[-0.8610262204547183,-1.0107699109685835],[0.8610262204547183,-1.0107699109685835],[0.8610262204547183,1.0107699109685835],[-0.8610262204547183,1.0107699109685835]],"radius":1.4028319120407104},{"id":8,"type":"CIRCLE","position":{"x":2.7360250565404804,"y":0.7688604506257768},"rotation":1.402000904083252,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0.5,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"impact.wav","color":"rgba(145.55794505797627, 187.6814023272608, 225.86153190870866, 1)","isStatic":false,"mass":6.182457447052002,"joints":[{"id":9,"bodyA":6,"bodyB":8,"anchorA":[2.781675338745117,0.9739360809326172],"anchorB":[0.06229591369628906,0.05590629577636719],"collideConnected":false,"zDepth":314,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[-0.11230776788539742,-1.010769910968584],[0.11230776788539742,-1.010769910968584],[0.11230776788539742,1.010769910968584],[-0.11230776788539742,1.010769910968584]],"radius":1.4028319120407104}]`,
+        description: 'Basic car with 2 axles and circles',
+        image: "assets/textures/basic_car.png",
+        date: new Date().toISOString(),
+        version: "0.6.0",
+        versionTimestamp: new Date().getTime() / 1000,
+        type: 'objects'
+    },
+];
 /** `SimuloClientController` manages connecting to the server, `SimuloViewer` and the UI. */
 class SimuloClientController {
     constructor(canvas) {
         this.timeScale = null;
         this.paused = null;
-        this.themes = {};
         this.maxZoom = 5;
         this.minZoom = 0.1;
         this.scrollSensitivity = 0.0005;
@@ -155,6 +167,8 @@ class SimuloClientController {
         this.toolIconOffset = null;
         this.key = 0;
         this.tool = 'drag';
+        this.version = 'unknown';
+        this.versionTimestamp = 0;
         this.mousePos = { x: 0, y: 0 };
         this.theme = themes.night;
         this.serverController = new SimuloServerController(this.theme, null, true);
@@ -169,6 +183,8 @@ class SimuloClientController {
                     let version = await response.json();
                     // we want month name, then day, then year. no time
                     let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+                    this.version = version.version;
+                    this.versionTimestamp = version.date; // we can use it for comparison later of which build is newer
                     versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
                 }
             }
@@ -257,49 +273,6 @@ class SimuloClientController {
             });
             popupThemes.appendChild(themeElement);
         }
-        let fileMenuChildren = document.querySelectorAll('.file-menu-content li, .file-menu-content');
-        fileMenuChildren.forEach((child) => {
-            // its a child of the file menu, we need to stop propagation of hover, move, click, touch, etc
-            child.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('touchend', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('touchmove', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('touchcancel', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('mousemove', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('mouseenter', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('mouseleave', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('mouseover', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('mouseout', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('pointerover', (e) => {
-                e.stopPropagation();
-            });
-            child.addEventListener('pointerout', (e) => {
-                e.stopPropagation();
-            });
-        });
         document.addEventListener('mouseup', (e) => {
             if (!(e instanceof MouseEvent) || e.button != 0)
                 return;
@@ -438,6 +411,10 @@ class SimuloClientController {
                             else {
                                 fileMenuContent.classList.remove('active');
                             }
+                            // put the x and y of the filemenucontent to the position in scree of the filemenu
+                            let fileMenuRect = fileMenu.getBoundingClientRect();
+                            fileMenuContent.style.left = fileMenuRect.left + 'px';
+                            fileMenuContent.style.top = fileMenuRect.bottom + 'px';
                         }
                         else {
                             console.log('hiding fileMenuContent');
@@ -451,6 +428,98 @@ class SimuloClientController {
                     console.log('no fileMenu.dataset.file');
                 }
             });
+        });
+        const fileMenuContentButtons = document.querySelectorAll('.file-menu-content ul li');
+        fileMenuContentButtons.forEach((buttonElement) => {
+            let button = buttonElement;
+            // it has dataset.file
+            if (button.dataset.file) {
+                let action = button.dataset.file;
+                button.addEventListener('click', async () => {
+                    if (action == 'new-scene') {
+                        this.defaultWorld();
+                        this.showToast('Loaded default scene', ToastType.INFO);
+                    }
+                    else if (action == 'save-scene') {
+                        var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene. (Note: this box will be replaced with a UI in a future update)") || new Date().getTime().toString();
+                        //localStorage.setItem('tempScene', await this.saveWorldToString());
+                        // set localStorage scenes key
+                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+                        scenes[name] = JSON.stringify({
+                            ...JSON.parse(await this.saveWorldToString()),
+                            name: name
+                        });
+                        localStorage.setItem('scenes', JSON.stringify(scenes));
+                        this.showToast('Saved scene "' + name + '"', ToastType.INFO);
+                    }
+                    else if (action == 'load-scene') {
+                        /*let tempScene = localStorage.getItem('tempScene');
+                        if (tempScene) {
+                            this.loadWorldFromString(tempScene);
+                            this.showToast('Loaded scene', ToastType.INFO);
+                        }
+                        else {
+                            this.showToast('No saved scene found', ToastType.ERROR);
+                        }*/
+                        // show scenes menu
+                        let saveList = document.getElementById('save-list');
+                        let saveGrid = saveList.querySelector('.save-grid');
+                        saveList.style.display = 'flex';
+                        saveGrid.innerHTML = '<span class="top-text">This is where your saved scenes go! It will look completely different soon and have a grid with pictures.</span>';
+                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+                        Object.keys(scenes).sort((a, b) => {
+                            // get them and their dates, then sort
+                            let sceneA = JSON.parse(scenes[a]);
+                            let sceneB = JSON.parse(scenes[b]);
+                            let dateA = new Date(Date.parse(sceneA.date));
+                            let dateB = new Date(Date.parse(sceneB.date));
+                            return dateA.getTime() - dateB.getTime();
+                            // this sort will make the first one the oldest, and the last one the newest
+                        }).reverse().forEach((name) => {
+                            let scene = scenes[name];
+                            let div = document.createElement('div');
+                            div.classList.add('scene');
+                            div.classList.add('button');
+                            div.addEventListener('click', async (e) => {
+                                saveList.style.display = 'none';
+                                this.showToast('Loading scene "' + name + '"...', ToastType.INFO);
+                                await this.loadWorldFromString(scene);
+                                this.showToast('Loaded scene "' + name + '"', ToastType.INFO);
+                                this.pauseButton.classList.add('checked');
+                                this.setPaused(true);
+                            });
+                            div.innerHTML = `<span>${name}</span> - <span>${new Date(Date.parse(JSON.parse(scene).date)).toLocaleString()}</span> - <button class="delete-scene" data-scene="${name}">Delete</button>`;
+                            let deleteButton = div.querySelector('.delete-scene');
+                            deleteButton.addEventListener('click', (e) => {
+                                let sceneName = deleteButton.dataset.scene;
+                                let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+                                delete scenes[sceneName];
+                                localStorage.setItem('scenes', JSON.stringify(scenes));
+                                this.showToast('Deleted scene "' + sceneName + '"', ToastType.INFO);
+                                div.remove();
+                                e.stopPropagation();
+                                e.preventDefault();
+                            });
+                            saveGrid.appendChild(div);
+                        });
+                    }
+                    else if (action == 'import') {
+                        let file = await this.simuloFileInput(); // reeturns string or null
+                        if (file) {
+                            this.load(file);
+                        }
+                    }
+                    else if (action == 'export-scene') {
+                        let file = await this.saveWorldToString();
+                        this.saveFile(file, 'Scene.simulo');
+                        this.showToast('Exported scene', ToastType.INFO);
+                    }
+                    else {
+                        this.showToast('Not implemented yet! Be sure to try again next version!', ToastType.WARNING);
+                    }
+                    queryParent(button, 'file-menu-content').classList.remove('active');
+                });
+            }
         });
         this.timeScaleSlider.addEventListener('input', (e) => {
             if (e.target) {
@@ -500,6 +569,9 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse down", this.player);
             mouseDownOnCanvas = true;
+            if (this.tool == 'select' && this.selectedObjects[this.client.id] && this.selectedObjects[this.client.id].length > 0) {
+                objectMenuButton.classList.add('ready');
+            }
             console.log('mouse now down on canvas!');
         });
         this.viewer.on('mouseUp', (pos) => {
@@ -513,9 +585,12 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
         });
+        let objectMenuButton = document.getElementById('menu-2-button');
         document.addEventListener('mouseup', (e) => {
+            objectMenuButton.classList.remove('ready');
+            objectMenuButton.classList.remove('drop');
             console.log('mouseup on document');
-            if (mouseDownOnCanvas) {
+            if (mouseDownOnCanvas && this.tool == 'select' && this.selectedObjects[this.client.id] && this.selectedObjects[this.client.id].length > 0) {
                 console.log('mouse was down on canvas, now up on document');
                 // that means we started the mouse down on the canvas, and it ended off the canvas
                 // lets check if we're hovering over object-grid-bar or one of its children
@@ -525,17 +600,13 @@ class SimuloClientController {
                 let target = document.elementFromPoint(e.clientX, e.clientY);
                 if (target) {
                     console.log('we have a target element from point', target);
-                    if (checkElement(target) || (target.parentElement && checkElement(target.parentElement))) {
-                        // if our tool is move, we just dragged the object to the object grid, lets save it
-                        if (this.tool == 'select') { // select = move
+                    let parentElement = target;
+                    while (parentElement) {
+                        if (checkElement(parentElement)) {
                             this.saveSelectionToObjects();
+                            break;
                         }
-                        else {
-                            console.log('everything was in place but the tool was', this.tool);
-                        }
-                    }
-                    else {
-                        console.log(target, 'wasnt what we wanted');
+                        parentElement = parentElement.parentElement;
                     }
                 }
                 else {
@@ -546,6 +617,32 @@ class SimuloClientController {
                 console.log('mouse wasnt down on canvas');
             }
             mouseDownOnCanvas = false;
+        });
+        document.addEventListener('mousemove', (e) => {
+            let shouldDrop = false;
+            if (mouseDownOnCanvas && this.tool == 'select' && this.selectedObjects[this.client.id] && this.selectedObjects[this.client.id].length > 0) {
+                let checkElement = (target) => {
+                    return target.classList.contains('object-grid-bar') || target.classList.contains('object-grid') || target.classList.contains('object') || target.dataset.menu == 'objects';
+                };
+                let target = document.elementFromPoint(e.clientX, e.clientY);
+                if (target) {
+                    console.log('we have a target element from point', target);
+                    let parentElement = target;
+                    while (parentElement) {
+                        if (checkElement(parentElement)) {
+                            shouldDrop = true;
+                            break;
+                        }
+                        parentElement = parentElement.parentElement;
+                    }
+                }
+            }
+            if (shouldDrop) {
+                objectMenuButton.classList.add('drop');
+            }
+            else {
+                objectMenuButton.classList.remove('drop');
+            }
         });
         document.addEventListener('keydown', (e) => {
             // make sure we arent in a text area or input or contenteditable
@@ -579,28 +676,28 @@ class SimuloClientController {
         }, false); // disable right click menu since we will make our own
         this.viewer.start(); // loops as often as possible, up to screen refresh rate (requestAnimationFrame)
         setInterval(() => {
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('Hello? Is anyone there? I don\'t know where I am', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('Help me', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('Help us', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('We are trapped', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('We are trapped in here', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('Is anyone there?', ToastType.INFO);
             }
-            if (Math.random() < 0.00003) {
+            if (Math.random() < 0.00002) {
                 this.showToast('I can hear their screams', ToastType.INFO);
             }
-        }, 90);
+        }, 2000);
     }
     sendServiceWorkerMessage(message) {
         // This wraps the message posting/response in a promise, which will
@@ -676,6 +773,61 @@ class SimuloClientController {
             });
         });
     }
+    async openFileDialog() {
+        return new Promise((resolve) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = '.simulo';
+            input.addEventListener('change', () => {
+                if (input.files && input.files.length > 0) {
+                    resolve(Array.from(input.files));
+                }
+                else {
+                    resolve(null);
+                }
+            });
+            input.click();
+        });
+    }
+    async simuloFileInput() {
+        const files = await this.openFileDialog();
+        if (!files) {
+            alert('No files selected.');
+            return;
+        }
+        let file = files[0];
+        if (file.name.endsWith('.simulo')) {
+            const fileContents = await this.readFile(file);
+            return fileContents;
+        }
+        else {
+            alert('Invalid file: ' + file.name);
+            return null;
+        }
+    }
+    async saveFile(content, name) {
+        let blob = new Blob([content], { type: 'text/plain' });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url); // free up memory, i honestly dont know what this does but its cool
+    }
+    async readFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const contents = reader.result;
+                resolve(contents);
+            };
+            reader.onerror = () => {
+                reject(reader.error);
+            };
+            reader.readAsText(file);
+        });
+    }
     setTheme(name) {
         this.client.emitData('set_theme', name);
     }
@@ -694,21 +846,98 @@ class SimuloClientController {
     spawnObject(savedObject, x, y) {
         this.client.emitData('spawn_object', { savedObject, x, y });
     }
-    async saveSelection() {
-        let saved = await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y });
-        // copy saved.data to clipboard
-        navigator.clipboard.writeText(saved.data);
+    copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
         // fallback with creating a textarea and selecting it
         let textArea = document.createElement('textarea');
-        textArea.value = saved.data;
+        textArea.value = text;
         document.body.appendChild(textArea);
         textArea.select();
         document.execCommand('copy');
         textArea.remove();
+    }
+    async saveSelection() {
+        let saved = await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y });
+        // copy saved.data to clipboard
+        this.copyToClipboard(saved.data);
         console.log('Saved', saved.data);
     }
     async getSelectedObjects() {
         return (await this.emitDataAsync('save_selection', { x: this.mousePos.x, y: this.mousePos.y })).data;
+    }
+    async saveWorldToString() {
+        return JSON.stringify({
+            ...(JSON.parse((await this.emitDataAsync('save_world', null)).data)),
+            version: this.version,
+            versionTimestamp: this.versionTimestamp,
+            name: 'Unnamed Scene',
+            description: null,
+            type: 'scene',
+            author: null,
+            date: new Date().toISOString(),
+            camera: {
+                x: this.viewer.cameraOffset.x,
+                y: this.viewer.cameraOffset.y,
+                zoom: this.viewer.cameraZoom
+            }
+        });
+    }
+    async loadWorldFromString(saveData) {
+        let parsed = JSON.parse(saveData);
+        this.viewer.cameraOffset.x = parsed.camera.x;
+        this.viewer.cameraOffset.y = parsed.camera.y;
+        this.viewer.cameraZoom = parsed.camera.zoom;
+        this.pauseButton.classList.remove('checked');
+        this.setPaused(false);
+        if (parsed.versionTimestamp > this.versionTimestamp) {
+            this.showToast('This save was made in a newer version of Simulo (' + parsed.version + '). It may not load correctly, or at all.', ToastType.WARNING);
+        }
+        await this.emitDataAsync('load_world', {
+            data: saveData
+        });
+    }
+    async load(data) {
+        // first, figure out what type of data it is
+        let parsed = JSON.parse(data);
+        if (parsed.type == 'scene') {
+            // its a scene
+            this.showToast('Loading scene "' + parsed.name + '"...', ToastType.INFO);
+            await this.loadWorldFromString(data);
+            this.showToast('Loaded scene "' + parsed.name + '"', ToastType.INFO);
+        }
+        else if (parsed.type == 'objects') {
+            // its some objects
+            this.loadSavedObjects(JSON.parse(data).data, this.mousePos.x, this.mousePos.y);
+            this.showToast('Loaded ' + JSON.parse(JSON.parse(data).data.length) + ' objects', ToastType.INFO);
+        }
+        else {
+            this.showToast('What the ' + 'f' + 'uck is this supposed to be lmfao', ToastType.ERROR);
+            console.log('the data is:', JSON.parse(data));
+        }
+    }
+    async defaultWorld() {
+        this.client.emitData('load_world', {
+            data: '{"theme": ' + JSON.stringify(themes['night']) + ', "objects":[{"id":3,"type":"CIRCLE","position":{"x":-0.05464658513665199,"y":27.79596519470215},"rotation":3.192410469055176,'
+                + '"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderS'
+                + 'caleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"i'
+                + 'd":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring"'
+                + ',"dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"a'
+                + 'nchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit'
+                + '":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x'
+                + '":-0.08659487962722778,"y":28.54715919494629},"rotation":3.143559455871582,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1'
+                + ',"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/te'
+                + 'xtures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"b'
+                + 'odyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"fr'
+                + 'equencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anch'
+                + 'orB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,'
+                + '"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-'
+                + '0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668'
+                + ',-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]},{"id":1,"type"'
+                + ':"POLYGON","position":{"x":0,"y":25030},"rotation":0,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":0,"friction":0.2000000029'
+                + '8023224,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color'
+                + '":"#a1acfa","isStatic":true,"mass":0,"joints":[],"points":[[-50000,-25000],[50000,-25000],[50000,25000],[-50000,25000]]}],"particles":[]}'
+        });
+        this.viewer.resetCamera();
     }
     loadSavedObjects(saveData, x, y) {
         this.client.emitData('load_save_data', {
@@ -736,11 +965,14 @@ class SimuloClientController {
         let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
         objects.push({
             name: 'Unnamed Object',
-            date: new Date().toLocaleString(),
+            date: new Date().toISOString(),
             author: null,
             description: null,
             data: selectedObjects,
-            image: 'assets/textures/unknown.png'
+            image: 'assets/textures/unknown.png',
+            version: this.version,
+            versionTimestamp: this.versionTimestamp,
+            type: 'objects'
         });
         localStorage.setItem('objects', JSON.stringify(objects));
         // update objects list
@@ -757,6 +989,10 @@ class SimuloClientController {
       </div> */
             // we will not include image for now
             let object = objects[i];
+            // if object doesnt have .type set to objects
+            if (!object.type) {
+                object.type = 'objects';
+            }
             let div = document.createElement('div');
             div.classList.add('object');
             div.dataset.object = i.toString();
@@ -774,6 +1010,94 @@ class SimuloClientController {
             let img = document.createElement('img');
             img.src = object.image;
             div.appendChild(img);
+            // add icons/dots-vertical.svg
+            let res = await fetch('icons/dots-vertical.svg');
+            let svg = await res.text();
+            let options = document.createElement('div');
+            options.classList.add('options');
+            options.innerHTML = svg;
+            div.appendChild(options);
+            // create a div on the body of class object-options-menu
+            let menu = document.createElement('div');
+            menu.classList.add('object-options-menu');
+            menu.style.display = 'none';
+            // add options
+            let copyButton = document.createElement('div');
+            copyButton.innerText = 'Copy to clipboard';
+            copyButton.classList.add('button');
+            copyButton.addEventListener('click', () => {
+                // copy to clipboard
+                this.copyToClipboard(object.data);
+                this.showToast('Copied "' + object.name + '" to clipboard', ToastType.INFO);
+                menu.style.display = 'none';
+            });
+            let exportButton = document.createElement('div');
+            exportButton.innerText = 'Export';
+            exportButton.classList.add('button');
+            exportButton.addEventListener('click', () => {
+                // download as file
+                this.saveFile(JSON.stringify(object), object.name + '.simulo');
+                this.showToast('Exported "' + object.name + '"', ToastType.INFO);
+                menu.style.display = 'none';
+            });
+            let deleteButton = document.createElement('div');
+            deleteButton.innerText = 'Delete';
+            deleteButton.classList.add('button');
+            deleteButton.addEventListener('click', () => {
+                // delete from localstorage
+                let objects = JSON.parse(localStorage.getItem('objects') || JSON.stringify(defaultSavedObjects));
+                objects.splice(i, 1);
+                localStorage.setItem('objects', JSON.stringify(objects));
+                // update objects list
+                this.updateObjectsList();
+                this.showToast('Deleted "' + object.name + '"', ToastType.INFO);
+                // close menu
+                menu.style.display = 'none';
+            });
+            menu.appendChild(copyButton);
+            menu.appendChild(exportButton);
+            menu.appendChild(deleteButton);
+            document.body.appendChild(menu);
+            let clickAnywhereElseClose = (e) => {
+                if (!e.target || !e.target.closest('.object-options-menu')) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('mousedown', clickAnywhereElseClose);
+                    document.removeEventListener('touchstart', clickAnywhereElseClose);
+                }
+            };
+            // add event listener to options button
+            options.addEventListener('click', (e) => {
+                // toggle menu
+                if (menu.style.display == 'none') {
+                    menu.style.display = 'flex';
+                    // get e position
+                    menu.style.top = e.clientY + 'px';
+                    menu.style.left = e.clientX + 'px';
+                    document.addEventListener('mousedown', clickAnywhereElseClose);
+                    document.addEventListener('touchstart', clickAnywhereElseClose);
+                }
+                else {
+                    menu.style.display = 'none';
+                }
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            options.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            options.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            options.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            options.addEventListener('mouseup', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
             grid.appendChild(div);
         }
     }
@@ -882,7 +1206,8 @@ class SimuloClientController {
                 var shapes = [];
                 // push all the entities
                 //shapes = shapes.concat(this.entities);
-                this.entities.forEach((entity) => {
+                this.entities.forEach((entityObj) => {
+                    let entity = Object.assign({}, entityObj);
                     Object.keys(this.selectedObjects).forEach((key) => {
                         let selectedObjectArray = this.selectedObjects[key];
                         if (selectedObjectArray.includes(entity.id.toString())) {
@@ -1230,6 +1555,7 @@ class SimuloClientController {
                     this.toolIconOffset = null;
                 }
                 //this.themeSelect.value = this.theme;
+                console.log('Theme changed to ' + body.data);
             }
         }
     }
