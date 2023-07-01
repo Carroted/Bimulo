@@ -67,6 +67,14 @@ class SimuloObject {
     wakeUp() {
         this._body.SetAwake(true);
     }
+    get name(): string | undefined {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        return objectData.name;
+    }
+    set name(name: string | undefined) {
+        let objectData = this._body.GetUserData() as SimuloObjectData;
+        objectData.name = name;
+    }
     get zDepth(): number {
         let objectData = this._body.GetUserData() as SimuloObjectData;
         return objectData.zDepth;
@@ -349,6 +357,7 @@ class SimuloMouseSpring extends SimuloJoint {
         super(physicsServer, joint); // super is used to call functions of the parent class
         this._mouseJoint = mouseJoint;
     }
+
     get damping(): number {
         return this._mouseJoint.GetDamping();
     }
@@ -459,6 +468,7 @@ function translateVerts(vertices: { x: number, y: number }[], xOffset: number, y
 
 interface SimuloSavedObject {
     id: number;
+    name: string | null;
     position: { x: number, y: number };
     rotation: number;
     velocity: { x: number, y: number };
@@ -595,6 +605,9 @@ class SimuloPhysicsServer {
             }
             else if (key == 'image') {
                 bodyData.image = data[key];
+            }
+            else if (key == 'name') {
+                bodyData.name = data[key];
             }
         }
 
@@ -802,6 +815,9 @@ class SimuloPhysicsServer {
             else if (key == 'image') {
                 bodyData.image = data[key];
             }
+            else if (key == 'name') {
+                bodyData.name = data[key];
+            }
         }
 
         var object = new SimuloObject(this, body);
@@ -812,9 +828,10 @@ class SimuloPhysicsServer {
     }
     deleteObjects: (Box2D.b2Body | Box2D.b2Joint | Box2D.b2Fixture)[] = [];
     deletePromises: { resolve: () => void, reject: () => void }[] = [];
-    destroy(object: SimuloObject | SimuloJoint) {
+    async destroy(object: SimuloObject | SimuloJoint) {
         if (object instanceof SimuloObject) {
-            this.deleteObjects.push(object._body);
+            //this.deleteObjects.push(object._body);
+            await object.destroy();
         }
         else if (object instanceof SimuloJoint) {
             this.deleteObjects.push(object._joint);
@@ -1307,6 +1324,7 @@ class SimuloPhysicsServer {
                 joints: joints,
                 points: o.points,
                 radius: o.radius,
+                name: o.name ? o.name : null
             };
         });
         return savedStuff;
@@ -1367,7 +1385,8 @@ class SimuloPhysicsServer {
                         circleCake: o.circleCake,
                         image: o.image,
                         sound: o.sound,
-                        color: o.color
+                        color: o.color,
+                        name: (o.name === null ? undefined : o.name)
                     }, o.isStatic);
                 }
             }
@@ -1380,7 +1399,8 @@ class SimuloPhysicsServer {
                     circleCake: o.circleCake,
                     image: o.image,
                     sound: o.sound,
-                    color: o.color
+                    color: o.color,
+                    name: (o.name === null ? undefined : o.name)
                 }, o.isStatic);
             }
             if (obj) {
@@ -1520,6 +1540,10 @@ class SimuloPhysicsServer {
             var body = fixture.GetBody();
             selectedBodies.push(body);
             return true;
+        };
+        // we dont want to query the particle system, because we can easily do that manually
+        callback.ShouldQueryParticleSystem = function (system: Box2D.b2ParticleSystem) {
+            return false;
         };
         this.world.QueryAABB(callback, aabb);
         /*return selectedBodies.map((b) => {

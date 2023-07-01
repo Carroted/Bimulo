@@ -1,0 +1,45 @@
+{
+  "name": "liquidfun-wasm",
+  "version": "7.0.0",
+  "description": "Liquidfun fork of Box2D compiled to WebAssembly",
+  "module": "dist/es/entry.js",
+  "main": "dist/umd/entry.js",
+  "files": [
+    "dist/Box2D.d.ts",
+    "dist/Box2DModule.d.ts",
+    "dist/Box2DModuleAugmentations.d.ts",
+    "dist/es/entry.d.ts",
+    "dist/es/entry.js",
+    "dist/umd/entry.d.ts",
+    "dist/umd/entry.js",
+    "dist/es/Box2D.d.ts",
+    "dist/es/Box2D.js",
+    "dist/es/Box2D.wasm",
+    "dist/es/Box2D.simd.d.ts",
+    "dist/es/Box2D.simd.js",
+    "dist/es/Box2D.simd.wasm",
+    "dist/umd/Box2D.d.ts",
+    "dist/umd/Box2D.js",
+    "dist/umd/Box2D.wasm",
+    "dist/umd/Box2D.simd.d.ts",
+    "dist/umd/Box2D.simd.js",
+    "dist/umd/Box2D.simd.wasm"
+  ],
+  "types": "dist/Box2DModule.d.ts",
+  "repository": {
+    "url": "https://github.com/Birch-san/box2d-wasm/tree/liquidfun/box2d-wasm"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build_typings": "npm start --prefix node_modules/webidl-to-ts -- -f $(realpath Box2D.idl) -n Box2D -o $(realpath .)/build/Box2D.d.ts",
+    "build": "./build_all.sh"
+  },
+  "devDependencies": {
+    "webidl-to-ts": "workspace:*"
+  },
+  "dependencies": {
+    "@types/emscripten": "^1.39.6"
+  },
+  "author": "Alex Birch",
+  "license": "Zlib"
+}

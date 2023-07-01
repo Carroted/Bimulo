@@ -5,6 +5,7 @@ interface SimuloObjectData extends Box2D.b2BodyUserData {
     /**
      * Path to a sound file for collisions. Relative to /assets/sounds/
     */
+    name: string | undefined;
     sound: string | null;
     color: string;
     border: string | null;

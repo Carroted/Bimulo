@@ -53,6 +53,17 @@ function indentLines(str, count) {
     return newLines.join('\n');
 }
 
+// add .filter method to objects
+function filterObject(object, filter) {
+    var newObject = {};
+    for (var key in object) {
+        if (filter(key)) {
+            newObject[key] = object[key];
+        }
+    }
+    return newObject;
+}
+
 var steps = [
     // remove dist folder
     async (stepInfo) => {
@@ -113,7 +124,10 @@ var steps = [
                 start: 'node server/src/index.js',
                 build: 'echo "This is a build, run this on the source" && exit 1' // for convenience since people will likely accidentally run this
             },
-            dependencies: packageJson.dependencies,
+            dependencies: filterObject(packageJson.dependencies, (dep) => {
+                // exclude box2d-wasm
+                return dep !== 'box2d-wasm';
+            }),
             engines: packageJson.engines,
             type: packageJson.type
         };
@@ -154,7 +168,7 @@ var steps = [
         console.log(stepInfo, 'Installing node_modules...');
         // install node_modules in dist
         await new Promise((resolve, reject) => {
-            const child = exec('npm install --omit=dev', { cwd: path.join(__dirname, 'dist') });
+            const child = exec('pnpm install --production', { cwd: path.join(__dirname, 'dist') });
             child.stdout.on('data', (data) => {
                 console.log(indentLines(data.toString(), 4));
             });
@@ -169,6 +183,10 @@ var steps = [
                 }
             });
         });
+    },
+    async (stepInfo) => {
+        console.log(stepInfo, 'Copying box2d to dist/node_modules/box2d-wasm...');
+        copyFolderRecursiveSync(path.join(__dirname, 'box2d'), path.join(__dirname, 'dist', 'node_modules', 'box2d-wasm'));
     },
     async (stepInfo) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
@@ -264,6 +282,11 @@ function copyFolderRecursiveSync(source, target) {
             var curSource = path.join(source, file);
             if (fs.lstatSync(curSource).isDirectory()) {
                 copyFolderRecursiveSync(curSource, path.join(targetFolder, path.basename(curSource)));
+            }
+            // symlink support
+            else if (fs.lstatSync(curSource).isSymbolicLink()) {
+                var symlinkFull = fs.readlinkSync(curSource);
+                fs.symlinkSync(symlinkFull, path.join(targetFolder, path.basename(curSource)));
             }
             else {
                 fs.copyFileSync(curSource, path.join(targetFolder, path.basename(curSource)));

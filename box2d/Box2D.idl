@@ -1,0 +1,1389 @@
+/*
+ * Forked from Box2D.js
+ * @see https://github.com/kripken/box2d.js/blob/2816b45/Box2D_v2.3.1.idl
+ * @author dmagunov + alperencaliskan + fork contributions from Alex Birch
+ * @license Zlib https://opensource.org/licenses/Zlib
+ * License evidence: https://github.com/kripken/box2d.js/blob/master/README.markdown#box2djs
+ *   "box2d.js is zlib licensed, just like Box2D."
+ * Compatibility: Box2D v2.4.0+ @f0f9d50
+ */
+
+[NoDelete]
+interface b2Contact {
+  b2Manifold GetManifold();
+  void GetWorldManifold(b2WorldManifold manifold);
+  boolean IsTouching();
+  void SetEnabled(boolean flag);
+  boolean IsEnabled();
+  b2Contact GetNext();
+  b2Fixture GetFixtureA();
+  long GetChildIndexA();
+  b2Fixture GetFixtureB();
+  long GetChildIndexB();
+  void SetFriction(float friction);
+  float GetFriction();
+  void ResetFriction();
+  void SetRestitution(float restitution);
+  float GetRestitution();
+  void ResetRestitution();
+  void SetRestitutionThreshold(float threshold);
+  float GetRestitutionThreshold();
+  void ResetRestitutionThreshold();
+  void SetTangentSpeed(float speed);
+  float GetTangentSpeed();
+};
+
+interface b2ContactListener {
+};
+
+interface b2ContactListenerWrapper {
+};
+
+[JSImplementation="b2ContactListenerWrapper"]
+interface JSContactListener {
+  void JSContactListener();
+
+  void BeginContact(b2Contact contact);
+  void EndContact(b2Contact contact);
+  void BeginContactParticleSystemParticleBodyContact(b2ParticleSystem particleSystem, b2ParticleBodyContact particleBodyContact);
+  void EndContactFixtureParticleSystemIndex(b2Fixture fixture, b2ParticleSystem particleSystem, long index);
+  void BeginContactParticleSystemParticleContact(b2ParticleSystem particleSystem, b2ParticleContact particleContact);
+  void EndContactParticleSystemIndexIndex(b2ParticleSystem particleSystem, long indexA, long indexB);
+  void PreSolve(b2Contact contact, [Const] b2Manifold oldManifold);
+  void PostSolve(b2Contact contact, [Const] b2ContactImpulse impulse);
+};
+
+interface b2World {
+  void b2World([Const, Ref] b2Vec2 gravity);
+  void SetDestructionListener(b2DestructionListener listener);
+  void SetContactFilter(JSContactFilter filter);
+  void SetContactListener(JSContactListener listener);
+  void SetDebugDraw(b2Draw debugDraw);
+  b2Body CreateBody([Const] b2BodyDef def);
+  void DestroyBody(b2Body body);
+  b2Joint CreateJoint([Const] b2JointDef def);
+  void DestroyJoint(b2Joint joint);
+  b2ParticleSystem CreateParticleSystem([Const] b2ParticleSystemDef def);
+  void DestroyParticleSystem(b2ParticleSystem p);
+  long CalculateReasonableParticleIterations(float timeStep);
+  void Step(float timeStep, long velocityIterations, long positionIterations, long particleIterations);
+  void Step(float timeStep, long velocityIterations, long positionIterations);
+  void ClearForces();
+  void DebugDraw();
+  void QueryAABB(b2QueryCallback callback, [Ref] b2AABB aabb);
+  void RayCast(b2RayCastCallback callback, [Ref] b2Vec2 point1, [Ref] b2Vec2 point2);
+  b2Body GetBodyList();
+  b2Joint GetJointList();
+  b2Contact GetContactList();
+  void SetAllowSleeping(boolean flag);
+  boolean GetAllowSleeping();
+  void SetWarmStarting(boolean flag);
+  boolean GetWarmStarting();
+  void SetContinuousPhysics(boolean flag);
+  boolean GetContinuousPhysics();
+  void SetSubStepping(boolean flag);
+  boolean GetSubStepping();
+  long GetProxyCount();
+  long GetBodyCount();
+  long GetJointCount();
+  long GetContactCount();
+  long GetTreeHeight();
+  long GetTreeBalance();
+  float GetTreeQuality();
+  void SetGravity([Ref] b2Vec2 gravity);
+  [Value] b2Vec2 GetGravity();
+  boolean IsLocked();
+  void SetAutoClearForces(boolean flag);
+  boolean GetAutoClearForces();
+  [Const, Ref] b2Profile GetProfile();
+  void Dump();
+};
+
+enum b2ShapeType {
+  "b2Shape::e_circle",
+  "b2Shape::e_edge",
+  "b2Shape::e_polygon",
+  "b2Shape::e_chain",
+  "b2Shape::e_typeCount"
+};
+
+interface b2Shape {
+  b2ShapeType GetType();
+  long GetChildCount();
+  boolean TestPoint([Ref] b2Transform xf, [Ref] b2Vec2 p);
+  boolean RayCast(b2RayCastOutput output, [Ref] b2RayCastInput input,
+                  [Ref] b2Transform transform, long childIndex);
+  void ComputeAABB(b2AABB aabb, [Ref] b2Transform xf, long childIndex);
+  void ComputeMass(b2MassData massData, float density);
+  // WebIDL can't bind to float*
+  // void ComputeDistance([Const, Ref] b2Transform xf, [Const, Ref] b2Vec2 p, float* distance, b2Vec2 normal, long childIndex);
+
+  attribute b2ShapeType m_type;
+  attribute float m_radius;
+};
+
+interface b2FixtureUserData {
+  attribute unsigned long pointer;
+};
+
+interface b2FixtureDef {
+  void b2FixtureDef();
+  [Const] attribute b2Shape shape;
+  [Value] attribute b2FixtureUserData userData;
+  attribute float friction;
+  attribute float restitution;
+  attribute float restitutionThreshold;
+  attribute float density;
+  attribute boolean isSensor;
+  [Value] attribute b2Filter filter;
+};
+
+interface b2Fixture {
+  b2ShapeType GetType();
+  b2Shape GetShape();
+  void SetSensor(boolean sensor);
+  boolean IsSensor();
+  void SetFilterData([Const, Ref] b2Filter filter);
+  [Const, Ref] b2Filter GetFilterData();
+  void Refilter();
+  b2Body GetBody();
+  b2Fixture GetNext();
+  [Ref] b2FixtureUserData GetUserData();
+  boolean TestPoint([Const, Ref] b2Vec2 p);
+  boolean RayCast(b2RayCastOutput output, [Const, Ref] b2RayCastInput input, long childIndex);
+  void GetMassData(b2MassData massData);
+  void SetDensity(float density);
+  float GetDensity();
+  float GetFriction();
+  void SetFriction(float friction);
+  float GetRestitution();
+  void SetRestitution(float restitution);
+  float GetRestitutionThreshold();
+  void SetRestitutionThreshold(float threshold);
+  [Const, Ref] b2AABB GetAABB(long childIndex);
+  void Dump(long bodyIndex);
+};
+
+interface b2Transform {
+  void b2Transform();
+  void b2Transform([Ref] b2Vec2 position, [Ref] b2Rot rotation);
+  void SetIdentity();
+  void Set([Ref] b2Vec2 position, float angle);
+  [Value] attribute b2Vec2 p;
+  [Value] attribute b2Rot q;
+};
+
+
+interface b2RayCastCallback {
+};
+[JSImplementation="b2RayCastCallback"]
+interface JSRayCastCallback {
+  void JSRayCastCallback();
+  float ReportFixture(b2Fixture fixture, [Const, Ref] b2Vec2 point,
+                      [Const, Ref] b2Vec2 normal, float fraction);
+  float ReportParticle([Const] b2ParticleSystem particleSystem, long index, [Const, Ref] b2Vec2 point,
+                      [Const, Ref] b2Vec2 normal, float fraction);
+  boolean ShouldQueryParticleSystem([Const] b2ParticleSystem particleSystem);
+};
+
+interface b2QueryCallback {
+};
+[JSImplementation="b2QueryCallback"]
+interface JSQueryCallback {
+  void JSQueryCallback();
+  boolean ReportFixture(b2Fixture fixture);
+  boolean ReportParticle([Const] b2ParticleSystem particleSystem, long index);
+  boolean ShouldQueryParticleSystem([Const] b2ParticleSystem particleSystem);
+};
+
+interface b2MassData {
+  void b2MassData();
+  attribute float mass;
+  [Value] attribute b2Vec2 center;
+  attribute float I;
+};
+
+interface b2Vec2 {
+  void b2Vec2();
+  void b2Vec2(float x, float y);
+  void SetZero();
+  void Set(float x, float y);
+  [Operator="+="] void op_add([Const, Ref] b2Vec2 v);
+  [Operator="-="] void op_sub([Const, Ref] b2Vec2 v);
+  [Operator="*="] void op_mul(float s);
+  float Length();
+  float LengthSquared();
+  float Normalize();
+  boolean IsValid();
+  [Value] b2Vec2 Skew();
+  attribute float x;
+  attribute float y;
+};
+
+interface b2Vec3 {
+  void b2Vec3();
+  void b2Vec3(float x, float y, float z);
+  void SetZero();
+  void Set(float x, float y, float z);
+  float Length();
+  float Normalize();
+  [Operator="+="] void op_add([Const, Ref] b2Vec3 v);
+  [Operator="-="] void op_sub([Const, Ref] b2Vec3 v);
+  [Operator="*="] void op_mul(float s);
+  attribute float x;
+  attribute float y;
+  attribute float z;
+};
+
+interface b2Vec4 {
+  void b2Vec4();
+  void b2Vec4(float x, float y, float z, float w);
+  attribute float x;
+  attribute float y;
+  attribute float z;
+  attribute float w;
+};
+
+interface b2BodyUserData {
+  attribute unsigned long pointer;
+};
+
+[NoDelete]
+interface b2Body {
+  b2Fixture CreateFixture(b2FixtureDef def);
+  b2Fixture CreateFixture(b2Shape shape, float density);
+  void DestroyFixture(b2Fixture fixture);
+  void SetTransform([Const, Ref] b2Vec2 position, float angle);
+  [Const, Ref] b2Transform GetTransform();
+  [Const, Ref] b2Vec2 GetPosition();
+  float GetAngle();
+  [Const, Ref] b2Vec2 GetWorldCenter();
+  [Const, Ref] b2Vec2 GetLocalCenter();
+  void SetLinearVelocity([Const, Ref] b2Vec2 v);
+  [Const, Ref] b2Vec2 GetLinearVelocity();
+  void SetAngularVelocity(float omega);
+  float GetAngularVelocity();
+  void ApplyForce([Const, Ref] b2Vec2 force, [Const, Ref] b2Vec2 point, boolean wake);
+  void ApplyForceToCenter([Const, Ref] b2Vec2 force, boolean wake);
+  void ApplyTorque(float torque, boolean awake);
+  void ApplyLinearImpulse([Const, Ref] b2Vec2 impulse, [Const, Ref] b2Vec2 point, boolean wake);
+  void ApplyLinearImpulseToCenter([Const, Ref] b2Vec2 impulse, boolean wake);
+  void ApplyAngularImpulse(float impulse, boolean wake);
+  float GetMass();
+  float GetInertia();
+  void GetMassData(b2MassData data);
+  void SetMassData([Const] b2MassData data);
+  void ResetMassData();
+  [Value] b2Vec2 GetWorldPoint([Const, Ref] b2Vec2 localPoint);
+  [Value] b2Vec2 GetWorldVector([Const, Ref] b2Vec2 localVector);
+  [Value] b2Vec2 GetLocalPoint([Const, Ref] b2Vec2 worldPoint);
+  [Value] b2Vec2 GetLocalVector([Const, Ref] b2Vec2 worldVector);
+  [Value] b2Vec2 GetLinearVelocityFromWorldPoint([Const, Ref] b2Vec2 worldPoint);
+  [Value] b2Vec2 GetLinearVelocityFromLocalPoint([Const, Ref] b2Vec2 localPoint);
+  float GetLinearDamping();
+  void SetLinearDamping(float linearDamping);
+  float GetAngularDamping();
+  void SetAngularDamping(float angularDamping);
+  float GetGravityScale();
+  void SetGravityScale(float scale);
+  void SetType(b2BodyType type);
+  b2BodyType GetType();
+  void SetBullet(boolean flag);
+  boolean IsBullet();
+  void SetSleepingAllowed(boolean flag);
+  boolean IsSleepingAllowed();
+  void SetAwake(boolean flag);
+  boolean IsAwake();
+  void SetEnabled(boolean flag);
+  boolean IsEnabled();
+  void SetFixedRotation(boolean flag);
+  boolean IsFixedRotation();
+  // a const overload also exists, which we cannot easily expose
+  b2Fixture GetFixtureList();
+  // a const overload also exists, which we cannot easily expose
+  b2JointEdge GetJointList();
+  // a const overload also exists, which we cannot easily expose
+  b2ContactEdge GetContactList();
+  // a const overload also exists, which we cannot easily expose
+  b2Body GetNext();
+  [Ref] b2BodyUserData GetUserData();
+  b2World GetWorld();
+  void Dump();
+};
+
+enum b2BodyType {
+  "b2_staticBody",
+  "b2_kinematicBody",
+  "b2_dynamicBody"
+};
+
+interface b2BodyDef {
+  void b2BodyDef();
+
+  attribute b2BodyType type;
+  [Value] attribute b2Vec2 position;
+  attribute float angle;
+  [Value] attribute b2Vec2 linearVelocity;
+  attribute float angularVelocity;
+  attribute float linearDamping;
+  attribute float angularDamping;
+  attribute boolean allowSleep;
+  attribute boolean awake;
+  attribute boolean fixedRotation;
+  attribute boolean bullet;
+  attribute boolean enabled;
+  [Value] attribute b2BodyUserData userData;
+  attribute float gravityScale;
+};
+
+interface b2Filter {
+  void b2Filter();
+  attribute unsigned short categoryBits;
+  attribute unsigned short maskBits;
+  attribute short groupIndex;
+};
+
+interface b2AABB {
+  void b2AABB();
+  boolean IsValid();
+  [Value] b2Vec2 GetCenter();
+  [Value] b2Vec2 GetExtents();
+  float GetPerimeter();
+  void Combine([Ref] b2AABB aabb);
+  void Combine([Ref] b2AABB aabb1, [Ref] b2AABB aabb2);
+  boolean Contains([Ref] b2AABB aabb);
+  boolean RayCast(b2RayCastOutput output, [Ref] b2RayCastInput input);
+  [Value] attribute b2Vec2 lowerBound;
+  [Value] attribute b2Vec2 upperBound;
+};
+
+interface b2CircleShape {
+  void b2CircleShape();
+  [Value] attribute b2Vec2 m_p;
+};
+
+b2CircleShape implements b2Shape;
+
+interface b2EdgeShape {
+  void b2EdgeShape();
+  void SetOneSided([Const,Ref] b2Vec2 v0, [Const,Ref] b2Vec2 v1, [Const,Ref] b2Vec2 v2, [Const,Ref] b2Vec2 v3);
+  void SetTwoSided([Const,Ref] b2Vec2 v1, [Const,Ref] b2Vec2 v2);
+
+  [Value] attribute b2Vec2 m_vertex1;
+  [Value] attribute b2Vec2 m_vertex2;
+  [Value] attribute b2Vec2 m_vertex0;
+  [Value] attribute b2Vec2 m_vertex3;
+  attribute boolean m_oneSided;
+};
+
+b2EdgeShape implements b2Shape;
+
+enum b2JointType {
+  "e_unknownJoint",
+  "e_revoluteJoint",
+  "e_prismaticJoint",
+  "e_distanceJoint",
+  "e_pulleyJoint",
+  "e_mouseJoint",
+  "e_gearJoint",
+  "e_wheelJoint",
+  "e_weldJoint",
+  "e_frictionJoint",
+  "e_ropeJoint",
+  "e_motorJoint"
+};
+
+interface b2JointUserData {
+  attribute unsigned long pointer;
+};
+
+interface b2JointDef {
+  void b2JointDef();
+  attribute b2JointType type;
+  [Value] attribute b2JointUserData userData;
+  attribute b2Body bodyA;
+  attribute b2Body bodyB;
+  attribute boolean collideConnected;
+};
+
+[NoDelete]
+interface b2Joint {
+  b2JointType GetType();
+  b2Body GetBodyA();
+  b2Body GetBodyB();
+  [Value] b2Vec2 GetAnchorA();
+  [Value] b2Vec2 GetAnchorB();
+  [Value] b2Vec2 GetReactionForce(float inv_dt);
+  float GetReactionTorque(float inv_dt);
+  b2Joint GetNext();
+  [Ref] b2JointUserData GetUserData();
+  boolean GetCollideConnected();
+  void Dump();
+};
+
+interface b2WeldJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  float GetReferenceAngle();
+  void SetStiffness(float stiffness);
+  float GetStiffness();
+  void SetDamping(float damping);
+  float GetDamping();
+  void Dump();
+};
+
+b2WeldJoint implements b2Joint;
+
+interface b2WeldJointDef {
+  void b2WeldJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Ref] b2Vec2 anchor);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  attribute float referenceAngle;
+  attribute float stiffness;
+  attribute float damping;
+};
+
+b2WeldJointDef implements b2JointDef;
+
+interface b2ChainShape {
+  void b2ChainShape();
+  void Clear();
+  void CreateLoop([Const] b2Vec2 vertices, long count);
+  void CreateChain([Const] b2Vec2 vertices, long count, [Const,Ref] b2Vec2 prevVertex, [Const,Ref] b2Vec2 nextVertex);
+  void GetChildEdge(b2EdgeShape edge, long index);
+
+  attribute b2Vec2 m_vertices;
+  attribute long m_count;
+  [Value] attribute b2Vec2 m_prevVertex;
+  [Value] attribute b2Vec2 m_nextVertex;
+};
+
+b2ChainShape implements b2Shape;
+
+interface b2Color {
+  void b2Color();
+  void b2Color(float r, float g, float b);
+  void Set(float ri, float gi, float bi);
+
+  attribute float r;
+  attribute float g;
+  attribute float b;
+};
+
+interface b2ContactEdge {
+  void b2ContactEdge();
+  attribute b2Body other;
+  attribute b2Contact contact;
+  attribute b2ContactEdge prev;
+  attribute b2ContactEdge next;
+};
+
+enum b2ContactFeatureType {
+  "b2ContactFeature::e_vertex",
+  "b2ContactFeature::e_face"
+};
+
+interface b2ContactFeature {
+  attribute octet indexA;
+  attribute octet indexB;
+  attribute octet typeA;
+  attribute octet typeB;
+};
+
+interface b2ContactFilter {
+};
+
+interface b2ContactFilterWrapper {
+};
+
+[JSImplementation="b2ContactFilterWrapper"]
+interface JSContactFilter {
+  void JSContactFilter();
+  boolean ShouldCollide(b2Fixture fixtureA, b2Fixture fixtureB);
+  boolean ShouldCollideFixtureParticleSystemIndex(b2Fixture fixture, b2ParticleSystem particleSystem, long particleIndex);
+  boolean ShouldCollideParticleSystemIndexIndex(b2ParticleSystem particleSystem, long particleIndexA, long particleIndexB);
+};
+
+interface b2ContactID {
+  [Value] attribute b2ContactFeature cf;
+  attribute unsigned long key;
+};
+
+interface b2ContactImpulse {
+  // length 2
+  [BoundsChecked] attribute float[] normalImpulses;
+  // length 2
+  [BoundsChecked] attribute float[] tangentImpulses;
+  attribute long count;
+};
+
+interface b2DestructionListener {
+};
+
+interface b2DestructionListenerWrapper {
+};
+
+[JSImplementation="b2DestructionListenerWrapper"]
+interface JSDestructionListener {
+  void JSDestructionListener();
+  // These methods map the overloaded methods from b2DestructionListener onto differently-named
+  // methods, so that it is possible to implement both of them in JS.
+  void SayGoodbyeJoint(b2Joint joint);
+  void SayGoodbyeFixture(b2Fixture joint);
+  void SayGoodbyeParticleGroup(b2ParticleGroup group);
+  void SayGoodbyeParticleSystemIndex(b2ParticleSystem particleSystem, long index);
+};
+
+interface b2DistanceJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  float GetLength();
+  void SetLength(float length);
+  float GetMinLength();
+  void SetMinLength(float minLength);
+  float GetMaxLength();
+  void SetMaxLength(float maxLength);
+  float GetCurrentLength();
+  void SetStiffness(float stiffness);
+  float GetStiffness();
+  void SetDamping(float damping);
+  float GetDamping();
+};
+
+b2DistanceJoint implements b2Joint;
+
+interface b2DistanceJointDef {
+  void b2DistanceJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Const,Ref] b2Vec2 anchorA, [Const,Ref] b2Vec2 anchorB);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  attribute float length;
+  attribute float minLength;
+  attribute float maxLength;
+  attribute float stiffness;
+  attribute float damping;
+};
+
+b2DistanceJointDef implements b2JointDef;
+
+enum b2DrawFlag {
+  "b2Draw::e_shapeBit",
+  "b2Draw::e_jointBit",
+  "b2Draw::e_aabbBit",
+  "b2Draw::e_pairBit",
+  "b2Draw::e_centerOfMassBit",
+  "b2Draw::e_particleBit"
+};
+
+interface b2Draw {
+  void SetFlags(unsigned long flags);
+  unsigned long GetFlags();
+  void AppendFlags(unsigned long flags);
+  void ClearFlags(unsigned long flags);
+};
+
+[JSImplementation="b2Draw"]
+interface JSDraw {
+  void JSDraw();
+  void DrawPolygon([Const] b2Vec2 vertices, long vertexCount, [Const, Ref] b2Color color);
+  void DrawSolidPolygon([Const] b2Vec2 vertices, long vertexCount, [Const, Ref] b2Color color);
+  void DrawCircle([Const, Ref] b2Vec2 center, float radius, [Const, Ref] b2Color color);
+  void DrawSolidCircle([Const, Ref] b2Vec2 center, float radius, [Const, Ref] b2Vec2 axis, [Const, Ref] b2Color color);
+  void DrawParticles([Const] b2Vec2 centers, float radius, [Const] b2ParticleColor colors, long count);
+  void DrawSegment([Const, Ref] b2Vec2 p1, [Const, Ref] b2Vec2 p2, [Const, Ref] b2Color color);
+  void DrawTransform([Const, Ref] b2Transform xf);
+  void DrawPoint([Const, Ref] b2Vec2 p, float size, [Const, Ref] b2Color color);
+};
+
+interface b2FrictionJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  void SetMaxForce(float force);
+  float GetMaxForce();
+  void SetMaxTorque(float torque);
+  float GetMaxTorque();
+};
+
+b2FrictionJoint implements b2Joint;
+
+interface b2FrictionJointDef {
+  void b2FrictionJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Ref] b2Vec2 anchor);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  attribute float maxForce;
+  attribute float maxTorque;
+};
+
+b2FrictionJointDef implements b2JointDef;
+
+interface b2GearJoint {
+  b2Joint GetJoint1();
+  b2Joint GetJoint2();
+  void SetRatio(float ratio);
+  float GetRatio();
+};
+
+b2GearJoint implements b2Joint;
+
+interface b2GearJointDef {
+  void b2GearJointDef();
+  attribute b2Joint joint1;
+  attribute b2Joint joint2;
+  attribute float ratio;
+};
+
+b2GearJointDef implements b2JointDef;
+
+interface b2JointEdge {
+  void b2JointEdge();
+  attribute b2Body other;
+  attribute b2Joint joint;
+  attribute b2JointEdge prev;
+  attribute b2JointEdge next;
+};
+
+enum b2ManifoldType {
+  "b2Manifold::e_circles",
+  "b2Manifold::e_faceA",
+  "b2Manifold::e_faceB"
+};
+
+interface b2Manifold {
+  void b2Manifold();
+  // length 2
+  [Value,BoundsChecked] attribute b2ManifoldPoint[] points;
+  [Value] attribute b2Vec2 localNormal;
+  [Value] attribute b2Vec2 localPoint;
+  attribute b2ManifoldType type;
+  attribute long pointCount;
+};
+
+interface b2WorldManifold {
+  void b2WorldManifold();
+  void Initialize([Const] b2Manifold manifold, [Const, Ref] b2Transform xfA, float radiusA, [Const, Ref] b2Transform xfB, float radiusB);
+  [Value] attribute b2Vec2 normal;
+  // length 2
+  [Value,BoundsChecked] attribute b2Vec2[] points;
+  // length 2
+  [BoundsChecked] attribute float[] separations;
+};
+
+interface b2ManifoldPoint {
+  void b2ManifoldPoint();
+  [Value] attribute b2Vec2 localPoint;
+  attribute float normalImpulse;
+  attribute float tangentImpulse;
+  [Value] attribute b2ContactID id;
+};
+
+interface b2Mat22 {
+  void b2Mat22();
+  void b2Mat22([Ref] b2Vec2 c1, [Ref] b2Vec2 c2);
+  void b2Mat22(float a11, float a12, float a21, float a22);
+  void Set([Ref] b2Vec2 c1, [Ref] b2Vec2 c2);
+  void SetIdentity();
+  void SetZero();
+  [Value] b2Mat22 GetInverse();
+  [Value] b2Vec2 Solve([Ref] b2Vec2 b);
+
+  [Value] attribute b2Vec2 ex;
+  [Value] attribute b2Vec2 ey;
+};
+
+interface b2Mat33 {
+  void b2Mat33();
+  void b2Mat33([Ref] b2Vec3 c1, [Ref] b2Vec3 c2, [Ref] b2Vec3 c3);
+  void SetZero();
+  [Value] b2Vec3 Solve33([Ref] b2Vec3 b);
+  [Value] b2Vec2 Solve22([Ref] b2Vec2 b);
+  void GetInverse22(b2Mat33 M);
+  void GetSymInverse33(b2Mat33 M);
+
+  [Value] attribute b2Vec3 ex;
+  [Value] attribute b2Vec3 ey;
+  [Value] attribute b2Vec3 ez;
+};
+
+interface b2MouseJoint {
+  void SetTarget([Ref] b2Vec2 target);
+  [Const, Ref] b2Vec2 GetTarget();
+  void SetMaxForce(float force);
+  float GetMaxForce();
+  void SetStiffness(float stiffness);
+  float GetStiffness();
+  void SetDamping(float damping);
+  float GetDamping();
+};
+
+b2MouseJoint implements b2Joint;
+
+interface b2MouseJointDef {
+  void b2MouseJointDef();
+  [Value] attribute b2Vec2 target;
+  attribute float maxForce;
+  attribute float stiffness;
+  attribute float damping;
+};
+
+b2MouseJointDef implements b2JointDef;
+
+interface b2PolygonShape {
+  void b2PolygonShape();
+  void Set(b2Vec2 vertices, long vertexCount);
+  void SetAsBox(float hx, float hy);
+  void SetAsBox(float hx, float hy, [Ref] b2Vec2 center, float angle);
+  [Value] attribute b2Vec2 m_centroid;
+  // length 8
+  [Value,BoundsChecked] attribute b2Vec2[] m_vertices;
+  // length 8
+  [Value,BoundsChecked] attribute b2Vec2[] m_normals;
+
+  attribute long m_count;
+};
+
+b2PolygonShape implements b2Shape;
+
+interface b2PrismaticJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  [Const, Ref] b2Vec2 GetLocalAxisA();
+  float GetReferenceAngle();
+  float GetJointTranslation();
+  float GetJointSpeed();
+  boolean IsLimitEnabled();
+  void EnableLimit(boolean flag);
+  float GetLowerLimit();
+  float GetUpperLimit();
+  void SetLimits(float lower, float upper);
+  boolean IsMotorEnabled();
+  void EnableMotor(boolean flag);
+  void SetMotorSpeed(float speed);
+  float GetMotorSpeed();
+  void SetMaxMotorForce(float force);
+  float GetMaxMotorForce();
+  float GetMotorForce(float inv_dt);
+};
+
+b2PrismaticJoint implements b2Joint;
+
+interface b2PrismaticJointDef {
+  void b2PrismaticJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Ref] b2Vec2 anchor, [Ref] b2Vec2 axis);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  [Value] attribute b2Vec2 localAxisA;
+  attribute float referenceAngle;
+  attribute boolean enableLimit;
+  attribute float lowerTranslation;
+  attribute float upperTranslation;
+  attribute boolean enableMotor;
+  attribute float maxMotorForce;
+  attribute float motorSpeed;
+};
+
+b2PrismaticJointDef implements b2JointDef;
+
+interface b2Profile {
+  attribute float step;
+  attribute float collide;
+  attribute float solve;
+  attribute float solveInit;
+  attribute float solveVelocity;
+  attribute float solvePosition;
+  attribute float broadphase;
+  attribute float solveTOI;
+};
+
+interface b2PulleyJoint {
+  [Value] b2Vec2 GetGroundAnchorA();
+  [Value] b2Vec2 GetGroundAnchorB();
+  float GetLengthA();
+  float GetLengthB();
+  float GetRatio();
+  float GetCurrentLengthA();
+  float GetCurrentLengthB();
+};
+
+b2PulleyJoint implements b2Joint;
+
+interface b2PulleyJointDef {
+  void b2PulleyJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Ref] b2Vec2 groundAnchorA, [Ref] b2Vec2 groundAnchorB,
+                  [Ref] b2Vec2 anchorA, [Ref] b2Vec2 anchorB, float ratio);
+  [Value] attribute b2Vec2 groundAnchorA;
+  [Value] attribute b2Vec2 groundAnchorB;
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  attribute float lengthA;
+  attribute float lengthB;
+  attribute float ratio;
+};
+
+b2PulleyJointDef implements b2JointDef;
+
+
+interface b2RayCastInput {
+  [Value] attribute b2Vec2 p1;
+  [Value] attribute b2Vec2 p2;
+  attribute float maxFraction;
+};
+
+interface b2RayCastOutput {
+  [Value] attribute b2Vec2 normal;
+  attribute float fraction;
+};
+
+interface b2RevoluteJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  float GetReferenceAngle();
+  float GetJointAngle();
+  float GetJointSpeed();
+  boolean IsLimitEnabled();
+  void EnableLimit(boolean flag);
+  float GetLowerLimit();
+  float GetUpperLimit();
+  void SetLimits(float lower, float upper);
+  boolean IsMotorEnabled();
+  void EnableMotor(boolean flag);
+  void SetMotorSpeed(float speed);
+  float GetMotorSpeed();
+  void SetMaxMotorTorque(float torque);
+  float GetMaxMotorTorque();
+  float GetMotorTorque(float inv_dt);
+};
+
+b2RevoluteJoint implements b2Joint;
+
+interface b2RevoluteJointDef {
+  void b2RevoluteJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Ref] b2Vec2 anchor);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  attribute float referenceAngle;
+  attribute boolean enableLimit;
+  attribute float lowerAngle;
+  attribute float upperAngle;
+  attribute boolean enableMotor;
+  attribute float motorSpeed;
+  attribute float maxMotorTorque;
+};
+
+b2RevoluteJointDef implements b2JointDef;
+
+interface b2Rot {
+  void b2Rot();
+  void b2Rot(float angle);
+  void Set(float angle);
+  void SetIdentity();
+  float GetAngle();
+  [Value] b2Vec2 GetXAxis();
+  [Value] b2Vec2 GetYAxis();
+  attribute float s;
+  attribute float c;
+};
+
+interface b2WheelJoint {
+  [Const, Ref] b2Vec2 GetLocalAnchorA();
+  [Const, Ref] b2Vec2 GetLocalAnchorB();
+  [Const, Ref] b2Vec2 GetLocalAxisA();
+  float GetJointTranslation();
+  float GetJointLinearSpeed();
+  float GetJointAngle();
+  float GetJointAngularSpeed();
+  boolean IsLimitEnabled();
+  void EnableLimit(boolean flag);
+  float GetLowerLimit();
+  float GetUpperLimit();
+  void SetLimits(float lower, float upper);
+  boolean IsMotorEnabled();
+  void EnableMotor(boolean flag);
+  void SetMotorSpeed(float speed);
+  float GetMotorSpeed();
+  void SetMaxMotorTorque(float torque);
+  float GetMaxMotorTorque();
+  float GetMotorTorque(float inv_dt);
+  void SetStiffness(float stiffness);
+  float GetStiffness();
+  void SetDamping(float damping);
+  float GetDamping();
+};
+
+b2WheelJoint implements b2Joint;
+
+interface b2WheelJointDef {
+  void b2WheelJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB, [Const,Ref] b2Vec2 anchor, [Const,Ref] b2Vec2 axis);
+  [Value] attribute b2Vec2 localAnchorA;
+  [Value] attribute b2Vec2 localAnchorB;
+  [Value] attribute b2Vec2 localAxisA;
+  attribute boolean enableLimit;
+  attribute float lowerTranslation;
+  attribute float upperTranslation;
+  attribute boolean enableMotor;
+  attribute float maxMotorTorque;
+  attribute float motorSpeed;
+  attribute float stiffness;
+  attribute float damping;
+};
+
+b2WheelJointDef implements b2JointDef;
+
+interface b2MotorJoint {
+  void SetLinearOffset([Ref] b2Vec2 linearOffset);
+  [Const, Ref] b2Vec2 GetLinearOffset();
+  void SetAngularOffset(float angularOffset);
+  float GetAngularOffset();
+  void SetMaxForce(float force);
+  float GetMaxForce();
+  void SetMaxTorque(float torque);
+  float GetMaxTorque();
+  void SetCorrectionFactor(float factor);
+  float GetCorrectionFactor();
+
+};
+
+b2MotorJoint implements b2Joint;
+
+interface b2MotorJointDef {
+  void b2MotorJointDef();
+  void Initialize(b2Body bodyA, b2Body bodyB);
+  [Value] attribute b2Vec2 linearOffset;
+  attribute float angularOffset;
+  attribute float maxForce;
+  attribute float maxTorque;
+  attribute float correctionFactor;
+};
+
+b2MotorJointDef implements b2JointDef;
+
+enum b2PointState {
+  "b2_nullState",
+  "b2_addState",
+  "b2_persistState",
+  "b2_removeState"
+};
+
+enum b2StretchingModel {
+	"b2_pbdStretchingModel",
+	"b2_xpbdStretchingModel"
+};
+
+enum b2BendingModel {
+	"b2_springAngleBendingModel",
+	"b2_pbdAngleBendingModel",
+	"b2_xpbdAngleBendingModel",
+	"b2_pbdDistanceBendingModel",
+	"b2_pbdHeightBendingModel"
+};
+
+interface b2RopeTuning {
+  void b2RopeTuning();
+	attribute b2StretchingModel stretchingModel;
+	attribute b2BendingModel bendingModel;
+	attribute float damping;
+	attribute float stretchStiffness;
+	attribute float stretchHertz;
+	attribute float stretchDamping;
+	attribute float bendStiffness;
+	attribute float bendHertz;
+	attribute float bendDamping;
+	attribute boolean isometric;
+	attribute boolean fixedEffectiveMass;
+	attribute boolean warmStart;
+};
+
+interface b2RopeDef {
+  void b2RopeDef();
+  [Value] attribute b2Vec2 position;
+	attribute b2Vec2 vertices;
+	attribute long count;
+  // WebIDL binder doesn't seem to provide a way to model "float*",
+  // so I've bound this manually in glue_stub.{cpp,js}
+	// attribute float[] masses;
+	[Value] attribute b2Vec2 gravity;
+	[Value] attribute b2RopeTuning tuning;
+};
+
+interface b2Rope {
+  void b2Rope();
+  void Create([Const, Ref] b2RopeDef def);
+  void SetTuning([Const, Ref] b2RopeTuning tuning);
+  void Step(float timeStep, long iterations, [Const, Ref] b2Vec2 position);
+  void Reset([Const, Ref] b2Vec2 position);
+  void Draw(b2Draw draw);
+
+  // the following are private methods or properties. I decided not to expose them,
+  // as they included references to symbols such as b2RopeStretch and b2RopeBend,
+  // which aren't even published in box2d/include.
+  // if one day you find a reason to expose them: feel free to use this as a starting point.
+
+  // void SolveStretch_PBD();
+	// void SolveStretch_XPBD(float dt);
+	// void SolveBend_PBD_Angle();
+	// void SolveBend_XPBD_Angle(float dt);
+	// void SolveBend_PBD_Distance();
+	// void SolveBend_PBD_Height();
+	// void ApplyBendForces(float dt);
+
+	// [Value] attribute b2Vec2 m_position;
+
+	// attribute long m_count;
+	// attribute long m_stretchCount;
+	// attribute long m_bendCount;
+
+  // attribute b2RopeStretch m_stretchConstraints;
+	// attribute b2RopeBend m_bendConstraints;
+
+	// attribute b2Vec2 m_bindPositions;
+	// attribute b2Vec2 m_ps;
+	// attribute b2Vec2 m_p0s;
+	// attribute b2Vec2 m_vs;
+
+	// attribute float m_invMasses;
+	// [Value] attribute b2Vec2 m_gravity;
+
+	// [Value] attribute b2RopeTuning m_tuning;
+};
+
+interface b2ClipVertex {
+  void b2ClipVertex();
+  [Value] attribute b2Vec2 v;
+	[Value] attribute b2ContactID id;
+};
+
+enum b2ParticleFlag {
+	"b2_waterParticle",
+  "b2_zombieParticle",
+  "b2_wallParticle",
+  "b2_springParticle",
+  "b2_elasticParticle",
+  "b2_viscousParticle",
+  "b2_powderParticle",
+  "b2_tensileParticle",
+  "b2_colorMixingParticle",
+  "b2_destructionListenerParticle",
+  "b2_barrierParticle",
+  "b2_staticPressureParticle",
+  "b2_reactiveParticle",
+  "b2_repulsiveParticle",
+  "b2_fixtureContactListenerParticle",
+  "b2_particleContactListenerParticle",
+  "b2_fixtureContactFilterParticle",
+  "b2_particleContactFilterParticle"
+};
+
+interface b2ParticleColor {
+  void b2ParticleColor();
+  void b2ParticleColor(unsigned long r, unsigned long g, unsigned long b, unsigned long a);
+  void b2ParticleColor([Const, Ref] b2Color color);
+  boolean IsZero();
+  [Value] b2Color GetColor();
+  void Set(unsigned long r, unsigned long g, unsigned long b, unsigned long a);
+  void Set([Const, Ref] b2Color color);
+  [Operator="=", Ref] b2ParticleColor op_ass([Const, Ref] b2ParticleColor color);
+  [Operator="*=", Ref] b2ParticleColor op_mul_ass(float s);
+  // not distinguishable
+  // [Operator="*=", Ref] b2ParticleColor op_mul_ass(unsigned long s);
+  // unfamiliar operator
+  // [Operator="*", Value] b2ParticleColor op_mul(float s);
+  // not distinguishable
+  // [Operator="*", Value] b2ParticleColor op_mul(unsigned long s);
+  [Operator="+=", Ref] b2ParticleColor op_add_ass([Const, Ref] b2ParticleColor color);
+  // unfamiliar operator
+  // [Operator="+", Value] b2ParticleColor op_add([Const, Ref] b2ParticleColor color);
+  [Operator="-=", Ref] b2ParticleColor op_sub_ass([Const, Ref] b2ParticleColor color);
+  // unfamiliar operator
+  // [Operator="-", Value] b2ParticleColor op_sub([Const, Ref] b2ParticleColor color);
+  [Operator="=="] boolean op_eq([Const, Ref] b2ParticleColor color);
+  void Mix(b2ParticleColor mixColor, [Const] long strength);
+  void MixColors(b2ParticleColor colorA, b2ParticleColor colorB, [Const] long strength);
+
+  attribute octet r;
+  attribute octet g;
+  attribute octet b;
+  attribute octet a;
+};
+
+interface b2ParticleDef {
+  void b2ParticleDef();
+  attribute unsigned long flags;
+  [Value] attribute b2Vec2 position;
+  [Value] attribute b2Vec2 velocity;
+  [Value] attribute b2ParticleColor color;
+  attribute float lifetime;
+  attribute VoidPtr userData;
+  attribute b2ParticleGroup group;
+};
+
+enum b2ParticleGroupFlag {
+  "b2_solidParticleGroup",
+  "b2_rigidParticleGroup",
+  "b2_particleGroupCanBeEmpty",
+  "b2_particleGroupWillBeDestroyed",
+  "b2_particleGroupNeedsUpdateDepth",
+  "b2_particleGroupInternalMask"
+};
+
+interface b2ParticleGroupDef {
+  void b2ParticleGroupDef();
+  attribute unsigned long flags;
+  attribute unsigned long groupFlags;
+  [Value] attribute b2Vec2 position;
+  attribute float angle;
+  [Value] attribute b2Vec2 linearVelocity;
+  attribute float angularVelocity;
+  [Value] attribute b2ParticleColor color;
+  attribute float strength;
+  [Const] attribute b2Shape shape;
+  // can't bind to const b2Shape* const* shapes;
+  // [Const] attribute b2Shape shapes;
+  attribute long shapeCount;
+  attribute float stride;
+  attribute long particleCount;
+  [Const] attribute b2Vec2 positionData;
+  attribute float lifetime;
+  attribute VoidPtr userData;
+  attribute b2ParticleGroup group;
+};
+
+[NoDelete]
+interface b2ParticleGroup {
+  b2ParticleGroup GetNext();
+	// [Const] b2ParticleGroup GetNext();
+  b2ParticleSystem GetParticleSystem();
+	// [Const] b2ParticleSystem GetParticleSystem();
+  long GetParticleCount();
+  long GetBufferIndex();
+  boolean ContainsParticle(long index);
+  unsigned long GetAllParticleFlags();
+  unsigned long GetGroupFlags();
+  void SetGroupFlags(unsigned long flags);
+  float GetMass();
+  float GetInertia();
+  [Value] b2Vec2 GetCenter();
+  [Value] b2Vec2 GetLinearVelocity();
+  float GetAngularVelocity();
+  [Const, Ref] b2Transform GetTransform();
+  [Const, Ref] b2Vec2 GetPosition();
+  float GetAngle();
+  [Value] b2Vec2 GetLinearVelocityFromWorldPoint([Const, Ref] b2Vec2 worldPoint);
+  VoidPtr GetUserData();
+  void SetUserData(VoidPtr data);
+  void ApplyForce([Const, Ref] b2Vec2 force);
+  void ApplyLinearImpulse([Const, Ref] b2Vec2 impulse);
+  void DestroyParticles(boolean callDestructionListener);
+  void DestroyParticles();
+};
+
+interface b2ParticleContact {
+  void b2ParticleContact();
+  void SetIndices(long a, long b);
+	void SetWeight(float w);
+	void SetNormal([Const, Ref] b2Vec2 n);
+	void SetFlags(unsigned long f);
+
+	long GetIndexA();
+	long GetIndexB();
+	float GetWeight();
+	[Const, Ref] b2Vec2 GetNormal();
+	unsigned long GetFlags();
+
+	[Operator="=="] boolean op_eq([Const, Ref] b2ParticleContact rhs);
+	[Operator="!="] boolean op_neq([Const, Ref] b2ParticleContact rhs);
+	boolean ApproximatelyEqual([Const, Ref] b2ParticleContact rhs);
+};
+
+interface b2ParticleBodyContact {
+  void b2ParticleBodyContact();
+  attribute long index;
+  attribute b2Body body;
+  attribute b2Fixture fixture;
+  attribute float weight;
+  [Value] attribute b2Vec2 normal;
+  attribute float mass;
+};
+
+interface b2ParticlePair {
+  void b2ParticlePair();
+  attribute long indexA;
+  attribute long indexB;
+  attribute unsigned long flags;
+  attribute float strength;
+  attribute float distance;
+};
+
+interface b2ParticleTriad {
+  void b2ParticleTriad();
+	attribute long indexA;
+	attribute long indexB;
+	attribute long indexC;
+	attribute unsigned long flags;
+  attribute float strength;
+  [Value] attribute b2Vec2 pa;
+  [Value] attribute b2Vec2 pb;
+  [Value] attribute b2Vec2 pc;
+	attribute float ka;
+	attribute float kb;
+	attribute float kc;
+	attribute float s;
+};
+
+interface b2ParticleSystemDef {
+  void b2ParticleSystemDef();
+  attribute boolean strictContactCheck;
+	attribute float density;
+	attribute float gravityScale;
+	attribute float radius;
+	attribute long maxCount;
+	attribute float pressureStrength;
+	attribute float dampingStrength;
+	attribute float elasticStrength;
+	attribute float springStrength;
+	attribute float viscousStrength;
+	attribute float surfaceTensionPressureStrength;
+	attribute float surfaceTensionNormalStrength;
+	attribute float repulsiveStrength;
+	attribute float powderStrength;
+	attribute float ejectionStrength;
+	attribute float staticPressureStrength;
+	attribute float staticPressureRelaxation;
+	attribute long staticPressureIterations;
+	attribute float colorMixingStrength;
+	attribute boolean destroyByAge;
+	attribute float lifetimeGranularity;
+};
+
+[NoDelete]
+interface b2ParticleSystem {
+	long CreateParticle([Const, Ref] b2ParticleDef def);
+  [Const] b2ParticleHandle GetParticleHandleFromIndex([Const] long index);
+  void DestroyParticle(long index);
+  void DestroyParticle(long index, boolean callDestructionListener);
+  void DestroyOldestParticle([Const] long index, [Const] boolean callDestructionListener);
+  long DestroyParticlesInShape([Const, Ref] b2Shape shape, [Const, Ref] b2Transform xf);
+  long DestroyParticlesInShape([Const, Ref] b2Shape shape, [Const, Ref] b2Transform xf, boolean callDestructionListener);
+  b2ParticleGroup CreateParticleGroup([Const, Ref] b2ParticleGroupDef def);
+  void JoinParticleGroups(b2ParticleGroup groupA, b2ParticleGroup groupB);
+  void SplitParticleGroup(b2ParticleGroup group);
+  b2ParticleGroup GetParticleGroupList();
+	// [Const] b2ParticleGroup GetParticleGroupList();
+  long GetParticleGroupCount();
+  long GetParticleCount();
+  long GetMaxParticleCount();
+  void SetMaxParticleCount(long count);
+  unsigned long GetAllParticleFlags();
+  unsigned long GetAllGroupFlags();
+  void SetPaused(boolean paused);
+  boolean GetPaused();
+  void SetDensity(float density);
+  float GetDensity();
+  void SetGravityScale(float gravityScale);
+  float GetGravityScale();
+  void SetDamping(float damping);
+  float GetDamping();
+  void SetStaticPressureIterations(long iterations);
+  long GetStaticPressureIterations();
+  void SetRadius(float radius);
+  float GetRadius();
+  b2Vec2 GetPositionBuffer();
+	// [Const] b2Vec2 GetPositionBuffer();
+  b2Vec2 GetVelocityBuffer();
+	// [Const] b2Vec2 GetVelocityBuffer();
+  b2ParticleColor GetColorBuffer();
+	// [Const] b2ParticleColor GetColorBuffer();
+  // can't bind to b2ParticleGroup* const* GetGroupBuffer();
+  // b2ParticleGroup GetGroupBuffer();
+	// [Const] b2ParticleGroup GetGroupBuffer();
+  // WebIDL doesn't provide a way to bind to float*
+  // float* GetWeightBuffer();
+	// [Const] float GetWeightBuffer();
+  // this is a void**
+  // VoidPtr GetUserDataBuffer();
+	// VoidPtr GetUserDataBuffer();
+  // WebIDL doesn't provide a way to bind to long*
+  // const unsigned long* GetFlagsBuffer();
+  void SetParticleFlags(long index, unsigned long flags);
+	unsigned long GetParticleFlags([Const] long index);
+  // WebIDL doesn't provide a way to bind to long*
+	// void SetFlagsBuffer(unsigned long* buffer, long capacity);
+	void SetPositionBuffer(b2Vec2 buffer, long capacity);
+	void SetVelocityBuffer(b2Vec2 buffer, long capacity);
+	void SetColorBuffer(b2ParticleColor buffer, long capacity);
+  // this is a void**
+	// void SetUserDataBuffer(VoidPtr buffer, long capacity);
+  [Const] b2ParticleContact GetContacts();
+	long GetContactCount();
+  [Const] b2ParticleBodyContact GetBodyContacts();
+	long GetBodyContactCount();
+  [Const] b2ParticlePair GetPairs();
+	long GetPairCount();
+  [Const] b2ParticleTriad GetTriads();
+	long GetTriadCount();
+  void SetStuckThreshold(long iterations);
+  // WebIDL doesn't provide a way to bind to long*
+  // [Const] long* GetStuckCandidates();
+  long GetStuckCandidateCount();
+  float ComputeCollisionEnergy();
+  void SetStrictContactCheck(boolean enabled);
+	boolean GetStrictContactCheck();
+  void SetParticleLifetime([Const] long index, [Const] float lifetime);
+	float GetParticleLifetime([Const] long index);
+  void SetDestructionByAge([Const] boolean enable);
+	boolean GetDestructionByAge();
+  // WebIDL doesn't provide a way to bind to long*
+  // [Const] long* GetExpirationTimeBuffer();
+	float ExpirationTimeToLifetime([Const] long expirationTime);
+  // WebIDL doesn't provide a way to bind to long*
+	// [Const] long* GetIndexByExpirationTimeBuffer();
+  void ParticleApplyLinearImpulse(long index, [Const, Ref] b2Vec2 impulse);
+  void ApplyLinearImpulse(long firstIndex, long lastIndex, [Const, Ref] b2Vec2 impulse);
+  void ParticleApplyForce(long index, [Const, Ref] b2Vec2 force);
+  void ApplyForce(long firstIndex, long lastIndex, [Const, Ref] b2Vec2 force);
+  b2ParticleSystem GetNext();
+	// [Const] b2ParticleSystem GetNext();
+  void QueryAABB(b2QueryCallback callback, [Const, Ref] b2AABB aabb);
+  void QueryShapeAABB(b2QueryCallback callback, [Const, Ref] b2Shape shape, [Const, Ref] b2Transform xf);
+  void RayCast(b2RayCastCallback callback, [Const, Ref] b2Vec2 point1, [Const, Ref] b2Vec2 point2);
+  void ComputeAABB(b2AABB aabb);
+};
+
+// interface b2IntrusiveListNode {
+// }
+
+interface b2ParticleHandle {
+  void b2ParticleHandle();
+  long GetIndex();
+  void InsertAfter(b2ParticleHandle obj);
+  void InsertBefore(b2ParticleHandle obj);
+  b2ParticleHandle GetNext();
+  b2ParticleHandle GetPrevious();
+  b2ParticleHandle GetTerminator();
+  b2ParticleHandle Remove();
+  boolean InList();
+  boolean IsEmpty();
+  unsigned long GetLength();
+  // let's not expose this; it's getting pretty far from what people actually want to interact with
+  // b2IntrusiveListNode GetListNode();
+  // [Const] b2IntrusiveListNode GetListNode();
+};
+
+interface b2StackAllocator {
+  void b2StackAllocator();
+  VoidPtr Allocate(long size);
+  VoidPtr Reallocate(VoidPtr p, long size);
+  void Free(VoidPtr p);
+};
+
+interface b2VoronoiDiagram {
+  void b2VoronoiDiagram(b2StackAllocator allocator, long generatorCapacity);
+  void AddGenerator([Const, Ref] b2Vec2 center, long tag, boolean necessary);
+  void Generate(float radius, float margin);
+  void GetNodes([Ref] NodeCallback callback);
+};
+
+[Prefix="b2VoronoiDiagram::"]
+interface NodeCallback {
+};

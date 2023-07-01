@@ -64,8 +64,8 @@ class SimuloServerController {
     //previousStep: SimuloStepExtended | null = null;
     timeScale: number = 1 / 500;
     frameRate: number = 1000 / 60;
-    velocityIterations: number = 3;
-    positionIterations: number = 2;
+    velocityIterations: number = 8;
+    positionIterations: number = 3;
     springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
     creatingObjects: { [key: string]: SimuloCreatingObject } = {}; // will be renamed for clarity, but this is all the tool actions in progress. for example, a circle being drawn, selection box, spring being added, etc
     creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null, end: [x: number, y: number], width: number } } = {};
@@ -785,6 +785,102 @@ class SimuloServerController {
                     });
                 }
             });
+        }
+        else if (formatted.type == 'get_object_at_point') {
+            let objects = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+            if (objects.length >= 1 && formatted.data.key !== undefined) {
+                this.send(uuid, 'get_object_at_point', {
+                    key: formatted.data.key,
+                    data: { id: objects[0].id, color: objects[0].color, image: objects[0].image, name: objects[0].name }
+                });
+            }
+            else if (objects.length == 0 && formatted.data.key !== undefined) {
+                this.send(uuid, 'get_object_at_point', {
+                    key: formatted.data.key,
+                    data: { id: null }
+                });
+            }
+        }
+        else if (formatted.type == 'delete_object') {
+            let object = this.physicsServer.getObjectByID(formatted.data.id);
+            if (object) {
+                this.physicsServer.destroy(object).then(() => {
+                    if (formatted.data.key !== undefined) {
+                        this.send(uuid, 'delete_object', {
+                            key: formatted.data.key,
+                            data: true
+                        });
+                    }
+                });
+            }
+            else {
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'delete_object', {
+                        key: formatted.data.key,
+                        data: false
+                    });
+                }
+            }
+        }
+        else if (formatted.type == 'change_object_color') {
+            let object = this.physicsServer.getObjectByID(formatted.data.id);
+            if (object) {
+                object.color = formatted.data.color;
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_color', {
+                        key: formatted.data.key,
+                        data: true
+                    });
+                }
+            }
+            else {
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_color', {
+                        key: formatted.data.key,
+                        data: false
+                    });
+                }
+            }
+        }
+        else if (formatted.type == 'change_object_image') {
+            let object = this.physicsServer.getObjectByID(formatted.data.id);
+            if (object) {
+                object.image = formatted.data.image;
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_image', {
+                        key: formatted.data.key,
+                        data: true
+                    });
+                }
+            }
+            else {
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_image', {
+                        key: formatted.data.key,
+                        data: false
+                    });
+                }
+            }
+        }
+        else if (formatted.type == 'change_object_name') {
+            let object = this.physicsServer.getObjectByID(formatted.data.id);
+            if (object) {
+                object.name = formatted.data.name;
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_name', {
+                        key: formatted.data.key,
+                        data: true
+                    });
+                }
+            }
+            else {
+                if (formatted.data.key !== undefined) {
+                    this.send(uuid, 'change_object_name', {
+                        key: formatted.data.key,
+                        data: false
+                    });
+                }
+            }
         }
     }
 
