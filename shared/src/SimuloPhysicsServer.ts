@@ -702,7 +702,7 @@ class SimuloPhysicsServer {
         jointData.id = this.currentID++;
         jointData.zDepth = this.highestZDepth++;
     }
-    addPerson(offset: [x: number, y: number]) {
+    addPerson(offset: [x: number, y: number], personScale = 0.4) {
         var personBodyPoints: [x: number, y: number][] = [
             [0.0, 0.64],
             [0.712, 0.499],
@@ -721,8 +721,6 @@ class SimuloPhysicsServer {
             [-0.65, 0.517],
             [-0.328, 0.614],
         ];
-
-        const personScale = 0.4;
 
         personBodyPoints = personBodyPoints.map(function (point) {
             return [point[0] * personScale, point[1] * personScale];
