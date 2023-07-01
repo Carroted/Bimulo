@@ -106,7 +106,9 @@ class SimuloViewer {
             if (window.TouchEvent && e instanceof TouchEvent) {
                 this.emit("mouseDown", {
                     x: mousePos.x,
-                    y: mousePos.y
+                    y: mousePos.y,
+                    right: false,
+                    screenPos: getEventLocation(e)
                 });
                 this.pointerDown = true;
             }
@@ -119,10 +121,12 @@ class SimuloViewer {
                     this.dragStart2.y = getEventLocation(e).y;
                 }
                 // if its not those buttons, we will see how much cursor moves first
-                if (e.button == 0) {
+                if (e.button == 0 || e.button == 2) {
                     this.emit("mouseDown", {
                         x: mousePos.x,
-                        y: mousePos.y
+                        y: mousePos.y,
+                        right: e.button == 2,
+                        screenPos: getEventLocation(e)
                     });
                     this.pointerDown = true;
                 }

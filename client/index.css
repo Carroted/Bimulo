@@ -1022,3 +1022,40 @@ details summary {
   transform: scale(1.3);
   fill: #ffffff;
 }
+
+.object-menu {
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0.5rem;
+  z-index: 100;
+  border-radius: 0.8rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  display: flex;
+  position: absolute;
+  user-select: none;
+  min-width: 8rem;
+  margin-left: 0.3rem;
+  margin-top: 0.3rem;
+  flex-direction: column;
+}
+
+.object-menu .button {
+  padding: 0.2em 0.5rem;
+}
+
+.object-menu .menu-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}

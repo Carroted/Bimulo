@@ -558,21 +558,105 @@ class SimuloClientController {
             this.mousePos = pos;
             this.client.emitData("player mouse", this.player);
         });
-        this.viewer.on('mouseDown', (pos) => {
-            this.player = {
-                x: pos.x,
-                y: pos.y,
-                down: this.viewer.pointerDown,
-                name: this.player.name,
-                zoom: this.viewer.cameraZoom
-            };
-            this.mousePos = pos;
-            this.client.emitData("player mouse down", this.player);
-            mouseDownOnCanvas = true;
-            if (this.tool == 'select' && this.selectedObjects[this.client.id] && this.selectedObjects[this.client.id].length > 0) {
-                objectMenuButton.classList.add('ready');
+        this.viewer.on('mouseDown', async (data) => {
+            if (!data.right) {
+                this.player = {
+                    x: data.x,
+                    y: data.y,
+                    down: this.viewer.pointerDown,
+                    name: this.player.name,
+                    zoom: this.viewer.cameraZoom
+                };
+                this.mousePos = { x: data.x, y: data.y };
+                this.client.emitData("player mouse down", this.player);
+                mouseDownOnCanvas = true;
+                if (this.tool == 'select' && this.selectedObjects[this.client.id] && this.selectedObjects[this.client.id].length > 0) {
+                    objectMenuButton.classList.add('ready');
+                }
+                console.log('mouse now down on canvas!');
             }
-            console.log('mouse now down on canvas!');
+            else {
+                var object = (await this.emitDataAsync('get_object_at_point', { x: data.x, y: data.y })).data;
+                console.log('we right clicked on:', object.id);
+                if (object.id != null) {
+                    // create a menu at mouse pos
+                    let menu = document.createElement('div');
+                    menu.classList.add('object-menu');
+                    menu.style.left = data.screenPos.x + 'px';
+                    menu.style.top = data.screenPos.y + 'px';
+                    menu.innerHTML = `<div class="menu-item">ID ${object.id}</div>
+                    <div class="menu-item">Name <input type="text" data-field="name" placeholder="" class="input" value="${object.name || 'Something'}"></div>
+                    <div class="menu-item">Color <input type="text" data-field="color" placeholder="" class="input" value="${object.color || 'Something'}"></div>
+                    <div class="menu-item">Image <input type="text" data-field="image" placeholder="" class="input" value="${object.image || ''}"></div>
+                    <div class="menu-item button" data-action="delete">Delete</div>`;
+                    document.body.appendChild(menu);
+                    let menuItems = menu.querySelectorAll('.menu-item');
+                    menuItems.forEach((item) => {
+                        if (item.classList.contains('button')) {
+                            item.addEventListener('click', async (e) => {
+                                let action = item.dataset.action;
+                                if (action == 'delete') {
+                                    var deleted = await this.emitDataAsync('delete_object', { id: object.id });
+                                    this.showToast(deleted ? 'Deleted object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
+                                }
+                                menu.remove();
+                                document.removeEventListener('mousedown', menuRemover);
+                                document.removeEventListener('touchstart', menuRemover);
+                            });
+                        }
+                        else {
+                            let inputElement = item.querySelector('input');
+                            if (inputElement) {
+                                let input = inputElement;
+                                input.addEventListener('change', async (e) => {
+                                    let field = input.dataset.field;
+                                    if (field == 'color') {
+                                        let color = input.value;
+                                        if (color.trim() == '')
+                                            color = '#00000000';
+                                        let changed = await this.emitDataAsync('change_object_color', { id: object.id, color: color });
+                                        this.showToast(changed ? 'Changed color' : 'Doesn\'t exist, idk', changed ? ToastType.INFO : ToastType.ERROR);
+                                    }
+                                    else if (field == 'image') {
+                                        let value = input.value;
+                                        let image = value;
+                                        if (value.trim() == '')
+                                            image = null;
+                                        let changed = await this.emitDataAsync('change_object_image', { id: object.id, image: image });
+                                        this.showToast(changed ? 'Changed image (remove color or set it to low opacity to see)' : 'Doesn\'t exist, idk', changed ? ToastType.INFO : ToastType.ERROR);
+                                    }
+                                    else if (field == 'name') {
+                                        let value = input.value;
+                                        let name = value;
+                                        if (value.trim() == '')
+                                            name = undefined;
+                                        let changed = await this.emitDataAsync('change_object_name', { id: object.id, name: name });
+                                        this.showToast(changed ? 'Changed name' : 'Doesn\'t exist, idk', changed ? ToastType.INFO : ToastType.ERROR);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                    let menuRemover = (e) => {
+                        if (!menu.contains(e.target)) {
+                            console.log('click outside menu');
+                            menu.remove();
+                            document.removeEventListener('mousedown', menuRemover);
+                            document.removeEventListener('touchstart', menuRemover);
+                        }
+                        else {
+                            console.log('click on menu');
+                        }
+                    };
+                    let menuRemoverViewer = (data) => {
+                        menu.remove();
+                        this.viewer.off('mouseDown', menuRemoverViewer);
+                    };
+                    document.addEventListener('mousedown', menuRemover);
+                    document.addEventListener('touchstart', menuRemover);
+                    this.viewer.on('mouseDown', menuRemoverViewer);
+                }
+            }
         });
         this.viewer.on('mouseUp', (pos) => {
             this.player = {
@@ -1414,6 +1498,23 @@ class SimuloClientController {
                             borderScaleWithZoom: false,
                             stretchImage: true
                         });
+                        if (creatingSpring.image !== null && creatingSpring.image !== undefined) {
+                            // put a circle at each end, transparent but with solid white border
+                            shapes.push({
+                                x: creatingSpring.start[0], y: creatingSpring.start[1], radius: creatingSpring.width / 3, angle: 0, circleCake: false,
+                                type: 'circle', color: '#00000000', image: null,
+                                border: 'white',
+                                borderWidth: 4,
+                                borderScaleWithZoom: true,
+                            });
+                            shapes.push({
+                                x: creatingSpring.end[0], y: creatingSpring.end[1], radius: creatingSpring.width / 3, angle: 0, circleCake: false,
+                                type: 'circle', color: '#00000000', image: null,
+                                border: 'white',
+                                borderWidth: 4,
+                                borderScaleWithZoom: true
+                            });
+                        }
                     }
                     else {
                         // draw a line
@@ -1439,6 +1540,23 @@ class SimuloClientController {
                             borderScaleWithZoom: false,
                             stretchImage: true
                         });
+                        if (spring.image !== null && spring.image !== undefined) {
+                            // put a circle at each end, transparent but with solid white border
+                            shapes.push({
+                                x: spring.p1[0], y: spring.p1[1], radius: spring.width / 3, angle: 0, circleCake: false,
+                                type: 'circle', color: '#00000000', image: null,
+                                border: 'white',
+                                borderWidth: 4,
+                                borderScaleWithZoom: true,
+                            });
+                            shapes.push({
+                                x: spring.p2[0], y: spring.p2[1], radius: spring.width / 3, angle: 0, circleCake: false,
+                                type: 'circle', color: '#00000000', image: null,
+                                border: 'white',
+                                borderWidth: 4,
+                                borderScaleWithZoom: true
+                            });
+                        }
                     }
                     else {
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1]);
