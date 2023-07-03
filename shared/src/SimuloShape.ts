@@ -14,6 +14,17 @@ interface SimuloShape {
     stretchImage?: boolean;
     zDepth: number;
     id: number;
+    text?: {
+        color: string;
+        border?: string | null;
+        borderWidth?: number | null;
+        borderScaleWithZoom?: boolean;
+        zDepth: number;
+        text: string;
+        fontSize: number;
+        fontFamily: string;
+        align: "left" | "center" | "right";
+    } | null;
 }
 
 interface SimuloCircle extends SimuloShape {

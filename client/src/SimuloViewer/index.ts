@@ -1,4 +1,5 @@
 import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
+import SimuloText from '../../../shared/src/SimuloText';
 const style = `/*canvas.simulo-viewer.fullscreen {
     position: fixed;
     top: 0;
@@ -596,7 +597,9 @@ class SimuloViewer {
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawText(text: string, x: number, y: number, size: number, font: string) {
+    drawText(text: string, x: number, y: number, size: number, font: string, color: string, align: "left" | "center" | "right" = "left") {
+        this.ctx.fillStyle = color;
+        this.ctx.textAlign = align;
         this.ctx.font = `${size}px ${font}`;
         this.ctx.fillText(text, x, y);
     }
@@ -657,6 +660,7 @@ class SimuloViewer {
         return this.ctx;
     }
     shapes: SimuloShape[] = [];
+    texts: SimuloText[] = [];
     /** Draw the current state of the world to the canvas or other drawing context. */
     draw() {
         // if the classlist contains .fullscreen
@@ -790,6 +794,10 @@ class SimuloViewer {
                     { x: 0, y: shapeRectangle.height }
                 ];
                 this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
+            }
+
+            if(shape.text) {
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.fontFamily, shape.text.color, shape.text.align);
             }
         }
         /*

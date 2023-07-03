@@ -545,24 +545,37 @@ class SimuloPhysicsServer {
         restitution: number,
         // string key to any value
         data: { [key: string]: any },
-        isStatic: boolean = false
+        isStatic: boolean = false,
+        /** We currently triangulate polygons, but will soon "octagonulate" */
+        decompose: boolean = true
     ) { // TODO: change above into an interface or class or whatever named SimuloPolygon simuloobjectdata wont be needed anymore after that, can have stuff directly in the interface
         //var shape = createPolygonShape(vertices);
-        // earcut triangulation
-        var triangles: number[] = earcut(vertices.flat());
 
         var bd = new box2D.b2BodyDef();
         bd.set_type(isStatic ? box2D.b2_staticBody : box2D.b2_dynamicBody);
         bd.set_position(new box2D.b2Vec2(position[0], position[1]));
         bd.set_angle(rotation);
         var body = this.world.CreateBody(bd);
-        // make a bunch of polygons
-        for (var i = 0; i < triangles.length; i += 3) {
-            var shape = createPolygonShape([
-                [vertices[triangles[i]][0], vertices[triangles[i]][1]],
-                [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
-                [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
-            ]);
+        if (decompose) {
+            // earcut triangulation
+            var triangles: number[] = earcut(vertices.flat());
+            // make a bunch of polygons
+            for (var i = 0; i < triangles.length; i += 3) {
+                var shape = createPolygonShape([
+                    [vertices[triangles[i]][0], vertices[triangles[i]][1]],
+                    [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
+                    [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
+                ]);
+                var fd = new box2D.b2FixtureDef();
+                fd.set_shape(shape);
+                fd.set_density(density);
+                fd.set_friction(friction);
+                fd.set_restitution(restitution);
+                body.CreateFixture(fd);
+            }
+        }
+        else {
+            var shape = createPolygonShape(vertices);
             var fd = new box2D.b2FixtureDef();
             fd.set_shape(shape);
             fd.set_density(density);
