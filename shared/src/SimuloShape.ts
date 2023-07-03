@@ -24,6 +24,7 @@ interface SimuloShape {
         fontSize: number;
         fontFamily: string;
         align: "left" | "center" | "right";
+        baseline?: "alphabetic" | "top" | "middle" | "bottom"; // Default = alphabetic 
     } | null;
 }
 

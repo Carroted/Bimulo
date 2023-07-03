@@ -12,6 +12,7 @@ interface SimuloText {
     fontSize: number;
     fontFamily: string;
     align: "left" | "center" | "right";
+    baseline?: "alphabetic" | "top" | "middle" | "bottom"; // Default = alphabetic 
 }
 
 export default SimuloText;
