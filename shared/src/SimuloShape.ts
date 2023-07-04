@@ -19,12 +19,12 @@ interface SimuloShape {
         border?: string | null;
         borderWidth?: number | null;
         borderScaleWithZoom?: boolean;
-        zDepth: number;
+        // zDepth: number; // Text is always on top or same as parent shape
         text: string;
         fontSize: number;
-        fontFamily: string;
-        align: "left" | "center" | "right";
-        baseline?: "alphabetic" | "top" | "middle" | "bottom"; // Default = alphabetic 
+        fontFamily?: string;
+        align?: "left" | "center" | "right";    // Default = start
+        baseline?: "alphabetic" | "top" | "middle" | "bottom"; // Default = alphabetic
     } | null;
 }
 

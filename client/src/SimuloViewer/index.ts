@@ -597,9 +597,11 @@ class SimuloViewer {
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawText(text: string, x: number, y: number, size: number, font: string, color: string, align: "left" | "center" | "right" = "left") {
+    drawText(text: string, x: number, y: number, size: number, color: string, font: string = "urbanist", 
+                align: "left" | "center" | "right" = "left", baseline: "alphabetic" | "top" | "middle" | "bottom" = "alphabetic") {
         this.ctx.fillStyle = color;
         this.ctx.textAlign = align;
+        this.ctx.textBaseline = baseline;
         this.ctx.font = `${size}px ${font}`;
         this.ctx.fillText(text, x, y);
     }
@@ -797,9 +799,17 @@ class SimuloViewer {
             }
 
             if(shape.text) {
-                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.fontFamily, shape.text.color, shape.text.align);
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily,  shape.text.align, shape.text.baseline);
             }
         }
+
+        // Draw any text that is not attached to a shape
+        for (var i = 0; i < this.texts.length; i++) {
+            var text = this.texts[i];
+            this.drawText(text.text, text.x, text.y, text.fontSize, text.color, text.fontFamily, text.align, text.baseline);
+        }
+
+
         /*
                 // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
                 this.ctx.strokeStyle = 'white';
