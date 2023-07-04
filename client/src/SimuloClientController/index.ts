@@ -1612,14 +1612,17 @@ class SimuloClientController {
                             borderScaleWithZoom: true,                          
                         } as SimuloCircle);
 
-                        texts.push({                           
-                            x: posX + radius, 
-                            y: posY - radius,
-                            text: "r = " + radius.toFixed(3), 
-                            color: 'white', 
-                            fontSize: 20 / this.viewer.cameraZoom,
-                            fontFamily: 'Urbanist'                           
-                        } as SimuloText);
+                        if(radius > 0.01){
+                            texts.push({                           
+                                x: posX + radius, 
+                                y: posY - radius,
+                                text: "r = " + radius.toFixed(3) + ' m', 
+                                color: 'white', 
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist'                           
+                            } as SimuloText);
+                        }
+                        
                         
 
                     }
@@ -1663,12 +1666,11 @@ class SimuloClientController {
                         } as SimuloRectangle);
 
                         // Create dimension text when creating a rectangle, we need to check if the object is a rectangle because we don't want to create dimension text for a select object
-                        // NOTE: Instead of sending the text separately, we can edit the SimuloRectangle object to include support for an array of texts so we can render multiple texts to one object.
-                        if(creatingObject.shape == 'rectangle') {
+                        if (creatingObject.shape == 'rectangle' && width > 0.01 && height > 0.01) {
                             texts.push({ // width "dimension text"
                                 x: topLeftX + width / 2, 
                                 y: topLeftY - (10 / this.viewer.cameraZoom), 
-                                text: width.toFixed(3), 
+                                text: width.toFixed(3) + ' m', 
                                 color: 'white', 
                                 zDepth: 0,
                                 fontSize: 20 / this.viewer.cameraZoom,
@@ -1678,7 +1680,7 @@ class SimuloClientController {
                             texts.push({ // height "dimension text"
                                 x: (topLeftX + width) + (10 / this.viewer.cameraZoom),
                                 y: topLeftY + height / 2,
-                                text: height.toFixed(3),
+                                text: height.toFixed(3) + ' m',
                                 color: 'white',
                                 zDepth: 0,
                                 fontSize: 20 / this.viewer.cameraZoom,
