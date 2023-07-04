@@ -1615,14 +1615,12 @@ class SimuloClientController {
                             texts.push({
                                 x: posX + radius,
                                 y: posY - radius,
-                                text: "r = " + radius.toFixed(3) + ' m',
+                                text: "r = " + (radius * 0.425).toFixed(3) + ' m',
                                 color: 'white',
                                 fontSize: 20 / this.viewer.cameraZoom,
                                 fontFamily: 'Urbanist'
                             } as SimuloText);
                         }
-
-
 
                     }
                     else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select' && !creatingObject.moving) {
@@ -1669,7 +1667,7 @@ class SimuloClientController {
                             texts.push({ // width "dimension text"
                                 x: topLeftX + width / 2,
                                 y: topLeftY - (10 / this.viewer.cameraZoom),
-                                text: width.toFixed(3) + ' m',
+                                text: (width * 0.425).toFixed(3) + ' m',
                                 color: 'white',
                                 zDepth: 0,
                                 fontSize: 20 / this.viewer.cameraZoom,
@@ -1679,7 +1677,7 @@ class SimuloClientController {
                             texts.push({ // height "dimension text"
                                 x: (topLeftX + width) + (10 / this.viewer.cameraZoom),
                                 y: topLeftY + height / 2,
-                                text: height.toFixed(3) + ' m',
+                                text: (height * 0.425).toFixed(3) + ' m',
                                 color: 'white',
                                 zDepth: 0,
                                 fontSize: 20 / this.viewer.cameraZoom,
