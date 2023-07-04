@@ -19,6 +19,7 @@ function queryParent(element: HTMLElement, className: string): HTMLElement | nul
 }
 
 import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../../../shared/src/SimuloShape.js';
+import SimuloText from '../../../shared/src/SimuloText';
 import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../../shared/src/SimuloCreatingObject.js';
 
 const personPoints = [{
@@ -81,6 +82,7 @@ enum ToastType {
 interface SimuloSavedObject {
     name: string;
     shapes: SimuloShape[];
+    
 }
 
 const defaultSavedObjects: {
@@ -169,6 +171,7 @@ class SimuloClientController {
                         angle: Math.PI
                     } as SimuloCircle,
                 ]
+
             }
         };
 
@@ -1428,6 +1431,8 @@ class SimuloClientController {
                 }
 
                 var shapes: SimuloShape[] = [];
+                var texts: SimuloText[] = [];
+
                 // push all the entities
                 //shapes = shapes.concat(this.entities);
                 this.entities.forEach((entityObj) => {
@@ -1604,8 +1609,19 @@ class SimuloClientController {
                             type: 'circle', color: newColor, image: null,
                             border: 'white',
                             borderWidth: 3.5,
-                            borderScaleWithZoom: true
+                            borderScaleWithZoom: true,
+                            text: {
+                                x: posX + radius, 
+                                y: posY - radius,
+                                text: "radius = " + radius.toFixed(3), 
+                                color: 'white', 
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist'
+                            }
                         } as SimuloCircle);
+
+                        
+
                     }
                     else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select' && !creatingObject.moving) {
                         // Calculate the difference between creatingObjects[id] x and y and the current player x and y
@@ -1645,6 +1661,32 @@ class SimuloClientController {
                             borderWidth: 3.5,
                             borderScaleWithZoom: true
                         } as SimuloRectangle);
+
+                        // Create dimension text when creating a rectangle, we need to check if the object is a rectangle because we don't want to create dimension text for a select object
+                        // NOTE: Instead of sending the text separately, we can edit the SimuloRectangle object to include support for an array of texts so we can render multiple texts to one object.
+                        if(creatingObject.shape == 'rectangle') {
+                            texts.push({ // width "dimension text"
+                                x: topLeftX + width / 2, 
+                                y: topLeftY - (10 / this.viewer.cameraZoom), 
+                                text: width.toFixed(3), 
+                                color: 'white', 
+                                zDepth: 0,
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist',
+                                align: 'center'
+                            } as SimuloText);
+                            texts.push({ // height "dimension text"
+                                x: (topLeftX + width) + (10 / this.viewer.cameraZoom),
+                                y: topLeftY + height / 2,
+                                text: height.toFixed(3),
+                                color: 'white',
+                                zDepth: 0,
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist',
+                                align: 'left',
+                                baseline: 'middle'
+                            } as SimuloText);  
+                        }
 
                         console.log('rendered with topLeftX: ' + topLeftX + ' topLeftY: ' + topLeftY + ' width: ' + width + ' height: ' + height);
                     }
@@ -1797,6 +1839,7 @@ class SimuloClientController {
                 }
 
                 this.viewer.shapes = shapes;
+                this.viewer.texts = texts;
             }
             if (body.type == 'world_update_failed') {
                 console.log('Failed to update the world! Try changing the simulation speed.');
