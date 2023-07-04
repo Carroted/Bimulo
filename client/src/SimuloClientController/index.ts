@@ -1613,7 +1613,7 @@ class SimuloClientController {
                             text: {
                                 x: posX + radius, 
                                 y: posY - radius,
-                                text: "radius = " + radius.toFixed(3), 
+                                text: "r = " + radius.toFixed(3), 
                                 color: 'white', 
                                 fontSize: 20 / this.viewer.cameraZoom,
                                 fontFamily: 'Urbanist'
