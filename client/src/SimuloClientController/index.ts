@@ -1609,17 +1609,17 @@ class SimuloClientController {
                             type: 'circle', color: newColor, image: null,
                             border: 'white',
                             borderWidth: 3.5,
-                            borderScaleWithZoom: true,
-                            text: {
-                                x: posX + radius, 
-                                y: posY - radius,
-                                text: "r = " + radius.toFixed(3), 
-                                color: 'white', 
-                                fontSize: 20 / this.viewer.cameraZoom,
-                                fontFamily: 'Urbanist'
-                            }
+                            borderScaleWithZoom: true,                          
                         } as SimuloCircle);
 
+                        texts.push({                           
+                            x: posX + radius, 
+                            y: posY - radius,
+                            text: "r = " + radius.toFixed(3), 
+                            color: 'white', 
+                            fontSize: 20 / this.viewer.cameraZoom,
+                            fontFamily: 'Urbanist'                           
+                        } as SimuloText);
                         
 
                     }

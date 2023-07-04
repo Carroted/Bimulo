@@ -799,7 +799,7 @@ class SimuloViewer {
             }
 
             if(shape.text) {
-                this.drawText(shape.text.text, shape.text.x, shape.text.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily,  shape.text.align, shape.text.baseline);
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily,  shape.text.align, shape.text.baseline);
             }
         }
 
