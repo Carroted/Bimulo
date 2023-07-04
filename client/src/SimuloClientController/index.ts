@@ -82,7 +82,6 @@ enum ToastType {
 interface SimuloSavedObject {
     name: string;
     shapes: SimuloShape[];
-    
 }
 
 const defaultSavedObjects: {
@@ -1609,21 +1608,21 @@ class SimuloClientController {
                             type: 'circle', color: newColor, image: null,
                             border: 'white',
                             borderWidth: 3.5,
-                            borderScaleWithZoom: true,                          
+                            borderScaleWithZoom: true,
                         } as SimuloCircle);
 
-                        if(radius > 0.01){
-                            texts.push({                           
-                                x: posX + radius, 
+                        if (radius > 0.01) {
+                            texts.push({
+                                x: posX + radius,
                                 y: posY - radius,
-                                text: "r = " + radius.toFixed(3) + ' m', 
-                                color: 'white', 
+                                text: "r = " + radius.toFixed(3) + ' m',
+                                color: 'white',
                                 fontSize: 20 / this.viewer.cameraZoom,
-                                fontFamily: 'Urbanist'                           
+                                fontFamily: 'Urbanist'
                             } as SimuloText);
                         }
-                        
-                        
+
+
 
                     }
                     else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select' && !creatingObject.moving) {
@@ -1668,10 +1667,10 @@ class SimuloClientController {
                         // Create dimension text when creating a rectangle, we need to check if the object is a rectangle because we don't want to create dimension text for a select object
                         if (creatingObject.shape == 'rectangle' && width > 0.01 && height > 0.01) {
                             texts.push({ // width "dimension text"
-                                x: topLeftX + width / 2, 
-                                y: topLeftY - (10 / this.viewer.cameraZoom), 
-                                text: width.toFixed(3) + ' m', 
-                                color: 'white', 
+                                x: topLeftX + width / 2,
+                                y: topLeftY - (10 / this.viewer.cameraZoom),
+                                text: width.toFixed(3) + ' m',
+                                color: 'white',
                                 zDepth: 0,
                                 fontSize: 20 / this.viewer.cameraZoom,
                                 fontFamily: 'Urbanist',
@@ -1687,7 +1686,7 @@ class SimuloClientController {
                                 fontFamily: 'Urbanist',
                                 align: 'left',
                                 baseline: 'middle'
-                            } as SimuloText);  
+                            } as SimuloText);
                         }
 
                         console.log('rendered with topLeftX: ' + topLeftX + ' topLeftY: ' + topLeftY + ' width: ' + width + ' height: ' + height);
