@@ -1,4 +1,5 @@
 import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
+import SimuloText from '../../../shared/src/SimuloText';
 const style = `/*canvas.simulo-viewer.fullscreen {
     position: fixed;
     top: 0;
@@ -596,7 +597,11 @@ class SimuloViewer {
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawText(text: string, x: number, y: number, size: number, font: string) {
+    drawText(text: string, x: number, y: number, size: number, color: string, font: string = "urbanist", 
+                align: "left" | "center" | "right" = "left", baseline: "alphabetic" | "top" | "middle" | "bottom" = "alphabetic") {
+        this.ctx.fillStyle = color;
+        this.ctx.textAlign = align;
+        this.ctx.textBaseline = baseline;
         this.ctx.font = `${size}px ${font}`;
         this.ctx.fillText(text, x, y);
     }
@@ -657,6 +662,7 @@ class SimuloViewer {
         return this.ctx;
     }
     shapes: SimuloShape[] = [];
+    texts: SimuloText[] = [];
     /** Draw the current state of the world to the canvas or other drawing context. */
     draw() {
         // if the classlist contains .fullscreen
@@ -791,7 +797,19 @@ class SimuloViewer {
                 ];
                 this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
             }
+
+            if(shape.text) {
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily,  shape.text.align, shape.text.baseline);
+            }
         }
+
+        // Draw any text that is not attached to a shape
+        for (var i = 0; i < this.texts.length; i++) {
+            var text = this.texts[i];
+            this.drawText(text.text, text.x, text.y, text.fontSize, text.color, text.fontFamily, text.align, text.baseline);
+        }
+
+
         /*
                 // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
                 this.ctx.strokeStyle = 'white';

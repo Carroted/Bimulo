@@ -117,6 +117,8 @@ shared/src/SimuloShape.js
 shared/src/SimuloShape.js.map
 shared/src/SimuloStep.js
 shared/src/SimuloStep.js.map
+shared/src/SimuloText.js
+shared/src/SimuloText.js.map
 shared/src/SimuloTheme.js
 shared/src/SimuloTheme.js.map
 shared/src/intersect.js

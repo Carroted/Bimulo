@@ -1288,6 +1288,7 @@ class SimuloClientController {
                     }
                 }
                 var shapes = [];
+                var texts = [];
                 // push all the entities
                 //shapes = shapes.concat(this.entities);
                 this.entities.forEach((entityObj) => {
@@ -1430,8 +1431,18 @@ class SimuloClientController {
                             type: 'circle', color: newColor, image: null,
                             border: 'white',
                             borderWidth: 3.5,
-                            borderScaleWithZoom: true
+                            borderScaleWithZoom: true,
                         });
+                        if (radius > 0.01) {
+                            texts.push({
+                                x: posX + radius,
+                                y: posY - radius,
+                                text: "r = " + (radius * 0.425).toFixed(3) + ' m',
+                                color: 'white',
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist'
+                            });
+                        }
                     }
                     else if (creatingObject.shape == 'rectangle' || creatingObject.shape == 'select' && !creatingObject.moving) {
                         // Calculate the difference between creatingObjects[id] x and y and the current player x and y
@@ -1468,6 +1479,30 @@ class SimuloClientController {
                             borderWidth: 3.5,
                             borderScaleWithZoom: true
                         });
+                        // Create dimension text when creating a rectangle, we need to check if the object is a rectangle because we don't want to create dimension text for a select object
+                        if (creatingObject.shape == 'rectangle' && width > 0.01 && height > 0.01) {
+                            texts.push({
+                                x: topLeftX + width / 2,
+                                y: topLeftY - (10 / this.viewer.cameraZoom),
+                                text: (width * 0.425).toFixed(3) + ' m',
+                                color: 'white',
+                                zDepth: 0,
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist',
+                                align: 'center'
+                            });
+                            texts.push({
+                                x: (topLeftX + width) + (10 / this.viewer.cameraZoom),
+                                y: topLeftY + height / 2,
+                                text: (height * 0.425).toFixed(3) + ' m',
+                                color: 'white',
+                                zDepth: 0,
+                                fontSize: 20 / this.viewer.cameraZoom,
+                                fontFamily: 'Urbanist',
+                                align: 'left',
+                                baseline: 'middle'
+                            });
+                        }
                         console.log('rendered with topLeftX: ' + topLeftX + ' topLeftY: ' + topLeftY + ' width: ' + width + ' height: ' + height);
                     }
                 });
@@ -1612,6 +1647,7 @@ class SimuloClientController {
                     });
                 }
                 this.viewer.shapes = shapes;
+                this.viewer.texts = texts;
             }
             if (body.type == 'world_update_failed') {
                 console.log('Failed to update the world! Try changing the simulation speed.');

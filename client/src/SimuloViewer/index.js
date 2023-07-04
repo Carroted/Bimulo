@@ -158,6 +158,7 @@ class SimuloViewer {
         this.oldWidth = 50;
         this.oldHeight = 50;
         this.shapes = [];
+        this.texts = [];
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
         var dpr = window.devicePixelRatio || 1;
@@ -544,7 +545,10 @@ class SimuloViewer {
     drawRect(x, y, width, height) {
         this.ctx.fillRect(x, y, width, height);
     }
-    drawText(text, x, y, size, font) {
+    drawText(text, x, y, size, color, font = "urbanist", align = "left", baseline = "alphabetic") {
+        this.ctx.fillStyle = color;
+        this.ctx.textAlign = align;
+        this.ctx.textBaseline = baseline;
         this.ctx.font = `${size}px ${font}`;
         this.ctx.fillText(text, x, y);
     }
@@ -725,6 +729,14 @@ class SimuloViewer {
                 ];
                 this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
             }
+            if (shape.text) {
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily, shape.text.align, shape.text.baseline);
+            }
+        }
+        // Draw any text that is not attached to a shape
+        for (var i = 0; i < this.texts.length; i++) {
+            var text = this.texts[i];
+            this.drawText(text.text, text.x, text.y, text.fontSize, text.color, text.fontFamily, text.align, text.baseline);
         }
         /*
                 // draw springs (white line from spring.p1 (array of x and y) to spring.p2 (array of x and y))
