@@ -17,6 +17,7 @@ interface SimuloObjectData extends Box2D.b2BodyUserData {
     points?: [x: number, y: number][];
     /** We sort shapes with this for almost everything, including rendering. Newer shapes get a higher Z Depth. At the start of a scene, IDs and Z Depths will be the same, but user interaction can change this. */
     zDepth: number;
+    decomposedParts?: [x: number, y: number][][];
 }
 
 export default SimuloObjectData;

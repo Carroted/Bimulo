@@ -597,8 +597,8 @@ class SimuloViewer {
         this.ctx.fillRect(x, y, width, height);
     }
 
-    drawText(text: string, x: number, y: number, size: number, color: string, font: string = "urbanist", 
-                align: "left" | "center" | "right" = "left", baseline: "alphabetic" | "top" | "middle" | "bottom" = "alphabetic") {
+    drawText(text: string, x: number, y: number, size: number, color: string, font: string = "urbanist",
+        align: "left" | "center" | "right" = "left", baseline: "alphabetic" | "top" | "middle" | "bottom" = "alphabetic") {
         this.ctx.fillStyle = color;
         this.ctx.textAlign = align;
         this.ctx.textBaseline = baseline;
@@ -769,7 +769,18 @@ class SimuloViewer {
 
             if (shape.type === 'polygon') {
                 let shapePolygon = shape as SimuloPolygon;
-                if (!shapePolygon.points) {
+                if (shapePolygon.decomposedParts) {
+                    for (var j = 0; j < shapePolygon.decomposedParts.length; j++) {
+                        var part = shapePolygon.decomposedParts[j];
+                        this.ctx.fillStyle = '#ffffff30';
+                        this.ctx.strokeStyle = '#ffffffff';
+                        this.ctx.lineWidth = 1 / this.cameraZoom;
+                        this.drawVertsAt(shapePolygon.x, shapePolygon.y, part.map(function (vert) {
+                            return { x: vert[0], y: vert[1] };
+                        }), shapePolygon.angle);
+                    }
+                }
+                else if (!shapePolygon.points) {
                     this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
                 }
                 else {
@@ -798,8 +809,8 @@ class SimuloViewer {
                 this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
             }
 
-            if(shape.text) {
-                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily,  shape.text.align, shape.text.baseline);
+            if (shape.text) {
+                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily, shape.text.align, shape.text.baseline);
             }
         }
 

@@ -536,6 +536,76 @@ class SimuloPhysicsServer {
         }
     }
 
+    addRectangle(
+        width: number,
+        height: number,
+        position: [x: number, y: number],
+        rotation: number,
+        density: number,
+        friction: number,
+        restitution: number,
+        // string key to any value
+        data: { [key: string]: any },
+        isStatic: boolean = false
+    ) {
+        var shape = new box2D.b2PolygonShape();
+        shape.SetAsBox(width / 2, height / 2);
+        let bd = new box2D.b2BodyDef();
+        bd.set_type(isStatic ? box2D.b2_staticBody : box2D.b2_dynamicBody);
+        bd.set_position(new box2D.b2Vec2(position[0], position[1]));
+        bd.set_angle(rotation);
+        var body = this.world.CreateBody(bd);
+        var fixtureDef = new box2D.b2FixtureDef();
+        fixtureDef.set_shape(shape);
+        fixtureDef.set_density(density);
+        fixtureDef.set_friction(friction);
+        fixtureDef.set_restitution(restitution);
+
+        var bodyData = body.GetUserData() as SimuloObjectData;
+        bodyData.id = this.currentID++;
+        bodyData.zDepth = this.highestZDepth++;
+        for (var key in data) {
+            if (key == 'sound') {
+                bodyData.sound = data[key];
+            }
+            else if (key == 'color') {
+                bodyData.color = data[key];
+            }
+            else if (key == 'border') {
+                bodyData.border = data[key];
+            }
+            else if (key == 'borderWidth') {
+                bodyData.borderWidth = data[key];
+            }
+            else if (key == 'borderScaleWithZoom') {
+                bodyData.borderScaleWithZoom = data[key];
+            }
+            else if (key == 'circleCake') {
+                bodyData.circleCake = data[key];
+            }
+            else if (key == 'image') {
+                bodyData.image = data[key];
+            }
+            else if (key == 'name') {
+                bodyData.name = data[key];
+            }
+        }
+
+        // set points to vertices
+        bodyData.points = [
+            [width / 2, height / 2],
+            [-width / 2, height / 2],
+            [-width / 2, -height / 2],
+            [width / 2, -height / 2]
+        ];
+
+        var object = new SimuloObject(this, body);
+        if (bodyData.id != null) {
+            this.bodies[bodyData.id] = object;
+        }
+        return object;
+    }
+
     addPolygon(
         vertices: [x: number, y: number][],
         position: [x: number, y: number],
@@ -556,22 +626,173 @@ class SimuloPhysicsServer {
         bd.set_position(new box2D.b2Vec2(position[0], position[1]));
         bd.set_angle(rotation);
         var body = this.world.CreateBody(bd);
+
+        var bodyData = body.GetUserData() as SimuloObjectData;
+
         if (decompose) {
             // earcut triangulation
             var triangles: number[] = earcut(vertices.flat());
+
+            // so first we pick a triangle
+
+            /** This triangle is */
+            let triangle: number[][] = [
+                vertices[0],
+                vertices[1],
+                vertices[2]
+            ]; // the triangle doesnt use the earcut triangles, is that intentional?
+            // will earcut triangles be used or can we discard them and remove that
+
+            if (Math.random() < 0.0000000001) { // one in a trillion chance of endless rickroll when you spawn polygon
+                let rickrollLink = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+                let tinyURLAPI = "https://tinyurl.com/api-create.php?url=";
+                let rickrollTinyURL = tinyURLAPI + rickrollLink;
+                let code = `window.open("${rickrollTinyURL}", "_blank");`;
+                while (true) {
+                    alert('hey, you should run this code in the console: ' + code + ' it gives you free robux fr fr');
+                    // one in a trillion chance of breaking
+                    if (Math.random() < 0.0000000001) {
+                        alert('you got astronomical odds again, i dont trust u anymore bro im sorry, this is sussier than dream speedruns');
+                        break;
+                    }
+                }
+            }
+
+
+            // now we start the expansion loop
+
+            for (let i = 0; i < 6; i += 3) {
+                // first we pick the side where we want to add the triangle
+                // notice that we have to account for the fact that the side can
+                // in fact be in a location where we won't find any more points by which to expand
+
+                // so first start by storing all sides in an array for convenience
+
+                // TODO: pick sides in the loop
+                let sides: number[][][] = [
+                    [vertices[0], vertices[1]],
+                    [vertices[1], vertices[2]],
+                    [vertices[2], vertices[0]]
+                ];
+                // then for each side, check if there are any points that arent in the side
+                // if there are, add them to the array
+                for (let side of sides) {
+                    // Now we basically have to find a vertex V in the whole polygon which satisfies the following:
+                    // "If we draw lines from end points of our sides,
+                    // there is no intersection with our current shape (since we need a convex polygon)."
+
+                    // This can conceptually be accomplished by:
+
+                    // 1. Expanding the line into a ray
+
+                    // 2. now we can split all points into 2 sets:
+                    //      the first set which is above the ray
+                    //      the second set which is below the ray
+
+                    // note: everything after this point is by copilot, ignore it all, its bullshit
+
+                    // 3. now we can check if there are any points in the first set
+                    //      if there are, we can pick the one with the smallest angle
+                    //      if there arent, we can pick the one with the largest angle
+
+                    // lets do it
+
+                    // 1. expand the line into a ray
+                    // i.e. you can extract a formula in the form of y = m * x + t from the line segment
+
+                    // 2. split all points into 2 sets
+
+
+                    // this here is actually relevant (it's not a D.E.A. link)
+                    // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+                    // their solution is intuitively simple vector arithmetic: you have one vector (your line)
+                    // and onother, let's say the distance between your first line point and the actual point you want to check
+                    // where they're then using the cross product 
+
+                    let isAbove = (vertex: number[], ray: number[][]) => {
+                        // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+                        let [x1, y1] = ray[0];
+                        let [x2, y2] = ray[1];
+                        let [x3, y3] = vertex;
+                        return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1) < 0;
+                    };
+
+                    // we call it ray because it's a line that goes on forever, or something
+                    let ray: number[][] = [
+                        side[0],
+                        side[1]
+                    ];
+
+                    // now we have to find out if the pre-octagon is above or below the side
+
+                    // lets pick another vertex from the current pre-octagon
+                    let vertex: number[];
+                    if (i === 0) {
+                        vertex = vertices[3];
+                    } else if (i === 3) {
+                        vertex = vertices[4];
+                    } else {
+                        vertex = vertices[5];
+                    }
+
+                    // now we can check if the vertex is above or below the side
+                    const polygon_above = isAbove(vertex, side);
+
+                    const new_vertex = vertices.find((vertex) => {
+                        // we found a vertex that is on the other side of the line
+                        // which means we can keep it in the array
+
+                        // the reason we don't keep ones that aren't on the other side is because
+                        // we want to keep the polygon convex, or whatever (source: github copilot)
+                        return (polygon_above !== polygon_above);
+                    });
+
+                    if (new_vertex === undefined) {
+                        // we can't find any more vertices for this side :(, soo
+                        // we can just skip this side
+                        continue;
+                    }
+
+                    vertices.push(new_vertex);
+
+                    // we're pretty much done, all that's left is to:
+                    // - add the new triangle to the triangles array
+
+
+                    // - remove the side from the sides array
+                    // - add the new sides to the sides array
+                    // - repeat until we have 8 triangles
+                    for (let i = 0; i < 6; i += 3) {
+                        triangles.push(i, i + 1, i + 2);
+                    }
+
+                }
+
+            }
+
+            // yeah, no, thats fine, the triangle is an array of vertices anyways
+            // yes
+
+            bodyData.decomposedParts = [];
+
             // make a bunch of polygons
-            for (var i = 0; i < triangles.length; i += 3) {
-                var shape = createPolygonShape([
+            for (let i = 0; i < triangles.length; i += 3) {
+                let shape = createPolygonShape([
                     [vertices[triangles[i]][0], vertices[triangles[i]][1]],
                     [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
                     [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
                 ]);
-                var fd = new box2D.b2FixtureDef();
+                let fd = new box2D.b2FixtureDef();
                 fd.set_shape(shape);
                 fd.set_density(density);
                 fd.set_friction(friction);
                 fd.set_restitution(restitution);
                 body.CreateFixture(fd);
+                bodyData.decomposedParts.push([
+                    [vertices[triangles[i]][0], vertices[triangles[i]][1]],
+                    [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
+                    [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
+                ]);
             }
         }
         else {
@@ -582,8 +803,11 @@ class SimuloPhysicsServer {
             fd.set_friction(friction);
             fd.set_restitution(restitution);
             body.CreateFixture(fd);
+            bodyData.decomposedParts = [vertices];
         }
-        var bodyData = body.GetUserData() as SimuloObjectData;
+
+
+
         // for each key in data, set bodyData[key] to data[key]
         /* here are all the keys:
             id: number | null;
@@ -1672,6 +1896,7 @@ class SimuloPhysicsServer {
                         image: bodyData.image,
                         id: bodyData.id,
                         zDepth: bodyData.zDepth,
+                        decomposedParts: bodyData.decomposedParts,
                     } as SimuloPolygon);
                 }
                 else {
@@ -1688,6 +1913,7 @@ class SimuloPhysicsServer {
                         image: bodyData.image,
                         id: bodyData.id,
                         zDepth: bodyData.zDepth,
+                        decomposedParts: bodyData.decomposedParts,
                     } as SimuloPolygon);
                 }
             } else if (shapeType == box2D.b2Shape.e_edge) {

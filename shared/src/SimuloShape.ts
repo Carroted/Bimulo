@@ -26,6 +26,7 @@ interface SimuloShape {
         align?: "left" | "center" | "right";    // Default = start
         baseline?: "alphabetic" | "top" | "middle" | "bottom"; // Default = alphabetic
     } | null;
+    decomposedParts?: [x: number, y: number][][];
 }
 
 interface SimuloCircle extends SimuloShape {

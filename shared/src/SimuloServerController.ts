@@ -556,7 +556,7 @@ class SimuloServerController {
                         [-width / 2, height / 2],
                     ];
 
-                    let rectangle = this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false);
+                    let rectangle = this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false, false);
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
