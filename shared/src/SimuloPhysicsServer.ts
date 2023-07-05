@@ -2181,8 +2181,7 @@ class SimuloPhysicsServer {
                 else {
                     image = null;
                 }
-                var line: { color: string, scale_with_zoom: boolean } | null;
-                line = dData.line;
+                var line: { color: string, scale_with_zoom: boolean } | null = dData.line;
 
                 const spring = {
                         p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
@@ -2194,7 +2193,7 @@ class SimuloPhysicsServer {
                 if (joint_type == box2D.e_distanceJoint) {
                     springs.push(spring);
                 }
-                else if (joint_type == box2D.e_mouseJoint) {
+                else {
                     mouseSprings.push(spring);
                 }
             }
