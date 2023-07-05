@@ -2170,30 +2170,33 @@ class SimuloPhysicsServer {
         while (box2D.getPointer(joint)) {
             const j = joint;
             joint = joint.GetNext();
-            const d = box2D.castObject(j, box2D.b2DistanceJoint);
-            const dData = d.GetUserData() as SimuloJointData;
-            var image: string | null;
-            if (dData.image != null) {
-                image = dData.image;
-            }
-            else {
-                image = null;
-            }
-            var line: { color: string, scale_with_zoom: boolean } | null;
-            line = dData.line;
+            const joint_type = j.GetType();
+            if (joint_type == box2D.e_distanceJoint || joint_type == box2D.e_mouseJoint) {
+                const d = box2D.castObject(j, box2D.b2DistanceJoint);
+                const dData = d.GetUserData() as SimuloJointData;
+                var image: string | null;
+                if (dData.image != null) {
+                    image = dData.image;
+                }
+                else {
+                    image = null;
+                }
+                var line: { color: string, scale_with_zoom: boolean } | null;
+                line = dData.line;
 
-            const spring = {
-                    p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
-                    p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
-                    image: image,
-                    line: line,
-                    width: dData.width,
-            };
-            if (j.GetType() == box2D.e_distanceJoint) {
-                springs.push(spring);
-            }
-            else if (j.GetType() == box2D.e_mouseJoint) {
-                mouseSprings.push(spring);
+                const spring = {
+                        p1: [d.GetAnchorA().get_x(), d.GetAnchorA().get_y()],
+                        p2: [d.GetAnchorB().get_x(), d.GetAnchorB().get_y()],
+                        image: image,
+                        line: line,
+                        width: dData.width,
+                };
+                if (joint_type == box2D.e_distanceJoint) {
+                    springs.push(spring);
+                }
+                else if (joint_type == box2D.e_mouseJoint) {
+                    mouseSprings.push(spring);
+                }
             }
         }
         return { springs: springs, mouseSprings: mouseSprings };
