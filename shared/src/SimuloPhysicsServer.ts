@@ -37,7 +37,7 @@ import earcut from 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/+esm'
 
 const box2D = await Box2DFactory();
 
-import SimuloObjectData from "./SimuloObjectData.js";
+import { SimuloObjectData, SimuloFixtureData, SimuloParentData } from "./SimuloObjectData.js";
 import SimuloJointData from "./SimuloJointData.js";
 import SimuloTheme from "./SimuloTheme.js";
 
@@ -68,26 +68,38 @@ class SimuloObject {
         this._body.SetAwake(true);
     }
     get name(): string | undefined {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.name;
     }
     set name(name: string | undefined) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         objectData.name = name;
     }
     get zDepth(): number {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.zDepth;
     }
-    get id(): number {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        return objectData.id;
-    }
+    readonly id: number;
     get position(): { x: number, y: number } {
-        return { x: this._body.GetPosition().get_x(), y: this._body.GetPosition().get_y() };
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        let localX = this._body.GetLocalPoint(this._body.GetPosition()).get_x() + objectData.positionOffset[0];
+        let localY = this._body.GetLocalPoint(this._body.GetPosition()).get_y() + objectData.positionOffset[1];
+        let vec = this._body.GetWorldPoint(new box2D.b2Vec2(localX, localY));
+        return { x: vec.get_x(), y: vec.get_y() };
     }
     set position({ x, y }: { x: number, y: number }) {
-        this._body.SetTransform(new box2D.b2Vec2(x, y), this._body.GetAngle());
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        let localX = this._body.GetLocalPoint(this._body.GetPosition()).get_x() + objectData.positionOffset[0];
+        let localY = this._body.GetLocalPoint(this._body.GetPosition()).get_y() + objectData.positionOffset[1];
+        let vec = this._body.GetWorldPoint(new box2D.b2Vec2(localX, localY));
+        let xDiff = x - vec.get_x();
+        let yDiff = y - vec.get_y();
+        this._body.SetTransform(new box2D.b2Vec2(this._body.GetPosition().get_x() + xDiff, this._body.GetPosition().get_y() + yDiff), this._body.GetAngle());
     }
     get velocity(): { x: number, y: number } {
         return { x: this._body.GetLinearVelocity().get_x(), y: this._body.GetLinearVelocity().get_y() };
@@ -102,7 +114,8 @@ class SimuloObject {
         this._body.SetAngularVelocity(angularVelocity);
     }
     get points(): [x: number, y: number][] | undefined {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.points;
     }
     get type(): SimuloObjectType {
@@ -247,9 +260,10 @@ class SimuloObject {
     // when set any of the above, itll update the box2d body, which we'll define now:
     _body: Box2D.b2Body; // this is not meant to be accessed in scripting, only in the physics server. however, we cant really make it private and it shouldnt cause any issues
 
-    constructor(physicsServer: SimuloPhysicsServer, body: Box2D.b2Body) {
+    constructor(physicsServer: SimuloPhysicsServer, body: Box2D.b2Body, id: number) {
         this._body = body;
         this._physicsServer = physicsServer;
+        this.id = id;
     }
     addForce([x, y]: [x: number, y: number]) {
         this._body.ApplyForce(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
@@ -660,115 +674,115 @@ class SimuloPhysicsServer {
 
 
             // now we start the expansion loop
-
-            for (let i = 0; i < 6; i += 3) {
-                // first we pick the side where we want to add the triangle
-                // notice that we have to account for the fact that the side can
-                // in fact be in a location where we won't find any more points by which to expand
-
-                // so first start by storing all sides in an array for convenience
-
-                // TODO: pick sides in the loop
-                let sides: number[][][] = [
-                    [vertices[0], vertices[1]],
-                    [vertices[1], vertices[2]],
-                    [vertices[2], vertices[0]]
-                ];
-                // then for each side, check if there are any points that arent in the side
-                // if there are, add them to the array
-                for (let side of sides) {
-                    // Now we basically have to find a vertex V in the whole polygon which satisfies the following:
-                    // "If we draw lines from end points of our sides,
-                    // there is no intersection with our current shape (since we need a convex polygon)."
-
-                    // This can conceptually be accomplished by:
-
-                    // 1. Expanding the line into a ray
-
-                    // 2. now we can split all points into 2 sets:
-                    //      the first set which is above the ray
-                    //      the second set which is below the ray
-
-                    // note: everything after this point is by copilot, ignore it all, its bullshit
-
-                    // 3. now we can check if there are any points in the first set
-                    //      if there are, we can pick the one with the smallest angle
-                    //      if there arent, we can pick the one with the largest angle
-
-                    // lets do it
-
-                    // 1. expand the line into a ray
-                    // i.e. you can extract a formula in the form of y = m * x + t from the line segment
-
-                    // 2. split all points into 2 sets
-
-
-                    // this here is actually relevant (it's not a D.E.A. link)
-                    // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
-                    // their solution is intuitively simple vector arithmetic: you have one vector (your line)
-                    // and onother, let's say the distance between your first line point and the actual point you want to check
-                    // where they're then using the cross product 
-
-                    let isAbove = (vertex: number[], ray: number[][]) => {
-                        // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
-                        let [x1, y1] = ray[0];
-                        let [x2, y2] = ray[1];
-                        let [x3, y3] = vertex;
-                        return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1) < 0;
-                    };
-
-                    // we call it ray because it's a line that goes on forever, or something
-                    let ray: number[][] = [
-                        side[0],
-                        side[1]
-                    ];
-
-                    // now we have to find out if the pre-octagon is above or below the side
-
-                    // lets pick another vertex from the current pre-octagon
-                    let vertex: number[];
-                    if (i === 0) {
-                        vertex = vertices[3];
-                    } else if (i === 3) {
-                        vertex = vertices[4];
-                    } else {
-                        vertex = vertices[5];
-                    }
-
-                    // now we can check if the vertex is above or below the side
-                    const polygon_above = isAbove(vertex, side);
-
-                    const new_vertex = vertices.find((vertex) => {
-                        // we found a vertex that is on the other side of the line
-                        // which means we can keep it in the array
-
-                        // the reason we don't keep ones that aren't on the other side is because
-                        // we want to keep the polygon convex, or whatever (source: github copilot)
-                        return (polygon_above !== polygon_above);
-                    });
-
-                    if (new_vertex === undefined) {
-                        // we can't find any more vertices for this side :(, soo
-                        // we can just skip this side
-                        continue;
-                    }
-
-                    vertices.push(new_vertex);
-
-                    // we're pretty much done, all that's left is to:
-                    // - add the new triangle to the triangles array
-
-
-                    // - remove the side from the sides array
-                    // - add the new sides to the sides array
-                    // - repeat until we have 8 triangles
-                    for (let i = 0; i < 6; i += 3) {
-                        triangles.push(i, i + 1, i + 2);
-                    }
-
-                }
-
-            }
+            /*
+                        for (let i = 0; i < 6; i += 3) {
+                            // first we pick the side where we want to add the triangle
+                            // notice that we have to account for the fact that the side can
+                            // in fact be in a location where we won't find any more points by which to expand
+            
+                            // so first start by storing all sides in an array for convenience
+            
+                            // TODO: pick sides in the loop
+                            let sides: number[][][] = [
+                                [vertices[0], vertices[1]],
+                                [vertices[1], vertices[2]],
+                                [vertices[2], vertices[0]]
+                            ];
+                            // then for each side, check if there are any points that arent in the side
+                            // if there are, add them to the array
+                            for (let side of sides) {
+                                // Now we basically have to find a vertex V in the whole polygon which satisfies the following:
+                                // "If we draw lines from end points of our sides,
+                                // there is no intersection with our current shape (since we need a convex polygon)."
+            
+                                // This can conceptually be accomplished by:
+            
+                                // 1. Expanding the line into a ray
+            
+                                // 2. now we can split all points into 2 sets:
+                                //      the first set which is above the ray
+                                //      the second set which is below the ray
+            
+                                // note: everything after this point is by copilot, ignore it all, its bullshit
+            
+                                // 3. now we can check if there are any points in the first set
+                                //      if there are, we can pick the one with the smallest angle
+                                //      if there arent, we can pick the one with the largest angle
+            
+                                // lets do it
+            
+                                // 1. expand the line into a ray
+                                // i.e. you can extract a formula in the form of y = m * x + t from the line segment
+            
+                                // 2. split all points into 2 sets
+            
+            
+                                // this here is actually relevant (it's not a D.E.A. link)
+                                // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+                                // their solution is intuitively simple vector arithmetic: you have one vector (your line)
+                                // and onother, let's say the distance between your first line point and the actual point you want to check
+                                // where they're then using the cross product 
+            
+                                let isAbove = (vertex: number[], ray: number[][]) => {
+                                    // https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+                                    let [x1, y1] = ray[0];
+                                    let [x2, y2] = ray[1];
+                                    let [x3, y3] = vertex;
+                                    return (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1) < 0;
+                                };
+            
+                                // we call it ray because it's a line that goes on forever, or something
+                                let ray: number[][] = [
+                                    side[0],
+                                    side[1]
+                                ];
+            
+                                // now we have to find out if the pre-octagon is above or below the side
+            
+                                // lets pick another vertex from the current pre-octagon
+                                let vertex: number[];
+                                if (i === 0) {
+                                    vertex = vertices[3];
+                                } else if (i === 3) {
+                                    vertex = vertices[4];
+                                } else {
+                                    vertex = vertices[5];
+                                }
+            
+                                // now we can check if the vertex is above or below the side
+                                const polygon_above = isAbove(vertex, side);
+            
+                                const new_vertex = vertices.find((vertex) => {
+                                    // we found a vertex that is on the other side of the line
+                                    // which means we can keep it in the array
+            
+                                    // the reason we don't keep ones that aren't on the other side is because
+                                    // we want to keep the polygon convex, or whatever (source: github copilot)
+                                    return (polygon_above !== polygon_above);
+                                });
+            
+                                if (new_vertex === undefined) {
+                                    // we can't find any more vertices for this side :(, soo
+                                    // we can just skip this side
+                                    continue;
+                                }
+            
+                                vertices.push(new_vertex);
+            
+                                // we're pretty much done, all that's left is to:
+                                // - add the new triangle to the triangles array
+            
+            
+                                // - remove the side from the sides array
+                                // - add the new sides to the sides array
+                                // - repeat until we have 8 triangles
+                                for (let i = 0; i < 6; i += 3) {
+                                    triangles.push(i, i + 1, i + 2);
+                                }
+            
+                            }
+            
+                        }*/
 
             // yeah, no, thats fine, the triangle is an array of vertices anyways
             // yes

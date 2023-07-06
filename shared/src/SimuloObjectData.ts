@@ -1,7 +1,9 @@
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
 
-interface SimuloObjectData extends Box2D.b2BodyUserData {
+interface SimuloObjectData {
     id: number;
+    positionOffset: [x: number, y: number];
+    angleOffset: number;
     /**
      * Path to a sound file for collisions. Relative to /assets/sounds/
     */
@@ -20,4 +22,13 @@ interface SimuloObjectData extends Box2D.b2BodyUserData {
     decomposedParts?: [x: number, y: number][][];
 }
 
-export default SimuloObjectData;
+interface SimuloParentData extends Box2D.b2BodyUserData {
+    // it has a bunch of simuloobjects
+    objects: SimuloObjectData[];
+}
+
+interface SimuloFixtureData extends Box2D.b2FixtureUserData {
+    id: number; // all we have is an ID, we get the rest from the parent. this prevents duplication of data and having to update it in loads of places
+}
+
+export { SimuloObjectData, SimuloParentData, SimuloFixtureData };
