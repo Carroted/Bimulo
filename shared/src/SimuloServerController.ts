@@ -74,6 +74,8 @@ class SimuloServerController {
     theme: SimuloTheme;
     localClients: SimuloLocalClient[] = [];
     selectedObjects: { [key: string]: (SimuloJoint | SimuloObject)[] } = {};
+    // counts the number of iterations done in nonpaused mode
+    itCount: number = 0;
 
     sendAll(type: string, data: any) {
         if (this.networkServer) {
@@ -125,9 +127,10 @@ class SimuloServerController {
                 this.physicsServer.loadWorld(this.savedWorld);
                 console.log("reverted to last step");
             }
-            else {
+            else if (this.itCount % 40 == 0) {
                 this.savedWorld = this.physicsServer.saveWorld();
             }
+            this.itCount++;
         }
         var render = this.physicsServer.render() as SimuloStep;
 
