@@ -284,13 +284,12 @@ details summary {
   position: fixed;
   bottom: 0.5rem;
   left: 0.5rem;
-  background: #03081dc0;
   color: #ffffff50;
   font-family: "Urbanist", sans-serif;
   font-size: 1.2em;
   padding: 0 0.7em;
   z-index: 100;
-  border-radius: 10000rem;
+  border-radius: 0.9375rem;
   height: 3.5rem;
   /* according to a super cool stackoverflower i now lost, this is the best way to force hardware acceleration. i found a pretty good performance boost with this with my backdrop-filter blur */
   -webkit-backface-visibility: hidden;
@@ -301,7 +300,8 @@ details summary {
   perspective: 1000;
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
-  backdrop-filter: blur(35px);
+  background: linear-gradient(180deg, #15192bd0 0%, #050814d0 100%);
+  backdrop-filter: blur(50px);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -462,6 +462,10 @@ details summary {
   height: 2.8rem;
   padding: 0.5rem;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
 
 .toolbar.secondary .tool {
@@ -822,15 +826,18 @@ details summary {
   fill: #ffffff;
 }
 
-.toast.success .icon, .toast.warning .icon {
+.toast.success .icon,
+.toast.warning .icon {
   fill: #000000;
 }
 
-.toast.success .close, .toast.warning .close {
+.toast.success .close,
+.toast.warning .close {
   fill: #00000080;
 }
 
-.toast.success .close:hover, .toast.warning .close:hover {
+.toast.success .close:hover,
+.toast.warning .close:hover {
   fill: #000000;
 }
 
@@ -840,19 +847,67 @@ details summary {
   fill: #ffffff20;
 }
 
+.toolbar .tool svg {
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+}
+
 .toolbar .tool:hover svg {
-  color: #ffffffd0;
-  fill: #ffffffd0;
+  fill: #ddddddb0;
+  filter: drop-shadow(0px 0px 20px #ffffff);
 }
 
 .toolbar .tool:active svg {
-  color: #ffffff20;
-  fill: #ffffff20;
+  fill: #8594ff;
+  filter: drop-shadow(0px 0px 15px #8594ff);
 }
 
 .toolbar .tool.active svg {
-  color: #ffffff;
-  fill: #ffffff;
+  fill: #8594ff;
+  filter: drop-shadow(0px 0px 10px #8594ff);
+}
+
+.toolbar.primary .tool .bar {
+  background: #8594ff;
+  /* round top, not bottom */
+  border-radius: 0.2rem 0.2rem 0 0;
+  height: 0.3rem;
+  width: 0.4rem;
+  opacity: 0;
+  position: absolute;
+  bottom: 0;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.toolbar.primary .tool:hover .bar {
+  width: 0.9rem;
+  opacity: 0.8;
+}
+
+.toolbar.primary .tool:active .bar {
+  width: 1.2rem;
+  opacity: 1;
+}
+
+.toolbar.primary .tool.active .bar {
+  width: 1.2rem;
+  opacity: 1;
+  filter: drop-shadow(0px 0px 10px #8594ff);
+}
+
+.toolbar.primary .tool {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.toolbar.primary .tool svg {
+  height: 1.8rem;
+  width: 1.8rem;
 }
 
 .toolbar .tool.fake svg {
