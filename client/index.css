@@ -1,3 +1,7 @@
+:root, body {
+  cursor: none;
+}
+
 /* semi-bold */
 @font-face {
   font-family: 'Urbanist';
@@ -9,6 +13,30 @@
 *::selection {
   background-color: #7fdb55a0;
   color: #03081d;
+}
+
+#canvas-overlays {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.player-cursor {
+  position: absolute;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.player-cursor img {
+  width: 100%;
+  height: 100%;
+}
+
+#player-cursor {
+  z-index: 10000000;
 }
 
 /* bold */
@@ -340,7 +368,6 @@ details summary {
   font-family: "Urbanist", sans-serif;
   font-size: 0.9em;
   user-select: none;
-  cursor: default;
   color: #e0ddff40;
   position: relative;
 }

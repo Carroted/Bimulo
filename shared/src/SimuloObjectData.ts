@@ -24,7 +24,10 @@ interface SimuloObjectData {
 
 interface SimuloParentData extends Box2D.b2BodyUserData {
     // it has a bunch of simuloobjects
-    objects: SimuloObjectData[];
+    objects: {
+        [id: number]: SimuloObjectData
+    };
+    id: number;
 }
 
 interface SimuloFixtureData extends Box2D.b2FixtureUserData {

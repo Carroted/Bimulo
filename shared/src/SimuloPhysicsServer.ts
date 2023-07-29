@@ -59,7 +59,21 @@ function createPolygonShape(tuples: [x: number, y: number][]) { // This isn't in
 enum SimuloObjectType {
     POLYGON = "POLYGON",
     CIRCLE = "CIRCLE",
-    EDGE = "EDGE"
+    EDGE = "EDGE",
+    NOTHING = "NOTHING"
+}
+
+function filterBodyFixtures(body: Box2D.b2Body, id: number) {
+    let fixture = body.GetFixtureList();
+    let fixtures: Box2D.b2Fixture[] = [];
+    while (box2D.getPointer(fixture)) {
+        let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+        if (fixtureData.id == id) {
+            fixtures.push(fixture);
+        }
+        fixture = fixture.GetNext();
+    }
+    return fixtures;
 }
 
 class SimuloObject {
@@ -74,13 +88,16 @@ class SimuloObject {
     }
     set name(name: string | undefined) {
         let parentData = this._body.GetUserData() as SimuloParentData;
-        let objectData = parentData.objects[this.id];
-        objectData.name = name;
+        parentData.objects[this.id].name = name;
     }
     get zDepth(): number {
         let parentData = this._body.GetUserData() as SimuloParentData;
         let objectData = parentData.objects[this.id];
         return objectData.zDepth;
+    }
+    set zDepth(zDepth: number) {
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].zDepth = zDepth;
     }
     readonly id: number;
     get position(): { x: number, y: number } {
@@ -101,6 +118,16 @@ class SimuloObject {
         let yDiff = y - vec.get_y();
         this._body.SetTransform(new box2D.b2Vec2(this._body.GetPosition().get_x() + xDiff, this._body.GetPosition().get_y() + yDiff), this._body.GetAngle());
     }
+    get positionOffset(): { x: number, y: number } {
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        return { x: objectData.positionOffset[0], y: objectData.positionOffset[1] };
+    }
+    get angleOffset(): number {
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        return objectData.angleOffset;
+    }
     get velocity(): { x: number, y: number } {
         return { x: this._body.GetLinearVelocity().get_x(), y: this._body.GetLinearVelocity().get_y() };
     }
@@ -118,27 +145,44 @@ class SimuloObject {
         let objectData = parentData.objects[this.id];
         return objectData.points;
     }
+    get parentID(): number {
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        return parentData.id;
+    }
     get type(): SimuloObjectType {
+        let fixtures = filterBodyFixtures(this._body, this.id);
         // we get it from box2d
-        let shape = this._body.GetFixtureList().GetShape();
-        let shapeType = shape.GetType();
-        if (shapeType === box2D.b2Shape.e_polygon) {
-            return SimuloObjectType.POLYGON;
-        }
-        else if (shapeType === box2D.b2Shape.e_circle) {
-            return SimuloObjectType.CIRCLE;
-        }
-        else if (shapeType === box2D.b2Shape.e_edge) {
-            return SimuloObjectType.EDGE;
+        if (fixtures.length > 0) {
+            let shape = fixtures[0].GetShape();
+            let shapeType = shape.GetType();
+            if (shapeType === box2D.b2Shape.e_polygon) {
+                return SimuloObjectType.POLYGON;
+            }
+            else if (shapeType === box2D.b2Shape.e_circle) {
+                return SimuloObjectType.CIRCLE;
+            }
+            else if (shapeType === box2D.b2Shape.e_edge) {
+                return SimuloObjectType.EDGE;
+            }
+            else {
+                throw new Error("Unknown shape type");
+            }
         }
         else {
-            throw new Error("Unknown shape type");
+            return SimuloObjectType.NOTHING;
         }
     }
     get radius(): number | undefined {
-        // if type is circle, return radius from box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius()
         if (this.type === SimuloObjectType.CIRCLE) {
-            return box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius();
+            //return box2D.castObject(this._body.GetFixtureList().GetShape(), box2D.b2CircleShape).get_m_radius();
+            // first fixture
+            let fixtures = filterBodyFixtures(this._body, this.id);
+            if (fixtures.length > 0) {
+                return box2D.castObject(fixtures[0].GetShape(), box2D.b2CircleShape).get_m_radius();
+            }
+            else {
+                return undefined;
+            }
         }
         else {
             return undefined;
@@ -159,56 +203,102 @@ class SimuloObject {
             */
 
     get rotation(): number {
-        return this._body.GetAngle();
+        //return this._body.GetAngle();
+        // that but with angle offset from object data
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        return this._body.GetAngle() + objectData.angleOffset;
     }
     set rotation(angle: number) {
-        this._body.SetTransform(this._body.GetPosition(), angle);
+        //this._body.SetTransform(this._body.GetPosition(), angle);
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        this._body.SetTransform(this._body.GetPosition(), angle - objectData.angleOffset);
+        // the angle offset cannot be changed, instead you should separate objects and join them again after rotation
     }
     get density(): number {
-        return this._body.GetFixtureList().GetDensity();
+        //return this._body.GetFixtureList().GetDensity();
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        // we get it from box2d
+        if (fixtures.length > 0) {
+            return fixtures[0].GetDensity();
+        }
+        else {
+            return 0;
+        }
     }
     set density(density: number) {
-        this._body.GetFixtureList().SetDensity(density);
-        this._body.ResetMassData();
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        fixtures.forEach(fixture => {
+            fixture.SetDensity(density);
+        });
     }
     get friction(): number {
-        return this._body.GetFixtureList().GetFriction();
+        //return this._body.GetFixtureList().GetFriction();
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        // we get it from box2d
+        if (fixtures.length > 0) {
+            return fixtures[0].GetFriction();
+        }
+        else {
+            return 0;
+        }
     }
     set friction(friction: number) {
-        this._body.GetFixtureList().SetFriction(friction);
+        //this._body.GetFixtureList().SetFriction(friction);
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        fixtures.forEach(fixture => {
+            fixture.SetFriction(friction);
+        });
     }
     get restitution(): number {
-        return this._body.GetFixtureList().GetRestitution();
+        //return this._body.GetFixtureList().GetRestitution();
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        // we get it from box2d
+        if (fixtures.length > 0) {
+            return fixtures[0].GetRestitution();
+        }
+        else {
+            return 0;
+        }
     }
     set restitution(restitution: number) {
-        this._body.GetFixtureList().SetRestitution(restitution);
+        //this._body.GetFixtureList().SetRestitution(restitution);
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        fixtures.forEach(fixture => {
+            fixture.SetRestitution(restitution);
+        });
     }
     get border(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.border;
     }
     set border(border: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.border = border;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].border = border;
     }
     get borderWidth(): number | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.borderWidth;
     }
     set borderWidth(borderWidth: number | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.borderWidth = borderWidth;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].borderWidth = borderWidth;
     }
     get borderScaleWithZoom(): boolean {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.borderScaleWithZoom;
     }
     set borderScaleWithZoom(borderScaleWithZoom: boolean) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.borderScaleWithZoom = borderScaleWithZoom;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].borderScaleWithZoom = borderScaleWithZoom;
     }
     get circleCake(): boolean {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         // if undefined return false
         if (objectData.circleCake == undefined) {
             return false;
@@ -216,32 +306,35 @@ class SimuloObject {
         return objectData.circleCake;
     }
     set circleCake(circleCake: boolean) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.circleCake = circleCake;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].circleCake = circleCake;
     }
     get image(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.image;
     }
     set image(image: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.image = image;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].image = image;
     }
     get collisionSound(): string | null {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.sound;
     }
     set collisionSound(sound: string | null) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.sound = sound;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].sound = sound;
     }
     get color(): string {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
         return objectData.color;
     }
     set color(color: string) {
-        let objectData = this._body.GetUserData() as SimuloObjectData;
-        objectData.color = color;
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        parentData.objects[this.id].color = color;
     }
     get isStatic(): boolean {
         return this._body.GetType() == box2D.b2_staticBody;
@@ -254,6 +347,13 @@ class SimuloObject {
         }
     }
     get mass(): number {
+        //return this._body.GetMass();
+        // combine mass of all our fixtures
+        /*let fixtures = filterBodyFixtures(this._body, this.id);
+        let mass = 0;
+        fixtures.forEach(fixture => {
+            // TODO: calculate area of polygon and then multiply by density
+        });*/ // not yet done, back to the old way
         return this._body.GetMass();
     }
 
@@ -266,10 +366,21 @@ class SimuloObject {
         this.id = id;
     }
     addForce([x, y]: [x: number, y: number]) {
-        this._body.ApplyForce(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
+        // offset position by positionOffset
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        let positionOffset = objectData.positionOffset;
+        let position = [this._body.GetPosition().x + positionOffset[0], this._body.GetPosition().y + positionOffset[1]];
+        this._body.ApplyForce(new box2D.b2Vec2(x, y), new box2D.b2Vec2(position[0], position[1]), true);
     }
     addImpulse([x, y]: [x: number, y: number]) {
-        this._body.ApplyLinearImpulse(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
+        //this._body.ApplyLinearImpulse(new box2D.b2Vec2(x, y), this._body.GetPosition(), true);
+        // offset position by positionOffset
+        let parentData = this._body.GetUserData() as SimuloParentData;
+        let objectData = parentData.objects[this.id];
+        let positionOffset = objectData.positionOffset;
+        let position = [this._body.GetPosition().x + positionOffset[0], this._body.GetPosition().y + positionOffset[1]];
+        this._body.ApplyLinearImpulse(new box2D.b2Vec2(x, y), new box2D.b2Vec2(position[0], position[1]), true);
     }
     addTorque(torque: number) {
         this._body.ApplyTorque(torque, true);
@@ -280,7 +391,7 @@ class SimuloObject {
     destroy() {
         //this._body.GetWorld().DestroyBody(this._body);
         // No longer real
-        this._physicsServer.deleteObjects.push(this._body);
+        /*this._physicsServer.deleteObjects.push(this._body);
         let promise = new Promise((resolve, reject) => {
             this._physicsServer.deletePromises.push({
                 resolve: () => {
@@ -289,7 +400,36 @@ class SimuloObject {
                 reject: reject
             });
         });
-        return promise;
+        return promise;*/
+
+        // delete all our fixtures, and if the body has none left, delete the body (empty parent is useless)
+        let fixtures = filterBodyFixtures(this._body, this.id);
+        fixtures.forEach(fixture => {
+            this._body.DestroyFixture(fixture);
+        });
+        if (!box2D.getPointer(this._body.GetFixtureList())) {
+            // no fixtures left, delete body
+            this._physicsServer.deleteObjects.push(this._body);
+            let promise = new Promise((resolve, reject) => {
+                this._physicsServer.deletePromises.push({
+                    resolve: () => {
+                        resolve(null);
+                    },
+                    reject: reject
+                });
+            });
+            return promise;
+        }
+        // get joint list
+        let jointList = this._body.GetJointList();
+        while (jointList) {
+            // if any joint's .objectA or .objectB is our ID, delete the joint
+            let joint = jointList.get_joint();
+            let jointData = joint.GetUserData() as SimuloJointData;
+            if (jointData.objectA == this.id || jointData.objectB == this.id) {
+                this._body.GetWorld().DestroyJoint(joint);
+            }
+        }
     }
 }
 
@@ -353,6 +493,18 @@ class SimuloJoint {
     get zDepth(): number {
         let jointData = this._joint.GetUserData() as SimuloJointData;
         return jointData.zDepth;
+    }
+    set zDepth(zDepth: number) {
+        let jointData = this._joint.GetUserData() as SimuloJointData;
+        jointData.zDepth = zDepth;
+    }
+    get objectA(): number {
+        let jointData = this._joint.GetUserData() as SimuloJointData;
+        return jointData.objectA;
+    }
+    get objectB(): number {
+        let jointData = this._joint.GetUserData() as SimuloJointData;
+        return jointData.objectB;
     }
     constructor(physicsServer: SimuloPhysicsServer, joint: Box2D.b2Joint) {
         this._joint = joint;
@@ -503,6 +655,7 @@ interface SimuloSavedObject {
     points: [x: number, y: number][] | undefined;
     type: SimuloObjectType;
     radius: number | undefined;
+    parentID: number;
     // TODO: when scripting is added, add script here and have it call save() on script and push the return value here if it isnt circular
 }
 
@@ -549,7 +702,7 @@ class SimuloPhysicsServer {
             this.listeners[event] = this.listeners[event].filter((l) => l != listener);
         }
     }
-
+    /*
     addRectangle(
         width: number,
         height: number,
@@ -575,50 +728,36 @@ class SimuloPhysicsServer {
         fixtureDef.set_friction(friction);
         fixtureDef.set_restitution(restitution);
 
-        var bodyData = body.GetUserData() as SimuloObjectData;
-        bodyData.id = this.currentID++;
-        bodyData.zDepth = this.highestZDepth++;
-        for (var key in data) {
-            if (key == 'sound') {
-                bodyData.sound = data[key];
-            }
-            else if (key == 'color') {
-                bodyData.color = data[key];
-            }
-            else if (key == 'border') {
-                bodyData.border = data[key];
-            }
-            else if (key == 'borderWidth') {
-                bodyData.borderWidth = data[key];
-            }
-            else if (key == 'borderScaleWithZoom') {
-                bodyData.borderScaleWithZoom = data[key];
-            }
-            else if (key == 'circleCake') {
-                bodyData.circleCake = data[key];
-            }
-            else if (key == 'image') {
-                bodyData.image = data[key];
-            }
-            else if (key == 'name') {
-                bodyData.name = data[key];
-            }
-        }
+        let parentData = body.GetUserData() as SimuloParentData;
+        parentData.objects = {};
+        let id = this.currentID++;
+        let objectData: SimuloObjectData = {
+            id: id,
+            positionOffset: [0, 0],
+            angleOffset: 0,
+            name: data['name'] ?? null,
+            sound: data['sound'] ?? null,
+            color: data['color'] ?? 'gray',
+            border: data['border'] ?? null,
+            borderWidth: data['borderWidth'] ?? null,
+            borderScaleWithZoom: data['borderScaleWithZoom'] ?? false,
+            circleCake: data['circleCake'] ?? false,
+            image: data['image'] ?? null,
+            zDepth: this.highestZDepth++,
+        };
 
         // set points to vertices
-        bodyData.points = [
+        objectData.points = [
             [width / 2, height / 2],
             [-width / 2, height / 2],
             [-width / 2, -height / 2],
             [width / 2, -height / 2]
         ];
 
-        var object = new SimuloObject(this, body);
-        if (bodyData.id != null) {
-            this.bodies[bodyData.id] = object;
-        }
+        let object = new SimuloObject(this, body, id);
+        this.bodies[id] = object;
         return object;
-    }
+    }*/
 
     addPolygon(
         vertices: [x: number, y: number][],
@@ -641,7 +780,24 @@ class SimuloPhysicsServer {
         bd.set_angle(rotation);
         var body = this.world.CreateBody(bd);
 
-        var bodyData = body.GetUserData() as SimuloObjectData;
+        let parentData = body.GetUserData() as SimuloParentData;
+        parentData.id = this.currentID++;
+        parentData.objects = {};
+        let id = this.currentID++;
+        let objectData: SimuloObjectData = {
+            id: id,
+            positionOffset: [0, 0],
+            angleOffset: 0,
+            name: data['name'] ?? null,
+            sound: data['sound'] ?? null,
+            color: data['color'] ?? 'gray',
+            border: data['border'] ?? null,
+            borderWidth: data['borderWidth'] ?? null,
+            borderScaleWithZoom: data['borderScaleWithZoom'] ?? false,
+            circleCake: data['circleCake'] ?? false,
+            image: data['image'] ?? null,
+            zDepth: this.highestZDepth++,
+        };
 
         if (decompose) {
             // earcut triangulation
@@ -657,6 +813,7 @@ class SimuloPhysicsServer {
             ]; // the triangle doesnt use the earcut triangles, is that intentional?
             // will earcut triangles be used or can we discard them and remove that
 
+            /* // performance optimization
             if (Math.random() < 0.0000000001) { // one in a trillion chance of endless rickroll when you spawn polygon
                 let rickrollLink = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
                 let tinyURLAPI = "https://tinyurl.com/api-create.php?url=";
@@ -671,7 +828,7 @@ class SimuloPhysicsServer {
                     }
                 }
             }
-
+            */
 
             // now we start the expansion loop
             /*
@@ -787,7 +944,7 @@ class SimuloPhysicsServer {
             // yeah, no, thats fine, the triangle is an array of vertices anyways
             // yes
 
-            bodyData.decomposedParts = [];
+            objectData.decomposedParts = [];
 
             // make a bunch of polygons
             for (let i = 0; i < triangles.length; i += 3) {
@@ -801,8 +958,10 @@ class SimuloPhysicsServer {
                 fd.set_density(density);
                 fd.set_friction(friction);
                 fd.set_restitution(restitution);
-                body.CreateFixture(fd);
-                bodyData.decomposedParts.push([
+                let fixture = body.CreateFixture(fd);
+                let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+                fixtureData.id = id;
+                objectData.decomposedParts.push([
                     [vertices[triangles[i]][0], vertices[triangles[i]][1]],
                     [vertices[triangles[i + 1]][0], vertices[triangles[i + 1]][1]],
                     [vertices[triangles[i + 2]][0], vertices[triangles[i + 2]][1]]
@@ -816,59 +975,19 @@ class SimuloPhysicsServer {
             fd.set_density(density);
             fd.set_friction(friction);
             fd.set_restitution(restitution);
-            body.CreateFixture(fd);
-            bodyData.decomposedParts = [vertices];
-        }
-
-
-
-        // for each key in data, set bodyData[key] to data[key]
-        /* here are all the keys:
-            id: number | null;
-        sound: string | null;
-        color: string;
-        border: string | null;
-        borderWidth: number | null;
-        borderScaleWithZoom: boolean;
-        circleCake ?: boolean;
-        image: string | null;
-        */
-        bodyData.id = this.currentID++;
-        bodyData.zDepth = this.highestZDepth++;
-        for (var key in data) {
-            if (key == 'sound') {
-                bodyData.sound = data[key];
-            }
-            else if (key == 'color') {
-                bodyData.color = data[key];
-            }
-            else if (key == 'border') {
-                bodyData.border = data[key];
-            }
-            else if (key == 'borderWidth') {
-                bodyData.borderWidth = data[key];
-            }
-            else if (key == 'borderScaleWithZoom') {
-                bodyData.borderScaleWithZoom = data[key];
-            }
-            else if (key == 'circleCake') {
-                bodyData.circleCake = data[key];
-            }
-            else if (key == 'image') {
-                bodyData.image = data[key];
-            }
-            else if (key == 'name') {
-                bodyData.name = data[key];
-            }
+            let fixture = body.CreateFixture(fd);
+            let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+            fixtureData.id = id;
+            objectData.decomposedParts = [vertices];
         }
 
         // set points to vertices
-        bodyData.points = vertices;
+        objectData.points = vertices;
 
-        var object = new SimuloObject(this, body);
-        if (bodyData.id != null) {
-            this.bodies[bodyData.id] = object;
-        }
+        parentData.objects[id] = objectData;
+
+        var object = new SimuloObject(this, body, id);
+        this.bodies[id] = object;
         return object;
     }
     // axle = revolute joint
@@ -888,6 +1007,8 @@ class SimuloPhysicsServer {
         jointData.anchorA = anchorA;
         jointData.anchorB = anchorB;
         jointData.image = image;
+        jointData.objectA = objectA.id;
+        jointData.objectB = objectB.id;
     }
     // bolt = weld joint
     addBolt(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, image: string | null = null) {
@@ -907,20 +1028,26 @@ class SimuloPhysicsServer {
         jointData.anchorA = anchorA;
         jointData.anchorB = anchorB;
         jointData.image = image;
+        jointData.objectA = objectA.id;
+        jointData.objectB = objectB.id;
     }
-    getProxy(body: SimuloObject) {
-        return createSandboxedInstance(body);
+    getProxy(object: SimuloObject) {
+        return createSandboxedInstance(object);
     }
-    getLocalPoint(body: SimuloObject, point: [x: number, y: number]) {
-        var p = body._body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
+    getLocalPoint(object: SimuloObject, point: [x: number, y: number]) {
+        let positionOffset = object._body.GetPosition();
+        let angleOffset = object._body.GetAngle();
+        // SUPERTODO
+        var p = object._body.GetLocalPoint(new box2D.b2Vec2(point[0], point[1]));
         return [p.get_x(), p.get_y()];
     }
-    getWorldPoint(body: SimuloObject, point: [x: number, y: number]) {
-        var p = body._body.GetWorldPoint(new box2D.b2Vec2(point[0], point[1]));
+    getWorldPoint(object: SimuloObject, point: [x: number, y: number]) {
+        // SUPERTODO
+        var p = object._body.GetWorldPoint(new box2D.b2Vec2(point[0], point[1]));
         return [p.get_x(), p.get_y()];
     }
     getGroundBody() {
-        return new SimuloObject(this, this.ground);
+        return new SimuloObject(this, this.ground, 0);
     }
     addSpring(anchorA: [x: number, y: number], anchorB: [x: number, y: number], objectA: SimuloObject, objectB: SimuloObject, stiffness: number, length: number, damping: number, width: number, image?: string, line?: { color: string, scale_with_zoom: boolean }) {
         // distance joint
@@ -952,6 +1079,8 @@ class SimuloPhysicsServer {
         }
         jointData.id = this.currentID++;
         jointData.zDepth = this.highestZDepth++;
+        jointData.objectA = objectA.id;
+        jointData.objectB = objectB.id;
     }
     addPerson(offset: [x: number, y: number], personScale = 0.4) {
         var personBodyPoints: [x: number, y: number][] = [
@@ -1037,42 +1166,32 @@ class SimuloPhysicsServer {
         fd.set_density(density);
         fd.set_friction(friction);
         fd.set_restitution(restitution);
-        body.CreateFixture(fd);
-        var bodyData = body.GetUserData() as SimuloObjectData;
-        bodyData.id = this.currentID++;
-        bodyData.zDepth = this.highestZDepth++;
-        // for each key in data, set bodyData[key] to data[key]
-        for (var key in data) {
-            if (key == 'sound') {
-                bodyData.sound = data[key];
-            }
-            else if (key == 'color') {
-                bodyData.color = data[key];
-            }
-            else if (key == 'border') {
-                bodyData.border = data[key];
-            }
-            else if (key == 'borderWidth') {
-                bodyData.borderWidth = data[key];
-            }
-            else if (key == 'borderScaleWithZoom') {
-                bodyData.borderScaleWithZoom = data[key];
-            }
-            else if (key == 'circleCake') {
-                bodyData.circleCake = data[key];
-            }
-            else if (key == 'image') {
-                bodyData.image = data[key];
-            }
-            else if (key == 'name') {
-                bodyData.name = data[key];
-            }
-        }
+        let fixture = body.CreateFixture(fd);
+        let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+        let parentData = body.GetUserData() as SimuloParentData;
+        parentData.id = this.currentID++;
+        parentData.objects = {};
+        let id = this.currentID++;
+        fixtureData.id = id;
+        let objectData: SimuloObjectData = {
+            id: id,
+            positionOffset: [0, 0],
+            angleOffset: 0,
+            name: data['name'] ?? null,
+            sound: data['sound'] ?? null,
+            color: data['color'] ?? 'gray',
+            border: data['border'] ?? null,
+            borderWidth: data['borderWidth'] ?? null,
+            borderScaleWithZoom: data['borderScaleWithZoom'] ?? false,
+            circleCake: data['circleCake'] ?? false,
+            image: data['image'] ?? null,
+            zDepth: this.highestZDepth++,
+        };
 
-        var object = new SimuloObject(this, body);
-        if (bodyData.id != null) {
-            this.bodies[bodyData.id] = object;
-        }
+        parentData.objects[id] = objectData;
+
+        var object = new SimuloObject(this, body, id);
+        this.bodies[id] = object;
         return object;
     }
     deleteObjects: (Box2D.b2Body | Box2D.b2Joint | Box2D.b2Fixture)[] = [];
@@ -1136,6 +1255,8 @@ class SimuloPhysicsServer {
         jointData.image = null;
         jointData.anchorA = point;
         jointData.anchorB = point;
+        jointData.objectA = 0;
+        jointData.objectB = object.id;
         var joint = new SimuloMouseSpring(this, mouseJoint);
         return joint;
     }
@@ -1149,9 +1270,26 @@ class SimuloPhysicsServer {
 
         const bd_ground = new box2D.b2BodyDef();
         const ground = world.CreateBody(bd_ground);
-        var groundData = ground.GetUserData() as SimuloObjectData;
-        groundData.id = this.currentID++;
-        groundData.zDepth = this.highestZDepth++;
+        let groundParentData = ground.GetUserData() as SimuloParentData;
+        groundParentData.objects = {};
+        let groundData: SimuloObjectData = {
+            id: 0,
+            positionOffset: [0, 0],
+            angleOffset: 0,
+            name: 'Ground Body',
+            sound: null,
+            color: 'gray',
+            border: null,
+            borderWidth: null,
+            borderScaleWithZoom: false,
+            circleCake: false,
+            image: null,
+            zDepth: this.highestZDepth++,
+        };
+        groundParentData.id = 1;
+        groundParentData.objects[0] = groundData;
+        this.currentID = 2; // we hardcode this and the above just to be 10 trillion percent sure that the ground body is always id 0
+
         this.ground = ground;
 
         this.world = world;
@@ -1163,9 +1301,14 @@ class SimuloPhysicsServer {
             // get object mass if non-zero
             var mass1 = contact.GetFixtureA().GetBody().GetMass();
             var mass2 = contact.GetFixtureB().GetBody().GetMass();
+            let fixtureAData = contact.GetFixtureA().GetUserData() as SimuloFixtureData;
+            let fixtureBData = contact.GetFixtureB().GetUserData() as SimuloFixtureData;
             // get userdata as SimuloObjectData
-            var data1 = contact.GetFixtureA().GetBody().GetUserData() as SimuloObjectData;
-            var data2 = contact.GetFixtureB().GetBody().GetUserData() as SimuloObjectData;
+            let parent1Data = contact.GetFixtureA().GetBody().GetUserData() as SimuloParentData;
+            let parent2Data = contact.GetFixtureB().GetBody().GetUserData() as SimuloParentData;
+            // get object data from fixture?Data.id
+            let data1 = parent1Data.objects[fixtureAData.id];
+            let data2 = parent2Data.objects[fixtureBData.id];
             // if static and mass 0, set to 10
             if (
                 mass1 == 0 &&
@@ -1225,22 +1368,33 @@ class SimuloPhysicsServer {
         const floor = world.CreateBody(bd_floor);
         const floorShape = new box2D.b2PolygonShape();
         floorShape.SetAsBox(50000, 25000);
-        floor.CreateFixture(floorShape, 0);
-        var floorData = floor.GetUserData() as SimuloObjectData;
-        floorData.color = theme.ground.color;
-        floorData.border = theme.ground.border;
-        floorData.borderWidth = theme.ground.borderWidth;
-        floorData.borderScaleWithZoom =
-            theme.ground.borderScaleWithZoom;
-        floorData.sound = "ground.wav";
-        floorData.id = this.currentID++;
-        floorData.zDepth = this.highestZDepth++;
-        floorData.points = [
-            [floorShape.get_m_vertices(0).get_x(), floorShape.get_m_vertices(0).get_y()],
-            [floorShape.get_m_vertices(1).get_x(), floorShape.get_m_vertices(1).get_y()],
-            [floorShape.get_m_vertices(2).get_x(), floorShape.get_m_vertices(2).get_y()],
-            [floorShape.get_m_vertices(3).get_x(), floorShape.get_m_vertices(3).get_y()]
-        ];
+        let fixture = floor.CreateFixture(floorShape, 0);
+        let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+        fixtureData.id = this.currentID++;
+        let floorParentData = floor.GetUserData() as SimuloParentData;
+        floorParentData.id = this.currentID++;
+        floorParentData.objects = {};
+        let floorData: SimuloObjectData = {
+            id: fixtureData.id,
+            positionOffset: [0, 0],
+            angleOffset: 0,
+            name: 'Floor (Simulo Planet) (not canonically flat)',
+            sound: "ground.wav",
+            color: theme.ground.color,
+            border: theme.ground.border,
+            borderWidth: theme.ground.borderWidth,
+            borderScaleWithZoom: theme.ground.borderScaleWithZoom,
+            circleCake: false,
+            image: null,
+            zDepth: this.highestZDepth++,
+            points: [
+                [floorShape.get_m_vertices(0).get_x(), floorShape.get_m_vertices(0).get_y()],
+                [floorShape.get_m_vertices(1).get_x(), floorShape.get_m_vertices(1).get_y()],
+                [floorShape.get_m_vertices(2).get_x(), floorShape.get_m_vertices(2).get_y()],
+                [floorShape.get_m_vertices(3).get_x(), floorShape.get_m_vertices(3).get_y()]
+            ]
+        };
+        floorParentData.objects[floorData.id] = floorData;
 
         this.addPerson([0, 0]);
 
@@ -1323,7 +1477,7 @@ class SimuloPhysicsServer {
 
     getObjectsAtPoint(point: [x: number, y: number]) {
         var pos = new box2D.b2Vec2(point[0], point[1]);
-        var selectedBodies: Box2D.b2Body[] = [];
+        var selectedObjects: SimuloObject[] = [];
         var node = this.world.GetBodyList();
         while (box2D.getPointer(node)) {
             var b = node;
@@ -1341,24 +1495,32 @@ class SimuloPhysicsServer {
                 if (shapeType == box2D.b2Shape.e_circle) {
                     // test point in fixture (fl.TestPoint)
                     if (fl.TestPoint(pos)) {
-                        // we found a body
-                        selectedBodies.push(b);
+                        // make sure the ID is not already in the list
+                        let fixtureData = fl.GetUserData() as SimuloFixtureData;
+                        let matchingObject = selectedObjects.find((o) => o.id == fixtureData.id);
+                        if (!matchingObject) {
+                            // we found a body
+                            selectedObjects.push(new SimuloObject(this, b, fixtureData.id));
+                        }
                         break;
                     }
                 } else if (shapeType == box2D.b2Shape.e_polygon) {
                     // test point in fixture (fl.TestPoint)
                     if (fl.TestPoint(pos)) {
-                        // we found a body
-                        selectedBodies.push(b);
+                        // make sure the ID is not already in the list
+                        let fixtureData = fl.GetUserData() as SimuloFixtureData;
+                        let matchingObject = selectedObjects.find((o) => o.id == fixtureData.id);
+                        if (!matchingObject) {
+                            // we found a body
+                            selectedObjects.push(new SimuloObject(this, b, fixtureData.id));
+                        }
                         break;
                     }
                 }
                 fl = fl.GetNext();
             }
         }
-        return selectedBodies.map((b) => {
-            return new SimuloObject(this, b);
-        }).sort((a, b) => { // sort by .zDepth
+        return selectedObjects.sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
         });
     }
@@ -1389,16 +1551,17 @@ class SimuloPhysicsServer {
     }
 
     getAllObjects() {
-        var bodies: Box2D.b2Body[] = [];
+        var objects: SimuloObject[] = [];
         var node = this.world.GetBodyList();
         while (box2D.getPointer(node)) {
             var b = node;
             node = node.GetNext();
-            bodies.push(b);
+            let bData = b.GetUserData() as SimuloParentData;
+            for (let key in bData.objects) {
+                objects.push(new SimuloObject(this, b, bData.objects[key].id));
+            }
         }
-        return this.filterDuplicates(bodies.map((b) => {
-            return new SimuloObject(this, b);
-        }).sort((a, b) => { // sort by .zDepth
+        return this.filterDuplicates(objects.sort((a, b) => { // sort by .zDepth
             return a.zDepth - b.zDepth;
         }));
     }
@@ -1415,11 +1578,11 @@ class SimuloPhysicsServer {
                 let joint = j.joint;
                 let jointData = joint.GetUserData() as SimuloJointData;
                 let bodyB = joint.GetBodyB();
-                let bodyBData = bodyB.GetUserData() as SimuloObjectData;
-                let bodyBID = bodyBData.id;
+                let objectB = new SimuloObject(this, bodyB, jointData.objectB);
+                let bodyBID = jointData.objectB;
                 let bodyA = joint.GetBodyA();
-                let bodyAData = bodyA.GetUserData() as SimuloObjectData;
-                let bodyAID = bodyAData.id;
+                let objectA = new SimuloObject(this, bodyA, jointData.objectA);
+                let bodyAID = jointData.objectA;
                 let jointType = joint.GetType();
                 let jointTypeParsed: string;
                 let localAnchorA = jointData.anchorA;
@@ -1573,7 +1736,8 @@ class SimuloPhysicsServer {
                 joints: joints,
                 points: o.points,
                 radius: o.radius,
-                name: o.name ? o.name : null
+                name: o.name ? o.name : null,
+                parentID: o.parentID
             };
         });
         return savedStuff;
@@ -1709,22 +1873,22 @@ class SimuloPhysicsServer {
             var b = node;
             node = node.GetNext();
 
-            var data = b.GetUserData() as SimuloObjectData;
-            if (data.id === id) {
-                return new SimuloObject(this, b);
+            let parentData = b.GetUserData() as SimuloParentData;
+            if (parentData.objects[id]) {
+                return new SimuloObject(this, b, id);
             }
         }
         return null;
     }
     getTouchingObjects(object: SimuloObject) {
-        var selectedBodies: Box2D.b2Body[] = [];
+        var selectedObjects: SimuloObject[] = [];
         var node = this.world.GetBodyList();
         while (box2D.getPointer(node)) {
             var b = node;
             node = node.GetNext();
 
-            var data = b.GetUserData() as SimuloObjectData;
-            if (data.id === object.id) {
+            let parentData = b.GetUserData() as SimuloParentData;
+            if (parentData.objects[object.id]) {
                 continue;
             }
 
@@ -1736,16 +1900,17 @@ class SimuloPhysicsServer {
                 var contactData = contact.get_contact();
                 var fixtureA = contactData.GetFixtureA();
                 var fixtureB = contactData.GetFixtureB();
-                if (fixtureA.GetBody() === object._body || fixtureB.GetBody() === object._body) {
-                    selectedBodies.push(b);
+                if (fixtureA.GetBody() === object._body) {
+                    selectedObjects.push(new SimuloObject(this, b, (fixtureA.GetUserData() as SimuloFixtureData).id));
+                    break;
+                }
+                if (fixtureB.GetBody() === object._body) {
+                    selectedObjects.push(new SimuloObject(this, b, (fixtureB.GetUserData() as SimuloFixtureData).id));
                     break;
                 }
             }
         }
 
-        var selectedObjects = selectedBodies.map((b) => {
-            return new SimuloObject(this, b);
-        });
         selectedObjects = selectedObjects.filter((obj, index, self) =>
             index === self.findIndex((t) => (
                 t.id === obj.id
@@ -1773,7 +1938,7 @@ class SimuloPhysicsServer {
         }
 
         // we queryaabb
-        var selectedBodies: Box2D.b2Body[] = [];
+        var selectedObjects: SimuloObject[] = [];
         var aabb = new box2D.b2AABB();
         aabb.set_lowerBound(posA);
         aabb.set_upperBound(posB);
@@ -1784,13 +1949,15 @@ class SimuloPhysicsServer {
             return true;
         }, aabb);*/
         var callback = new box2D.JSQueryCallback();
-        callback.ReportFixture = function (fixturePtr: number) {
+        callback.ReportFixture = (fixturePtr: number) => {
             var fixture = box2D.wrapPointer(fixturePtr, box2D.b2Fixture);
-            var body = fixture.GetBody();
-            selectedBodies.push(body);
+            /*var body = fixture.GetBody();
+            selectedBodies.push(body);*/
+            let fixtureData = fixture.GetUserData() as SimuloFixtureData;
+            selectedObjects.push(new SimuloObject(this, fixture.GetBody(), fixtureData.id));
             return true;
         };
-        // we dont want to query the particle system, because we can easily do that manually
+        // we dont want to query the particle system, because we can easily do that manually with more control over logic
         callback.ShouldQueryParticleSystem = function (system: Box2D.b2ParticleSystem) {
             return false;
         };
@@ -1800,7 +1967,6 @@ class SimuloPhysicsServer {
         });*/
 
         // now we have a rough selection. however, on rotated boxes and on polygons, the selection is not perfect. lets testpoint on the fixtures
-        var selectedObjects: SimuloObject[] = [];
         /*// lets use intersect function. it takes {x: number, y:number}[]s
         var rect = [
             { x: posA.get_x(), y: posA.get_y() },
@@ -1808,9 +1974,7 @@ class SimuloPhysicsServer {
             { x: posB.get_x(), y: posB.get_y() },
             { x: posA.get_x(), y: posB.get_y() },
         ];*/ // the extra filter didnt work yet, the AABB is sufficient for alpha
-        selectedObjects = selectedBodies.map((b) => {
-            return new SimuloObject(this, b);
-        });
+
         // remove duplicate .id
         selectedObjects = selectedObjects.filter((obj, index, self) =>
             index === self.findIndex((t) => (
@@ -1831,13 +1995,16 @@ class SimuloPhysicsServer {
         var node: Box2D.b2Body = this.world.GetBodyList();
 
         var shapes: SimuloShape[] = [];
+        let renderedObjects: number[] = [];
 
         while (box2D.getPointer(node)) {
             var b = node;
             node = node.GetNext();
-            var bodyData = b.GetUserData() as SimuloObjectData;
-            var color = bodyData.color;
-
+            let parentData = b.GetUserData() as SimuloParentData;
+            if (!parentData.id) {
+                console.log("UH OH! LOOKS LIKE SOMEBODY DOESNT HAVE AN IDENTIFIER! THATS ILLEGAL!")
+                continue;
+            }
             var position = b.GetPosition();
             //console.log("position: " + position.x + ", " + position.y);
             b.GetType();
@@ -1851,118 +2018,132 @@ class SimuloPhysicsServer {
             // or was our mind just a construct beyond the world above?
 
             var fl = b.GetFixtureList();
-            if (!fl) {
-                continue;
-            }
-            //while (box2D.getPointer(fl)) {
-            var shape = fl.GetShape();
-            var shapeType: number;
-            try {
-                shapeType = shape.GetType();
-            } catch (e) {
-                continue;
-            }
-            if (shapeType == box2D.b2Shape.e_circle) {
-                const circleShape = box2D.castObject(shape, box2D.b2CircleShape);
-                //console.log("circle of radius " + circleShape.get_m_radius() + " at " + position.x + ", " + position.y);
-                shapes.push({
-                    x: position.x,
-                    y: position.y,
-                    type: "circle",
-                    radius: circleShape.get_m_radius(),
-                    angle: b.GetAngle(),
-                    color: color,
-                    border: bodyData.border,
-                    borderWidth: bodyData.borderWidth,
-                    borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                    circleCake: bodyData.circleCake,
-                    image: bodyData.image,
-                    id: bodyData.id,
-                    zDepth: bodyData.zDepth,
-                } as SimuloCircle);
-            } else if (shapeType == box2D.b2Shape.e_polygon) {
-                const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
-                var vertexCount = polygonShape.get_m_count();
-                var verts: { x: number, y: number }[] = [];
-                // iterate over vertices
-                for (let i = 0; i < vertexCount; i++) {
-                    const vertex = polygonShape.get_m_vertices(i);
-                    //console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
-                    verts.push({
-                        x: vertex.x,
-                        y: vertex.y,
-                    });
+            while (box2D.getPointer(fl)) {
+                var shape = fl.GetShape();
+                var shapeType: number;
+                try {
+                    shapeType = shape.GetType();
+                } catch (e) {
+                    fl = fl.GetNext();
+                    continue;
                 }
-                if (bodyData.points != null) {
+
+                // skip if already rendered
+                let fixtureData = fl.GetUserData() as SimuloFixtureData;
+                if (renderedObjects.includes(fixtureData.id)) {
+                    fl = fl.GetNext();
+                    continue;
+                }
+
+                let objectData = parentData.objects[fixtureData.id];
+
+                // SUPERTODO offset position and angle
+
+                if (shapeType == box2D.b2Shape.e_circle) {
+                    const circleShape = box2D.castObject(shape, box2D.b2CircleShape);
+                    //console.log("circle of radius " + circleShape.get_m_radius() + " at " + position.x + ", " + position.y);
                     shapes.push({
                         x: position.x,
                         y: position.y,
-                        type: "polygon",
-                        vertices: verts,
+                        type: "circle",
+                        radius: circleShape.get_m_radius(),
                         angle: b.GetAngle(),
-                        color: color,
-                        border: bodyData.border,
-                        borderWidth: bodyData.borderWidth,
-                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                        points: bodyData.points.map((p) => {
-                            return { x: p[0], y: p[1] };
-                        }),
-                        image: bodyData.image,
-                        id: bodyData.id,
-                        zDepth: bodyData.zDepth,
-                        decomposedParts: bodyData.decomposedParts,
-                    } as SimuloPolygon);
-                }
-                else {
+                        color: objectData.color,
+                        border: objectData.border,
+                        borderWidth: objectData.borderWidth,
+                        borderScaleWithZoom: objectData.borderScaleWithZoom,
+                        circleCake: objectData.circleCake,
+                        image: objectData.image,
+                        id: objectData.id,
+                        zDepth: objectData.zDepth,
+                    } as SimuloCircle);
+                } else if (shapeType == box2D.b2Shape.e_polygon) {
+                    const polygonShape = box2D.castObject(shape, box2D.b2PolygonShape);
+                    var vertexCount = polygonShape.get_m_count();
+                    var verts: { x: number, y: number }[] = [];
+                    // iterate over vertices
+                    for (let i = 0; i < vertexCount; i++) {
+                        const vertex = polygonShape.get_m_vertices(i);
+                        //console.log("vertex " + i + " at " + vertex.x + ", " + vertex.y);
+                        verts.push({
+                            x: vertex.x,
+                            y: vertex.y,
+                        });
+                    }
+                    if (!objectData) {
+                        console.log('no object data for fixture ' + fixtureData.id + ' of body ' + parentData.id + ' (polygon)');
+                    }
+                    if (objectData.points != null) {
+                        shapes.push({
+                            x: position.x,
+                            y: position.y,
+                            type: "polygon",
+                            vertices: verts,
+                            angle: b.GetAngle(),
+                            color: objectData.color,
+                            border: objectData.border,
+                            borderWidth: objectData.borderWidth,
+                            borderScaleWithZoom: objectData.borderScaleWithZoom,
+                            points: objectData.points.map((p) => {
+                                return { x: p[0], y: p[1] };
+                            }),
+                            image: objectData.image,
+                            id: objectData.id,
+                            zDepth: objectData.zDepth,
+                            decomposedParts: objectData.decomposedParts,
+                        } as SimuloPolygon);
+                    }
+                    else {
+                        shapes.push({
+                            x: position.x,
+                            y: position.y,
+                            type: "polygon",
+                            vertices: verts,
+                            angle: b.GetAngle(),
+                            color: objectData.color,
+                            border: objectData.border,
+                            borderWidth: objectData.borderWidth,
+                            borderScaleWithZoom: objectData.borderScaleWithZoom,
+                            image: objectData.image,
+                            id: objectData.id,
+                            zDepth: objectData.zDepth,
+                            decomposedParts: objectData.decomposedParts,
+                        } as SimuloPolygon);
+                    }
+                } else if (shapeType == box2D.b2Shape.e_edge) {
+                    const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
+                    var vertices = [
+                        {
+                            x: edgeShape.get_m_vertex1().get_x(),
+                            y: edgeShape.get_m_vertex1().get_y(),
+                        },
+                        {
+                            x: edgeShape.get_m_vertex2().get_x(),
+                            y: edgeShape.get_m_vertex2().get_y(),
+                        },
+                    ];
+                    //console.log("edge: ");
+                    //console.log(vertices);
                     shapes.push({
                         x: position.x,
                         y: position.y,
-                        type: "polygon",
-                        vertices: verts,
+                        type: "edge",
+                        vertices: vertices,
                         angle: b.GetAngle(),
-                        color: color,
-                        border: bodyData.border,
-                        borderWidth: bodyData.borderWidth,
-                        borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                        image: bodyData.image,
-                        id: bodyData.id,
-                        zDepth: bodyData.zDepth,
-                        decomposedParts: bodyData.decomposedParts,
-                    } as SimuloPolygon);
+                        color: objectData.color,
+                        border: objectData.border,
+                        borderWidth: objectData.borderWidth,
+                        borderScaleWithZoom: objectData.borderScaleWithZoom,
+                        image: objectData.image,
+                        id: objectData.id,
+                        zDepth: objectData.zDepth,
+                    } as SimuloEdge);
+                } else {
+                    //console.log("unknown shape type");
                 }
-            } else if (shapeType == box2D.b2Shape.e_edge) {
-                const edgeShape = box2D.castObject(shape, box2D.b2EdgeShape);
-                var vertices = [
-                    {
-                        x: edgeShape.get_m_vertex1().get_x(),
-                        y: edgeShape.get_m_vertex1().get_y(),
-                    },
-                    {
-                        x: edgeShape.get_m_vertex2().get_x(),
-                        y: edgeShape.get_m_vertex2().get_y(),
-                    },
-                ];
-                //console.log("edge: ");
-                //console.log(vertices);
-                shapes.push({
-                    x: position.x,
-                    y: position.y,
-                    type: "edge",
-                    vertices: vertices,
-                    angle: b.GetAngle(),
-                    color: color,
-                    border: bodyData.border,
-                    borderWidth: bodyData.borderWidth,
-                    borderScaleWithZoom: bodyData.borderScaleWithZoom,
-                    image: bodyData.image,
-                    id: bodyData.id,
-                    zDepth: bodyData.zDepth,
-                } as SimuloEdge);
-            } else {
-                //console.log("unknown shape type");
+                fl = fl.GetNext();
+                renderedObjects.push(fixtureData.id);
             }
-            //fl = fl.GetNext();
-            //}
         }
 
         /*var springsFormatted: { p1: number[], p2: number[] }[] = [];
@@ -2044,15 +2225,17 @@ class SimuloPhysicsServer {
                     }
                     let bodyARot = r.GetBodyA().GetAngle();
                     let bodyBRot = r.GetBodyB().GetAngle();
+                    let objectAID = rData.objectA;
+                    let objectBID = rData.objectB;
                     // figure out which body is on top (higher zDepth)
                     let bodyRot: number;
-                    if (new SimuloObject(this, r.GetBodyA()).zDepth > new SimuloObject(this, r.GetBodyB()).zDepth) {
+                    if (new SimuloObject(this, r.GetBodyA(), objectAID).zDepth > new SimuloObject(this, r.GetBodyB(), objectBID).zDepth) {
                         bodyRot = bodyARot;
                     }
                     else {
                         bodyRot = bodyBRot;
                     }
-                    let anchor = this.getWorldPoint(new SimuloObject(this, r.GetBodyA()), anchorRaw);
+                    let anchor = this.getWorldPoint(new SimuloObject(this, r.GetBodyA(), objectAID), anchorRaw);
                     let image: string | null;
                     if (rData.image != null) {
                         image = rData.image;
@@ -2094,15 +2277,17 @@ class SimuloPhysicsServer {
                     }
                     let bodyARot = w.GetBodyA().GetAngle();
                     let bodyBRot = w.GetBodyB().GetAngle();
+                    let objectAID = wData.objectA;
+                    let objectBID = wData.objectB;
                     // figure out which body is on top (higher zDepth)
                     let bodyRot: number;
-                    if (new SimuloObject(this, w.GetBodyA()).zDepth > new SimuloObject(this, w.GetBodyB()).zDepth) {
+                    if (new SimuloObject(this, w.GetBodyA(), objectAID).zDepth > new SimuloObject(this, w.GetBodyB(), objectBID).zDepth) {
                         bodyRot = bodyARot;
                     }
                     else {
                         bodyRot = bodyBRot;
                     }
-                    let anchor = this.getWorldPoint(new SimuloObject(this, w.GetBodyA()), anchorRaw);
+                    let anchor = this.getWorldPoint(new SimuloObject(this, w.GetBodyA(), objectAID), anchorRaw);
                     let image: string | null;
                     if (wData.image != null) {
                         image = wData.image;

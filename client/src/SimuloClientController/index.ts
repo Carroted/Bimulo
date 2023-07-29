@@ -1796,22 +1796,23 @@ class SimuloClientController {
                         } as SimuloRectangle);
                     }
                 });
-
+                /*
                 var cursorSize = 2;
                 var scaleWithZoom = true;
                 if (scaleWithZoom) {
                     cursorSize = cursorSize * 40 / this.viewer.cameraZoom;
                 }
-                var cursorWidth = 0.7 * cursorSize;
+                var cursorWidth = 1 * cursorSize;
                 let cursorImg = this.viewer.getImage('assets/textures/cursor.png');
-                var cursorHeight = cursorImg.height * ((0.7 * cursorSize) / cursorImg.width);
+                var cursorHeight = cursorImg.height * ((1 * cursorSize) / cursorImg.width);
+                let cursorOffset = [-8.5 / this.viewer.cameraZoom, -4.5 / this.viewer.cameraZoom];
                 Object.keys(this.players).forEach((key) => {
                     if (key == this.client.id) return;
                     // this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
                     let player = this.players[key];
 
                     shapes.push({
-                        x: player.x + (cursorWidth / 4), y: player.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
+                        x: player.x + (cursorWidth / 4) + cursorOffset[0], y: player.y + (cursorHeight / 4) + cursorOffset[1], width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
@@ -1821,13 +1822,19 @@ class SimuloClientController {
                 let cursor = this.viewer.getImage('assets/textures/cursor.png');
                 if (!this.viewer.systemCursor) {
                     shapes.push({
-                        x: this.mousePos.x + (cursorWidth / 4), y: this.mousePos.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
+                        x: this.mousePos.x + (cursorWidth / 4) + cursorOffset[0], y: this.mousePos.y + (cursorHeight / 4) + cursorOffset[1], width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
-                }
-                if (this.toolIcon) {
+                }*/
+                let cursorOffset = [-8.5, -4.5];
+                // now we actually just position #player-cursor element
+                let cursor = document.getElementById('player-cursor') as HTMLElement;
+                let mousePosScreen = this.viewer.inverseTransformPoint(this.mousePos.x, this.mousePos.y);
+                cursor.style.left = (mousePosScreen.x + 0.5 + cursorOffset[0]) + 'px';
+                cursor.style.top = (mousePosScreen.y + 0.5 + cursorOffset[1]) + 'px';
+                /*if (this.toolIcon) {
                     //this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
                     shapes.push({
                         x: this.mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), y: this.mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), width: (this.toolIconSize as number * cursorSize), height: (this.toolIconSize as number * cursorSize), angle: Math.PI, type: 'rectangle', color: '#00000000', image: this.toolIcon,
@@ -1835,7 +1842,7 @@ class SimuloClientController {
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
-                }
+                }*/
 
                 this.viewer.shapes = shapes;
                 this.viewer.texts = texts;

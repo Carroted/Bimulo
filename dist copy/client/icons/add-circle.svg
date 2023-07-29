@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M 12 2 A 10 10 0 0 0 2 12 A 10 10 0 0 0 12 22 A 10 10 0 0 0 13.431641 21.884766 A 6 6 0 0 1 12 18 A 6 6 0 0 1 18 12 A 6 6 0 0 1 21.884766 13.429688 A 10 10 0 0 0 22 12 A 10 10 0 0 0 12 2 z " />
+  <rect
+     style="stroke-width:6.0031;stroke-linecap:round;stroke-linejoin:round;paint-order:markers stroke fill;"
+     width="8"
+     height="2"
+     x="14"
+     y="17" />
+  <rect
+     style="stroke-width:6.0031;stroke-linecap:round;stroke-linejoin:round;paint-order:markers stroke fill"
+     width="8"
+     height="2"
+     x="14"
+     y="-19"
+     transform="rotate(90)" />
+</svg>

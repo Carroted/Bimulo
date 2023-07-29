@@ -9,6 +9,8 @@ interface SimuloJointData extends Box2D.b2JointUserData {
     zDepth: number;
     anchorA: [x: number, y: number];
     anchorB: [x: number, y: number];
+    objectA: number; // simulo object ID (cluster of fixtures)
+    objectB: number; // simulo object ID (cluster of fixtures)
 }
 
 export default SimuloJointData;

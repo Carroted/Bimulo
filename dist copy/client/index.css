@@ -1,0 +1,1116 @@
+/* semi-bold */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 400;
+  src: url('assets/fonts/Urbanist-SemiBold.woff2') format('woff2');
+}
+
+*::selection {
+  background-color: #7fdb55a0;
+  color: #03081d;
+}
+
+/* bold */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 600;
+  src: url('assets/fonts/Urbanist-Bold.woff2') format('woff2');
+}
+
+/* extra-bold */
+@font-face {
+  font-family: 'Urbanist';
+  font-style: normal;
+  font-weight: 800;
+  src: url('assets/fonts/Urbanist-ExtraBold.woff2') format('woff2');
+}
+
+.chat {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 400px;
+  height: 250px;
+  outline: 0.2rem solid #03081d50;
+  border-radius: 2rem;
+  pointer-events: none;
+  overflow: hidden;
+  font-family: 'Urbanist', sans-serif;
+}
+
+.chat .message-bar {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  width: calc(100% - 1rem);
+  height: 3rem;
+  background: #03081d50;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-radius: 10000rem;
+  align-items: center;
+  padding: 0 1rem;
+  backdrop-filter: blur(35px);
+}
+
+.chat * {
+  pointer-events: auto;
+}
+
+.chat .message {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: white;
+  padding: 0 1rem;
+  height: 3rem;
+  backdrop-filter: blur(35px);
+  border-radius: 10000rem;
+  margin: 0.5rem 0.5rem;
+  background-color: #03081d50;
+}
+
+.chat .message .message-avatar {
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  margin: 0 0.5rem;
+}
+
+.chat .message .message-avatar img {
+  width: 100%;
+  height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+
+
+html,
+:root,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+
+.update-menu {
+  position: fixed;
+  right: 0.5rem;
+  top: 0.5rem;
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 1em;
+  z-index: 100;
+  border-radius: 1rem;
+  width: 24rem;
+  /* according to a super cool stackoverflower i now lost, this is the best way to force hardware acceleration. i found a pretty good performance boost with this with my backdrop-filter blur */
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+}
+
+.update-menu-button {
+  background-color: #99e077;
+  border-radius: 10000rem;
+  padding: 0.5rem 1rem;
+  font-size: 1em;
+  color: #03081d;
+  font-family: "Urbanist", sans-serif;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  margin-right: 0.1rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.update-menu .comparison {
+  color: #ffffffa0;
+  fill: #ffffffa0;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  font-size: 1.1rem;
+  gap: 0.2rem;
+}
+
+.update-menu .comparison svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  font-weight: 600;
+  padding: 0;
+  user-select: none;
+}
+
+.update-menu details {
+  margin-bottom: 1rem;
+  color: #ffffffa0;
+}
+
+details summary {
+  user-select: none;
+}
+
+
+
+.update-menu-button:hover {
+  background-color: #b7f899;
+}
+
+.update-menu-button.secondary {
+  background-color: #8c67f2;
+}
+
+.update-menu-button.secondary:hover {
+  background-color: #ab8dff;
+}
+
+.update-menu-button.tertiary {
+  background-color: #dadada4d;
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin-right: 0;
+  text-align: center;
+  /* prevent wrapping */
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 0.5rem 0;
+}
+
+.update-menu-button.tertiary:hover {
+  background-color: #f9f9f980;
+}
+
+.update-menu-top {
+  display: flex;
+  /* stretch to fill, its the header and the close button */
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.update-menu-bottom {
+  display: flex;
+  /* stretch to fill, its the header and the close button */
+  width: 100%;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.update-menu-top h2 {
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
+  color: #ffffffa0;
+}
+
+.update-menu b {
+  color: #ffffffa0;
+}
+
+.update-menu-top .close {
+  color: #ffffffa0;
+  fill: #ffffffa0;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.update-menu-top .close svg {
+  color: #ffffffa0;
+  fill: #ffffffa0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+:root {
+  /* 0f1130 to 553f90, top to bottom */
+  background: linear-gradient(180deg, #0f1130 0%, #553f90 180%);
+  animation: bg 30s ease-in-out infinite;
+  background-size: 100% 100%;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes bg {
+
+  /* stretch the background to the bottom */
+  0% {
+    background-size: 100% 100%;
+  }
+
+  /* stretch the background to the top */
+  50% {
+    background-size: 100% 200%;
+  }
+
+  /* stretch the background to the bottom */
+  100% {
+    background-size: 100% 100%;
+  }
+}
+
+.toolbar {
+  position: fixed;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1.2em;
+  padding: 0 0.7em;
+  z-index: 100;
+  border-radius: 0.9375rem;
+  height: 3.5rem;
+  /* according to a super cool stackoverflower i now lost, this is the best way to force hardware acceleration. i found a pretty good performance boost with this with my backdrop-filter blur */
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  background: linear-gradient(180deg, #15192bd0 0%, #050814d0 100%);
+  backdrop-filter: blur(50px);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar.secondary {
+  bottom: 4.3rem;
+  height: 3rem;
+}
+
+
+
+.toolbar.secondary.grouped {
+  height: auto;
+  flex-direction: column;
+  border-radius: 1.2rem;
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+}
+
+
+
+.toolbar.file {
+  /* at top left */
+  top: 0.5rem;
+  height: 2rem;
+}
+
+.file-menu {
+  /* element in file toolbar */
+  /* 0.5rem horizontal padding */
+  padding: 0 0.4rem;
+  margin: 0;
+  border-radius: 10000rem;
+  font-family: "Urbanist", sans-serif;
+  font-size: 0.9em;
+  user-select: none;
+  cursor: default;
+  color: #e0ddff40;
+  position: relative;
+}
+
+.file-menu:hover {
+  background: #ffffff20;
+  color: #ffffffd0;
+}
+
+.file-menu:active {
+  background: #ffffff30;
+  color: #ffffff20;
+}
+
+.file-menu.active {
+  background: #ffffff30;
+  color: #ffffff;
+}
+
+.file-menu-content {
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0;
+  z-index: 100;
+  border-radius: 0.8rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  display: none;
+  position: absolute;
+  user-select: none;
+  min-width: 8rem;
+  margin-top: 0.7rem;
+}
+
+.object-options-menu {
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0;
+  z-index: 100;
+  border-radius: 0.8rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  display: none;
+  position: absolute;
+  user-select: none;
+  min-width: 8rem;
+  margin-left: 0.3rem;
+  margin-top: 0.3rem;
+  flex-direction: column;
+}
+
+.object-options-menu .button {
+  padding: 0.2em 0.5rem;
+}
+
+.file-menu-content ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file-menu-content li {
+  padding: 0.2rem 1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.file-menu-content li svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: #fff;
+  margin-right: 0.5rem;
+}
+
+.button {
+  border-radius: 10000rem;
+  user-select: none;
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  background: #03081d60;
+  transition: background 0.1s ease-in-out;
+}
+
+.button:hover {
+  background: #ffffff30;
+}
+
+.button:active {
+  background: #ffffff80;
+}
+
+
+.file-menu-content.active {
+  display: block;
+}
+
+.toolbar .tool {
+  width: 2.8rem;
+  height: 2.8rem;
+  padding: 0.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.toolbar.secondary .tool {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  margin: 0;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.object-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  width: 100%;
+  grid-gap: 0.25rem;
+  margin-bottom: 0.7em;
+}
+
+
+.toolbar svg {
+  width: 100%;
+  height: 100%;
+  fill: #e0ddff40;
+}
+
+
+
+.toolbar img {
+  width: 100%;
+  height: 100%;
+}
+
+#pause-overlay {
+  position: fixed;
+  top: 3rem;
+  left: 0.5rem;
+  z-index: 100;
+  fill: #ffffffff;
+  display: none;
+  pointer-events: none;
+  width: 14rem;
+  color: #ffffff60;
+  font-family: "Urbanist", sans-serif;
+  /* align to top left */
+  display: none;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+#pause-overlay svg {
+  width: 4rem;
+  height: 4rem;
+  fill: #ffffffff;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.pause-button {
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  margin: 0;
+}
+
+.pause-button .pause {
+  display: block;
+}
+
+.pause-button .play {
+  display: none;
+}
+
+
+.pause-button.checked .pause {
+  display: none;
+}
+
+.pause-button.checked .play {
+  display: block;
+}
+
+
+.pause-button svg {
+  width: 100%;
+  height: 100%;
+  fill: #ffffffd0;
+}
+
+.pause-button:hover svg {
+  width: 100%;
+  height: 100%;
+  fill: #fff;
+}
+
+.version-info {
+  position: fixed;
+  top: 0.5rem;
+  width: 100%;
+  pointer-events: none;
+  text-align: center;
+  font-size: 1em;
+  color: #ffffffff;
+  font-family: "Urbanist", sans-serif;
+}
+
+.popup-container {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starting-popup {
+  /* in middle of screen */
+  pointer-events: all;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin: 0.2rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  background: #03081dc0;
+  width: 50em;
+  transition: opacity 0.1s ease-in-out;
+  padding-bottom: 1.5rem;
+}
+
+.starting-popup li {
+  margin-bottom: 0.5rem;
+}
+
+.starting-popup ul {
+  margin-top: 0.5rem;
+}
+
+.starting-popup .popup-top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.starting-popup img {
+  width: 14rem;
+}
+
+.starting-popup h4 {
+  font-size: 1.3rem;
+  margin: 0;
+  margin-top: 1rem;
+  font-weight: normal;
+}
+
+.starting-popup h3 {
+  font-size: 2rem;
+  margin: 0;
+  margin-bottom: 0.2rem;
+  margin-left: 1.2rem;
+  font-weight: 600;
+}
+
+.starting-popup .themes {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.theme-option {
+  width: 3rem;
+  height: 14rem;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+  flex-grow: 1;
+  flex-shrink: 1;
+  margin-right: 0.5rem;
+}
+
+.theme-option:last-child {
+  margin-right: 0;
+}
+
+.theme-option .theme-ground {
+  width: 100%;
+  height: 45%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.theme-option .theme-background {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  transition: all 0.1s ease-in-out;
+  transform-origin: center;
+  position: relative;
+}
+
+.theme-option:hover .theme-background {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+.theme-option:active .theme-background {
+  transform: scale(1.2);
+  filter: brightness(1.2);
+}
+
+.theme-option .theme-info {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  height: 6rem;
+  background: linear-gradient(0deg, #000000b0, transparent);
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 0.5rem;
+  justify-content: flex-end;
+}
+
+.theme-info .theme-name {
+  font-weight: bold;
+}
+
+.theme-info .theme-description {
+  font-size: 0.7rem;
+  margin-top: 0.4rem;
+  width: 90%;
+}
+
+.theme-option .theme-circle {
+  /* right above the ground */
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 10000rem;
+  position: absolute;
+  bottom: 45%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#toasts {
+  position: fixed;
+  top: 4rem;
+  width: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 1rem;
+}
+
+.toast {
+  color: #ffffff;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0.5rem 1rem;
+  border-radius: 10000rem;
+  margin: 0.2rem;
+  pointer-events: all;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  transition: 0.2s;
+  height: 2.5rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  background: #03081dc0;
+  animation: toast 0.2s ease-in-out;
+}
+
+@keyframes toast {
+  0% {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast.error {
+  background: #dd4141e0;
+}
+
+.toast.success {
+  background: #99e077e0;
+  color: #000000;
+}
+
+.toast.warning {
+  background: #ffb951e0;
+  color: #000000;
+}
+
+.toast.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast .icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  fill: #ffffff;
+  margin-right: 0.7rem;
+}
+
+.toast .close {
+  width: 1rem;
+  height: 1rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  fill: #ffffff80;
+  margin-left: 0.7rem;
+}
+
+
+.toast .close:hover {
+  fill: #ffffff;
+}
+
+.toast.success .icon,
+.toast.warning .icon {
+  fill: #000000;
+}
+
+.toast.success .close,
+.toast.warning .close {
+  fill: #00000080;
+}
+
+.toast.success .close:hover,
+.toast.warning .close:hover {
+  fill: #000000;
+}
+
+.pause-button:active svg {
+  width: 100%;
+  height: 100%;
+  fill: #ffffff20;
+}
+
+.toolbar .tool svg {
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.toolbar .tool:hover svg {
+  fill: #ddddddb0;
+  filter: drop-shadow(0px 0px 20px #ffffff);
+}
+
+.toolbar .tool:active svg {
+  fill: #8594ff;
+  filter: drop-shadow(0px 0px 15px #8594ff);
+}
+
+.toolbar .tool.active svg {
+  fill: #8594ff;
+  filter: drop-shadow(0px 0px 10px #8594ff);
+}
+
+.toolbar.primary .tool .bar {
+  background: #8594ff;
+  /* round top, not bottom */
+  border-radius: 0.2rem 0.2rem 0 0;
+  height: 0.3rem;
+  width: 0.4rem;
+  opacity: 0;
+  position: absolute;
+  bottom: 0;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.toolbar.primary .tool:hover .bar {
+  width: 0.9rem;
+  opacity: 0.8;
+}
+
+.toolbar.primary .tool:active .bar {
+  width: 1.2rem;
+  opacity: 1;
+}
+
+.toolbar.primary .tool.active .bar {
+  width: 1.2rem;
+  opacity: 1;
+  filter: drop-shadow(0px 0px 10px #8594ff);
+}
+
+.toolbar.primary .tool {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.toolbar.primary .tool svg {
+  height: 1.8rem;
+  width: 1.8rem;
+}
+
+.toolbar .tool.fake svg {
+  color: #e0ddff0a;
+  fill: #e0ddff0a;
+}
+
+.object {
+  background: #03081d60;
+  border-radius: 0.5rem;
+  padding: 0;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition: background 0.1s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  position: relative;
+}
+
+.object .options {
+  position: absolute;
+  top: 0.2rem;
+  right: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+
+
+.object .options svg {
+  fill: #ffffff00;
+}
+
+.object:hover {
+  background: #ffffff30;
+}
+
+.object:hover .options svg {
+  fill: #ffffff80;
+}
+
+.object:hover .options svg:hover {
+  fill: #ffffff;
+}
+
+.object img {
+  width: 70%;
+  height: 70%;
+  margin: 0;
+  display: block;
+  object-fit: contain;
+  transition: width 0.1s ease-in-out, height 0.1s ease-in-out, opacity 0.1s ease-in-out;
+  /* stop dragging it */
+  pointer-events: none;
+  user-select: none;
+}
+
+.object:hover img {
+  width: 77%;
+  height: 77%;
+}
+
+.object:active {
+  background: #ffffff00;
+}
+
+.object:active img {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.toolbar.object-grid-bar {
+  height: auto;
+  display: flex;
+  /* make it rows */
+  flex-direction: column;
+  /* align left */
+  justify-content: flex-start;
+  align-items: flex-start;
+  border-radius: 1rem;
+  user-select: none;
+}
+
+.object-grid-bar span {
+  margin: 0.5rem 0;
+  color: #ffffffff;
+}
+
+.toolbar.save-list {
+  height: auto;
+  display: flex;
+  /* make it rows */
+  flex-direction: column;
+  /* align left */
+  justify-content: flex-start;
+  align-items: flex-start;
+  border-radius: 1rem;
+  user-select: none;
+  position: fixed;
+  top: 3rem;
+  left: 0.5rem;
+  bottom: auto;
+  min-width: 30rem;
+}
+
+
+
+.save-list .top-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.save-list .top-bar .close svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.save-list .top-bar .close:hover svg {
+  fill: #ffffff;
+}
+
+.save-list .top-bar .close:active svg {
+  fill: #ffffff20;
+}
+
+.save-grid .scene {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.save-grid {
+  width: 100%;
+  max-height: 20rem;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.save-grid .top-text {
+  width: 100%;
+  display: block;
+}
+
+.save-list .top-bar .close {
+  margin-top: 0.5rem;
+}
+
+.save-list span {
+  margin: 0.5rem 0;
+  color: #ffffffff;
+}
+
+.toolbar .tool.ready svg {
+  transform: scale(1.1);
+  fill: #e0ddff50;
+}
+
+.toolbar .tool.drop svg {
+  transform: scale(1.3);
+  fill: #ffffff;
+}
+
+.object-menu {
+  background: #03081dc0;
+  color: #ffffff50;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0.5rem;
+  z-index: 100;
+  border-radius: 0.8rem;
+  -webkit-backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  -webkit-transform: translate3d(0, 0, 0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
+  backdrop-filter: blur(35px);
+  display: flex;
+  position: absolute;
+  user-select: none;
+  min-width: 8rem;
+  margin-left: 0.3rem;
+  margin-top: 0.3rem;
+  flex-direction: column;
+}
+
+.object-menu .button {
+  padding: 0.2em 0.5rem;
+}
+
+.object-menu .menu-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
