@@ -73,7 +73,7 @@ var steps = [
         var promises = [];
         for (var srcDir of srcDirs) {
             promises.push(new Promise((resolve, reject) => {
-                const child = exec('tsc -p ' + srcDir, { cwd: __dirname });
+                const child = exec('npx tsup', { cwd: __dirname });
                 child.stdout.on('data', (data) => {
                     console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
                 });
@@ -159,7 +159,7 @@ var steps = [
         console.log(stepInfo, 'Installing node_modules...');
         // install node_modules in dist
         await new Promise((resolve, reject) => {
-            const child = exec('npm install --omit=dev', { cwd: path.join(__dirname, 'dist') });
+            const child = exec('pnpm install', { cwd: path.join(__dirname, 'dist') });
             child.stdout.on('data', (data) => {
                 console.log(indentLines(data.toString(), 4));
             });
