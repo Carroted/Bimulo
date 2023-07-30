@@ -34,7 +34,7 @@ if (fs.existsSync(buildLogPath)) {
     }
     var timeToBuildSeconds = timeToBuild / 1000;
     // ceil it
-    timeToBuildSeconds = Math.ceil(timeToBuildSeconds);
+    timeToBuildSeconds = timeToBuildSeconds.toFixed(3);
     console.log(buildInfo + 'Estimated time to build: ' + timeToBuildSeconds + 's\n');
 
     prevBuildTime = timeToBuild;
@@ -51,6 +51,12 @@ function indentLines(str, count) {
         newLines.push(' '.repeat(count) + line);
     }
     return newLines.join('\n');
+}
+
+// if --dev param
+let dev = false;
+if (process.argv.includes('--dev')) {
+    dev = true;
 }
 
 var steps = [
@@ -156,24 +162,33 @@ var steps = [
         fs.copyFileSync(path.join(__dirname, 'box2d-wasm-7.0.0.tgz'), path.join(__dirname, 'dist', 'box2d-wasm-7.0.0.tgz'));
     },
     async (stepInfo) => {
-        console.log(stepInfo, 'Installing node_modules...');
-        // install node_modules in dist
-        await new Promise((resolve, reject) => {
-            const child = exec('pnpm install', { cwd: path.join(__dirname, 'dist') });
-            child.stdout.on('data', (data) => {
-                console.log(indentLines(data.toString(), 4));
-            });
-            child.stderr.on('data', (data) => {
-                console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
-            });
-            child.on('close', (code) => {
-                if (code !== 0) {
-                    reject(new Error(`npm install exited with code ${code}`));
-                } else {
-                    resolve();
+        if (!dev) {
+            console.log(stepInfo, 'Copying node_modules...');
+            copyFolderRecursiveSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'));
+            // now we have to scan the devDependencies of package.json and remove them if they arent also in dependencies
+            let devDependencies = packageJson.devDependencies;
+            let dependencies = packageJson.dependencies;
+            Object.keys(devDependencies).forEach((devDependency) => {
+                if (!dependencies[devDependency]) {
+                    console.log('Removing devDependency', devDependency);
+                    // if its a dir
+                    if (fs.existsSync(path.join(__dirname, 'dist', 'node_modules', devDependency))) {
+                        if (fs.lstatSync(path.join(__dirname, 'dist', 'node_modules', devDependency)).isDirectory()) {
+                            fs.rmdirSync(path.join(__dirname, 'dist', 'node_modules', devDependency), { recursive: true });
+                        }
+                        // it could be a symlink
+                        else if (fs.lstatSync(path.join(__dirname, 'dist', 'node_modules', devDependency)).isSymbolicLink()) {
+                            fs.unlinkSync(path.join(__dirname, 'dist', 'node_modules', devDependency));
+                        }
+                    }
                 }
             });
-        });
+        }
+        else {
+            console.log(stepInfo, 'Symbolically linking node_modules...');
+            // symlink node_modules
+            fs.symlinkSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'), 'dir');
+        }
     },
     async (stepInfo) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
@@ -270,6 +285,10 @@ function copyFolderRecursiveSync(source, target) {
             if (fs.lstatSync(curSource).isDirectory()) {
                 copyFolderRecursiveSync(curSource, path.join(targetFolder, path.basename(curSource)));
             }
+            else if (fs.lstatSync(curSource).isSymbolicLink()) {
+                var symlinkFull = fs.readlinkSync(curSource);
+                fs.symlinkSync(symlinkFull, path.join(targetFolder, path.basename(curSource)));
+            }
             else {
                 fs.copyFileSync(curSource, path.join(targetFolder, path.basename(curSource)));
             }
@@ -283,4 +302,4 @@ for (var i = 0; i < steps.length; i++) {
 }
 
 
-console.log(chalk.greenBright.bold('\nBuild complete!'));
+console.log(chalk.greenBright.bold('\nBuild complete in ' + (Date.now() - startTime) + 'ms!\n'));
