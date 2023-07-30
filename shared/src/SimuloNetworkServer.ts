@@ -1,13 +1,12 @@
-import nodeDataChannel from "node-datachannel"; // for WebRTC data channels
-
-import { Server } from "socket.io"; // we use socket.io since websocket without SSL doesnt usually work. this could be replaced with ws and add SSL cert creation (Let's Encrypt?)
-
 import * as http from "http";
 
+interface Peer {
+    pc: RTCPeerConnection;
+    dc: RTCDataChannel;
+}
+
 class SimuloNetworkServer {
-    io: Server | null = null;
     listeners: { [key: string]: Function[] } = {};
-    server: http.Server;
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -26,94 +25,110 @@ class SimuloNetworkServer {
             this.listeners[event] = this.listeners[event].filter((l) => l != listener);
         }
     }
-    dataChannels: nodeDataChannel.DataChannel[] = [];
+    peers: { [id: string]: Peer } = {};
+    connectingPeers: Peer[] = [];
 
-    constructor(server: http.Server) {
-        this.server = server;
+    dcInit(dc: RTCDataChannel, pc: RTCPeerConnection) {
+        dc.onopen = () => {
+            //this.dataChannels.push(dc);
+            this.connectingPeers.push({ pc: pc, dc: dc });
+            this.emit("ready", null);
+        };
+        dc.onmessage = (msg) => {
+            try {
+                var formatted = JSON.parse(msg.data);
+                //this.dcIDs[formatted.id] = dc;
+                // find our peer from the datachannel
+                if (!this.peers[formatted.uuid]) {
+                    var peer = this.connectingPeers.find((p) => p.dc === dc);
+                    if (peer) {
+                        this.peers[formatted.uuid] = peer;
+                        this.connectingPeers = this.connectingPeers.filter((p) => p !== peer);
+                    }
+                }
+                // it should have a type and data. if not, it's not a valid message
+                if (
+                    formatted.type !== undefined &&
+                    formatted.data !== undefined &&
+                    formatted.type !== null &&
+                    formatted.data !== null
+                ) {
+                    //this.emit(formatted.type, formatted.data);
+                    this.emit("data", { formatted: formatted, uuid: formatted.uuid }); // TODO: change this to emit the type. will need heavy changes to ServerController
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        };
     }
 
+    offered: RTCPeerConnection[] = [];
+
     connect() {
-        this.io = new Server(this.server);
+        let pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                console.log('returning because e.candidate is not null, which means we are not done yet since we are still getting candidates');
+                return;
+            }; // ok
+            alert(encodeURIComponent(pc.localDescription!.sdp)); // if its null we cry about it
+            console.log('on ice candidate, the sdp is:', encodeURIComponent(pc.localDescription!.sdp));
+        };
+        pc.ondatachannel = (e) => {
+            let dc = e.channel;
+            this.dcInit(dc, pc);
+        };
+        pc.oniceconnectionstatechange = (e) => {
+            console.log("ICE connection state changed to " + pc.iceConnectionState);
+            switch (pc.iceConnectionState) {
+                case "closed":
+                case "failed":
+                case "disconnected":
+                    this.emit("disconnect", 'someone');
+                    break;
+                case "connected":
+                    this.emit("connect", 'someone');
+                    // remove it from the list
+                    this.offered = this.offered.filter((p) => p !== pc);
+                    break;
+            }
+        };
 
-        this.io.on("connection", (ws) => {
-            var uuid = ws.id;
-            let peer1 = new nodeDataChannel.PeerConnection("Peer" + uuid, {
-                iceServers: ["stun:stun.l.google.com:19302"],
-            }); // TODO: self-host ICE
-            let dc1: nodeDataChannel.DataChannel | null = null;
+        let dc = pc.createDataChannel("main");
+        this.dcInit(dc, pc);
 
-            console.log("------\nweb socket connected through socket.io!\n------");
-            // tell them they're connected
-            ws.send(
-                JSON.stringify({
-                    type: "connected",
-                    data: {
-                        message:
-                            "connected to server, good job. now all thats left is ICE stuff just like you practiced, client",
-                    },
-                })
-            );
+        // create the offer
+        pc.createOffer().then((offer) => {
+            pc.setLocalDescription(offer);
+            /*alert(encodeURIComponent(offer.sdp!));
+            console.log('after creating offer, the sdp is:', encodeURIComponent(offer.sdp!));*/
+        });
 
-            peer1.onLocalDescription((sdp: string, type: nodeDataChannel.DescriptionType) => {
-                console.log("Peer1 SDP:", sdp, " Type:", type);
-                ws.send(JSON.stringify({ sdp: sdp, type: type }));
-            });
+        //this.connectingPeers.push({ pc: pc, dc: dc });
+        this.offered.push(pc);
+    }
 
-            peer1.onLocalCandidate((candidate: string, mid: string) => {
-                console.log("Peer1 Candidate:", candidate);
-                ws.send(JSON.stringify({ candidate: candidate, mid: mid }));
-            });
-
-            ws.on("message", (message) => {
-                try {
-                    const msg = JSON.parse(message);
-
-                    if (msg.sdp) {
-                        peer1.setRemoteDescription(msg.sdp, msg.type);
-                    } else if (msg.candidate) {
-                        peer1.addRemoteCandidate(msg.candidate, msg.mid);
-                    }
-                } catch (e) {
-                    console.log(e);
-                }
-            });
-
-            this.emit("connect", uuid);
-
-            dc1 = peer1.createDataChannel("main");
-            dc1.onMessage((msg: string | Buffer) => {
-                //console.log('Peer1 Received Msg dc1:', msg);
-                try {
-                    var formatted = JSON.parse(msg as string);
-                    // it should have a type and data. if not, it's not a valid message
-                    if (
-                        formatted.type !== undefined &&
-                        formatted.data !== undefined &&
-                        formatted.type !== null &&
-                        formatted.data !== null
-                    ) {
-                        //this.emit(formatted.type, formatted.data);
-                        this.emit("data", { formatted: formatted, uuid: uuid }); // TODO: change this to emit the type. will need heavy changes to ServerController
-                    }
-                } catch (e) {
-                    console.log(e);
-                }
-            });
-            dc1.onOpen(() => {
-                this.dataChannels.push(dc1 as nodeDataChannel.DataChannel);
-                this.emit("ready", uuid);
-            });
+    useAnswerSdp(sdp: string) {
+        let desc = new RTCSessionDescription({ type: "answer", sdp: sdp });
+        //this.pc!.setRemoteDescription(desc);
+        this.offered.forEach((pc) => {
+            pc.setRemoteDescription(desc);
         });
     }
 
     sendAll(type: string, data: any) {
-        this.dataChannels.forEach((dc) => {
-            // check if open first
-            if (!dc.isOpen()) {
+        Object.keys(this.peers).forEach((key: string) => {
+            let peer = this.peers[key];
+            let dc = peer.dc;
+            if (dc.readyState != 'open') {
+                // remove it from the list
+                delete this.peers[key];
+                this.emit("disconnect", null);
+                console.log('disconnected')
                 return;
             }
             try {
-                dc.sendMessage(
+                dc.send(
                     JSON.stringify({
                         type: type,
                         data: data,

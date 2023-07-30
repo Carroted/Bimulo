@@ -1,4 +1,5 @@
-:root, body {
+:root,
+body {
   cursor: none;
 }
 
@@ -30,9 +31,40 @@
   height: 2.5rem;
 }
 
-.player-cursor img {
+.player-cursor img,
+.player-cursor svg {
   width: 100%;
   height: 100%;
+}
+
+.player-cursor img.cursor-tool {
+  width: 1.8rem;
+  height: 1.8rem;
+  position: absolute;
+  bottom: -1.5rem;
+  right: -0.8rem;
+}
+
+.player-cursor img.cursor-avatar {
+  border-radius: 50%;
+  width: 1.4rem;
+  height: 1.4rem;
+  right: -0.45rem;
+  bottom: -1.1rem;
+  position: absolute;
+  outline: 2px solid white;
+  box-shadow: 0px 3px 2px black;
+}
+
+.player-cursor img.cursor-avatar.light {
+  border-radius: 50%;
+  width: 1.4rem;
+  height: 1.4rem;
+  right: -0.45rem;
+  bottom: -1.1rem;
+  position: absolute;
+  outline: 2px solid black;
+  box-shadow: 0px 3px 2px black;
 }
 
 #player-cursor {
@@ -868,6 +900,14 @@ details summary {
   fill: #000000;
 }
 
+.toast.join .icon {
+  fill: #99e077;
+}
+
+.toast.leave .icon {
+  fill: #8c67f2;
+}
+
 .pause-button:active svg {
   width: 100%;
   height: 100%;
@@ -1140,4 +1180,216 @@ details summary {
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(35px);
+  background: #03081dc0;
+  color: #ffffffcf;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  padding: 0.5rem;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 20000000;
+  cursor: default;
+}
+
+.multiplayer-join-menu {
+  max-width: 30rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.spinner {
+  width: 120px;
+  height: 120px;
+}
+
+.spinner svg {
+  animation: rotate 1.5s linear infinite;
+  height: 100%;
+  width: 100%;
+}
+
+.spinner circle {
+  stroke-dasharray: 1, 200;
+  stroke-dashoffset: 0;
+  animation:
+    dash 1.5s ease-in-out infinite 0s;
+  stroke: white;
+  stroke-linecap: round;
+  fill: none;
+  stroke-width: 5;
+}
+
+@keyframes rotate {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 200;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -35;
+  }
+
+  100% {
+    stroke-dasharray: 89, 200;
+    stroke-dashoffset: -124;
+  }
+}
+
+.step {
+  filter: blur(2px);
+  opacity: 0.2;
+  display: flex;
+  flex-direction: column;
+  /* we have rows inside it */
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+  transition: filter 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  width: 100%;
+}
+
+.step.active {
+  filter: unset;
+  opacity: 1;
+}
+
+.step-number {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000a0;
+  flex-grow: 0;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.step p {
+  margin: 0;
+  margin-left: 0.8rem;
+}
+
+.step-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 0.5rem;
+  height: 0;
+  transition: height 0.5s ease-in-out;
+  width: 100%;
+  overflow: hidden;
+}
+
+.step-content textarea {
+  width: 100%;
+  height: 4rem;
+  background: #000000a0;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  color: #ffffffa0;
+  font-family: monospace;
+  font-size: 1em;
+  resize: none;
+  outline: none;
+}
+
+/* scrollbar of textarea has no track, and the thumb is very light white and fully rounded */
+.step-content textarea::-webkit-scrollbar {
+  width: 0.2rem;
+  background: transparent;
+}
+
+.step-content textarea::-webkit-scrollbar-thumb {
+  background: #ffffff50;
+  border-radius: 1rem;
+}
+
+.step-content textarea::-webkit-scrollbar-thumb:hover {
+  background: #ffffff;
+}
+
+.step-content button {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: #ffffffd0;
+  color: black;
+  font-size: 15px;
+  font-weight: 600;
+  position: relative;
+}
+
+.step-content button:hover {
+  background: #ffffff;
+  color: black;
+}
+
+.step-content button:active {
+  background: #ffffff50;
+  color: black;
+}
+
+.step.active .step-content {
+  height: 7.5rem;
+}
+
+.multiplayer-join-menu h1 {
+  margin-bottom: 2rem;
+}
+
+.copied {
+  position: absolute;
+  top: -1.7rem;
+  left: 0;
+  width: 100%;
+  height: 1.5rem;
+  background: #99e077;
+  color: black;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  border-radius: 1000rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.copied.active {
+  opacity: 1;
 }

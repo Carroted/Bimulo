@@ -52,8 +52,8 @@ export default {
       "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
-    "toolIconSize": 0.5,
-    "toolIconOffset": [0.42, 0.55]
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
   },
   "sunrise": {
     "displayName": "Sunrise",
@@ -104,8 +104,8 @@ export default {
       "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
-    "toolIconSize": 0.5,
-    "toolIconOffset": [0.42, 0.55]
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
   },
   "day": {
     "displayName": "Day",
@@ -156,8 +156,8 @@ export default {
       "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": false,
-    "toolIconSize": 0.5,
-    "toolIconOffset": [0.42, 0.55]
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
   },
   "nostalgia": {
     "displayName": "Nostalgia",
@@ -208,7 +208,7 @@ export default {
       "addParticle": "assets/textures/add_particle.png"
     },
     "systemCursor": true,
-    "toolIconSize": 0.7,
-    "toolIconOffset": [0.3, 0.4]
+    "toolIconSize": 1.8,
+    "toolIconOffset": [-1.5, -0.8]
   }
 } as { [key: string]: SimuloTheme };

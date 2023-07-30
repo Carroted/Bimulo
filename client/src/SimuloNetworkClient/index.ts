@@ -1,10 +1,9 @@
-/// @ts-nocheck
-import { io } from "./socket.io.esm.min.js"; // dont think theres TS types for this, why not just ignore and move on for the time being
+import SimuloClient from "../../../shared/src/SimuloClient";
 
-class SimuloNetworkClient {
+class SimuloNetworkClient implements SimuloClient {
     activeDc: RTCDataChannel | null = null;
     listeners: { [key: string]: Function[] } = {};
-    id: string | null = null;
+    id: string;
     ws: any | null = null;
     localCandidates: RTCIceCandidate[] = [];
 
@@ -12,7 +11,7 @@ class SimuloNetworkClient {
         this.localCandidates = [];
         this.activeDc = null;
         this.listeners = {};
-        this.id = null;
+        this.id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15); // generate a random id
     }
 
     /**
@@ -24,7 +23,8 @@ class SimuloNetworkClient {
         if (this.activeDc) {
             this.activeDc.send(JSON.stringify({
                 type: type,
-                data: data
+                data: data,
+                uuid: this.id
             }));
             return true;
         }
@@ -39,7 +39,8 @@ class SimuloNetworkClient {
         if (this.ws) {
             this.ws.send(JSON.stringify({
                 type: type,
-                data: data
+                data: data,
+                uuid: this.id
             }));
             return true;
         }
@@ -50,105 +51,75 @@ class SimuloNetworkClient {
     /**
      * Connect to the server in both WebRTC and WebSocket. Fires `connect` event when WebSocket connects, and `ready` event when WebRTC connects.
     */
-    connect() {
-        this.ws = io();
-        this.ws.on('connect', () => {
-            this.id = this.ws.id;
-            console.log('WebSocket connection established');
-            this.ws.send('i exist, notice me');
-            // Connect event is for WebSocket, ready event is for WebRTC
-            if (this.listeners['connect']) {
-                this.listeners['connect'].forEach((listener) => {
-                    listener();
-                });
-            }
+    connect(offerSdp: string) {
+        console.log('network client connecting with offersdp')
+        let desc = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
+        let pc = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: "stun:stun.l.google.com:19302",
+                },
+            ],
         });
-        this.ws.on('message', (event: any) => {
-            console.log('Received message from server:', event);
-            const msg = JSON.parse(event);
-            // rtcpeerconnection to the same domain
-            const pc = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-                // set remote description
-
-            });
-
-            if (msg.sdp) {
-                console.log('using sdp');
-                pc.setRemoteDescription(new RTCSessionDescription(msg))
-                    .then(() => {
-                        if (msg.type === 'offer') {
-                            pc.createAnswer().then((answer) => {
-                                pc.setLocalDescription(answer)
-                                    .then(() => {
-                                        this.ws.send(JSON.stringify(answer));
-                                    });
-                            });
-                        }
-                    });
-            } else if (msg.candidate) {
-                console.log('using candidate');
+        pc.onicecandidate = (e) => {
+            if (e.candidate) return;
+            console.log('omng! ice!')
+            //alert(pc.localDescription!.sdp); // this is our answer to the offer
+            console.log('answer sdp:', encodeURIComponent(pc.localDescription!.sdp));
+            this.emit("answerSdp", encodeURIComponent(pc.localDescription!.sdp));
+        }
+        pc.oniceconnectionstatechange = (e) => {
+            console.log('ice connection state change', e);
+            switch (pc.iceConnectionState) {
+                case "connected":
+                    console.log('connected');
+                    break;
+                case "disconnected":
+                    console.log('disconnected');
+                    alert('Disconnected from server!');
+                    break;
+                case "failed":
+                    console.log('failed');
+                    // log anything that could be relevant about why ICE failed
+                    console.log('gathering state:', pc.iceGatheringState);
+                    console.log('connection state:', pc.iceConnectionState);
+                    console.log('signaling state:', pc.signalingState);
+                    console.log('local candidates:', this.localCandidates);
+                    // log a big red message with huge text
+                    console.log('%cICE failed!', 'font-size: 50px; color: red;');
+                    alert('Connection failed! This could be due to router settings, firewall, VPN, etc.');
+                    break;
+                case "closed":
+                    console.log('closed');
+                    break;
+            }
+        };
+        pc.ondatachannel = (e) => {
+            let dc = e.channel;
+            dc.onmessage = (e) => {
                 try {
-                    pc.addIceCandidate(new RTCIceCandidate({
-                        sdpMid: msg.mid, candidate: msg.candidate,
-                        // description
-                    })).catch((e) => {
-                        console.log(e);
-                        console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
-                    });
-                    console.log('added ice candidate');
-                }
-                catch (e) {
+                    var formatted = JSON.parse(e.data);
+                    if (
+                        formatted.type !== undefined &&
+                        formatted.data !== undefined &&
+                        formatted.type !== null &&
+                        formatted.data !== null
+                    ) {
+                        this.emit("data", { type: formatted.type, data: formatted.data, uuid: this.id });
+                    }
+                } catch (e) {
                     console.log(e);
-                    console.log('failed to add ice candidate :( i wanted to add it so bad, but i failed. i am so sorry, please forgive me');
                 }
             }
-
-            pc.ondatachannel = (event) => {
-                const dc = event.channel;
-                console.log('data channel established!!! omg! yay!\n\n\n------\n\ntell asour the data channel is established\n\n------\n\n\n');
-
-                // Handle incoming data from server
-                dc.onmessage = (event) => {
-                    //console.log(`Received data from server: ${event.data}`);
-                    try {
-                        var formatted = JSON.parse(event.data);
-                        //handleData(formatted);
-                        if (this.listeners[formatted.type]) {
-                            this.listeners[formatted.type].forEach((listener) => {
-                                listener(formatted.data);
-                            });
-                        }
-                        if (this.listeners['data']) {
-                            this.listeners['data'].forEach((listener) => {
-                                listener(formatted);
-                            });
-                        }
-                    }
-                    catch (e) {
-                        console.log(e);
-                    }
-                };
-
-                // Send data to server
-                dc.onopen = () => {
-                    //dc.send('Hello, server!');
-                    this.activeDc = dc;
-                    if (this.listeners['ready']) {
-                        this.listeners['ready'].forEach((listener) => {
-                            listener();
-                        });
-                    }
-                };
-            };
-
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    this.ws.send(JSON.stringify({ candidate: event.candidate.candidate, mid: event.candidate.sdpMid }));
-                    this.localCandidates.push(event.candidate);
-                }
-            };
+            dc.onopen = () => {
+                this.activeDc = dc;
+                this.emit("ready", this.id);
+            }
+        }
+        pc.setRemoteDescription(desc).then(() => {
+            pc.createAnswer().then((answer) => {
+                pc.setLocalDescription(answer);
+            });
         });
     }
 
@@ -175,6 +146,14 @@ class SimuloNetworkClient {
         if (this.listeners[type]) {
             this.listeners[type] = this.listeners[type].filter((l) => {
                 return l !== listener;
+            });
+        }
+    }
+
+    emit(type: string, data: any) {
+        if (this.listeners[type]) {
+            this.listeners[type].forEach((l) => {
+                l(data);
             });
         }
     }

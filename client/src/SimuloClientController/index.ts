@@ -18,9 +18,24 @@ function queryParent(element: HTMLElement, className: string): HTMLElement | nul
     return null;
 }
 
+// fetch client/assets/textures/cursor.svg
+let cursorRes = await fetch('assets/textures/cursor.svg');
+let cursorSVG = await cursorRes.text();
+
+function getCursorSVG(fillColor: string) {
+    let strokeColor = '#000000';
+    // if fill is #000000 or black or #000, make stroke #ffffff
+    if (fillColor === '#000000' || fillColor === 'black' || fillColor === '#000') {
+        strokeColor = '#ffffff';
+    }
+    // split join #00FF00 for fill, split join #0000FF for stroke
+    return cursorSVG.split('#00FF00').join(fillColor).split('#0000FF').join(strokeColor);
+}
+
 import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../../../shared/src/SimuloShape.js';
 import SimuloText from '../../../shared/src/SimuloText';
 import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../../shared/src/SimuloCreatingObject.js';
+import SimuloNetworkClient from '../SimuloNetworkClient/index.js';
 
 const personPoints = [{
     x: 0,
@@ -76,7 +91,9 @@ enum ToastType {
     SUCCESS,
     ERROR,
     INFO,
-    WARNING
+    WARNING,
+    JOIN,
+    LEAVE
 }
 
 interface SimuloSavedObject {
@@ -131,7 +148,7 @@ class SimuloClientController {
     client: SimuloClient;
     timeScale: number | null = null;
     paused: boolean | null = null;
-    serverController: SimuloServerController;
+    serverController: SimuloServerController | null = null;
     theme: SimuloTheme;
     maxZoom = 5;
     minZoom = 0.1;
@@ -207,7 +224,7 @@ class SimuloClientController {
             width: number;
         };
     } = {};
-    private players: { [key: string]: { x: number, y: number } } = {};
+    private players: { [key: string]: { x: number, y: number, color: string, tool: string } } = {};
     private springs: {
         p1: number[];
         p2: number[];
@@ -280,6 +297,9 @@ class SimuloClientController {
         let key = this.key++; // unique key for this request
         return new Promise((resolve, reject) => {
             let handler = (body: any) => {
+                if (body.formatted) {
+                    body.data = body.formatted.data;
+                }
                 //console.log('requst from our handlerr!!! body is', body);
                 if (body.data.key === key) {
                     //console.log('Got response', body.data);
@@ -371,11 +391,22 @@ class SimuloClientController {
     version: string = 'unknown';
     versionTimestamp: number = 0;
 
+    useAnswerSdp() {
+        let sdp = decodeURIComponent(prompt('Enter the answer SDP')!);
+        this.serverController!.networkServer!.useAnswerSdp(sdp);
+        console.log('we relayed it, dunno if it worked');
+    }
 
-    constructor(canvas: HTMLCanvasElement) {
+    constructor(canvas: HTMLCanvasElement, host: boolean) {
         this.theme = themes.night;
-        this.serverController = new SimuloServerController(this.theme, null, true);
-        this.client = this.serverController.localClients[0];
+        if (host) {
+            this.serverController = new SimuloServerController(this.theme, true, true);
+            this.client = this.serverController.localClients[0];
+        }
+        else {
+            let networkClient = new SimuloNetworkClient();
+            this.client = networkClient;
+        }
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
         // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
@@ -407,7 +438,15 @@ class SimuloClientController {
             this.handleData(data); // Parses and displays the data in the world
         });
 
-        this.client.connect(); // Connects to the server
+        if (!host) {
+            /*let sdp = decodeURIComponent(prompt('whats the offer sdp?')!);
+            console.log('offer SDP is', sdp);
+            this.client.connect(sdp);
+            console.log('told it to connect with that')*/
+        }
+        else {
+            this.client.connect(); // Connects to the server
+        }
 
         /*
         let objects = document.querySelectorAll('.object-grid .object');
@@ -424,7 +463,7 @@ class SimuloClientController {
 
         let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
         let dismissPopup = (e: MouseEvent | undefined) => {
-            if (e && (e.target as HTMLElement).closest('.starting-popup')) return;
+            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.loading-overlay'))) return;
             startingPopup.style.opacity = '0';
             startingPopup.style.pointerEvents = 'none';
             document.removeEventListener('click', dismissPopup);
@@ -995,8 +1034,6 @@ class SimuloClientController {
             }
         });
 
-        this.viewer.systemCursor = this.theme.systemCursor;
-
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
         }, false); // disable right click menu since we will make our own
@@ -1350,6 +1387,12 @@ class SimuloClientController {
         else if (type == ToastType.INFO) {
             toast.classList.add('info');
         }
+        else if (type == ToastType.JOIN) {
+            toast.classList.add('join');
+        }
+        else if (type == ToastType.LEAVE) {
+            toast.classList.add('leave');
+        }
         var icon = document.createElement('div');
         icon.classList.add('icon');
         // load svg with fetch
@@ -1363,6 +1406,12 @@ class SimuloClientController {
         else if (type == ToastType.SUCCESS) {
             path = 'icons/check-circle.svg';
         }
+        else if (type == ToastType.JOIN) {
+            path = 'icons/arrow-right.svg';
+        }
+        else if (type == ToastType.LEAVE) {
+            path = 'icons/arrow-left.svg';
+        }
         else { // default to info
             path = 'icons/information.svg';
         }
@@ -1371,7 +1420,7 @@ class SimuloClientController {
         icon.innerHTML = svg;
         toast.appendChild(icon);
         var span = document.createElement('span');
-        span.innerText = message;
+        span.innerHTML = message;
         toast.appendChild(span);
         var close = document.createElement('div');
         close.classList.add('close');
@@ -1830,10 +1879,69 @@ class SimuloClientController {
                 }*/
                 let cursorOffset = [-8.5, -4.5];
                 // now we actually just position #player-cursor element
-                let cursor = document.getElementById('player-cursor') as HTMLElement;
+
+                let canvasOverlays = document.getElementById('canvas-overlays')!;
+
+                let playerCursorFillColor = '#000000';
+
+                if (this.client.id in this.players) {
+                    // get our color from that
+                    let player = this.players[this.client.id];
+                    playerCursorFillColor = player.color;
+                }
+
+                let cursorNullable = document.getElementById('player-cursor');
+                if (!cursorNullable) {
+                    let cursor = document.createElement('div');
+                    cursor.id = 'player-cursor';
+                    cursor.className = 'player-cursor';
+                    cursor.innerHTML = getCursorSVG(playerCursorFillColor);
+                    // add img .cursor-tool display: none
+                    let cursorTool = document.createElement('img');
+                    cursorTool.className = 'cursor-tool';
+                    cursorTool.style.display = 'none';
+                    cursor.appendChild(cursorTool);
+                    canvasOverlays.appendChild(cursor);
+                    cursorNullable = cursor;
+                }
+
+                let cursor = cursorNullable!;
                 let mousePosScreen = this.viewer.inverseTransformPoint(this.mousePos.x, this.mousePos.y);
                 cursor.style.left = (mousePosScreen.x + 0.5 + cursorOffset[0]) + 'px';
                 cursor.style.top = (mousePosScreen.y + 0.5 + cursorOffset[1]) + 'px';
+                let cursorTool = cursor.querySelector('.cursor-tool') as HTMLImageElement;
+                if (this.toolIcon) {
+                    cursorTool.src = this.toolIcon;
+                    cursorTool.style.display = 'block';
+                }
+                else {
+                    cursorTool.style.display = 'none';
+                }
+                cursorTool.style.right = this.theme.toolIconOffset[1] + 'rem';
+                cursorTool.style.bottom = this.theme.toolIconOffset[0] + 'rem';
+                cursorTool.style.width = this.theme.toolIconSize + 'rem';
+                cursorTool.style.height = this.theme.toolIconSize + 'rem';
+
+                // draw other cursors
+                Object.keys(this.players).forEach((key) => {
+                    if (key == this.client.id) return;
+                    let player = this.players[key];
+                    let cursor = document.getElementById('player-cursor-' + key);
+                    if (!cursor) {
+                        cursor = document.createElement('div');
+                        cursor.id = 'player-cursor-' + key;
+                        cursor.classList.add('player-cursor');
+                        canvasOverlays.appendChild(cursor);
+                        cursor.innerHTML = getCursorSVG(player.color);
+                        let tool = document.createElement('img');
+                        tool.classList.add('cursor-tool');
+                        tool.style.display = 'none';
+                        cursor.appendChild(tool);
+                    }
+                    let mousePosScreen = this.viewer.inverseTransformPoint(player.x, player.y);
+                    cursor.style.left = (mousePosScreen.x + 0.5 + cursorOffset[0]) + 'px';
+                    cursor.style.top = (mousePosScreen.y + 0.5 + cursorOffset[1]) + 'px';
+                });
                 /*if (this.toolIcon) {
                     //this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
                     shapes.push({
@@ -1854,9 +1962,17 @@ class SimuloClientController {
             if (body.type == 'player mouse') {
                 this.players[body.data.id] = {
                     x: body.data.x,
-                    y: body.data.y
+                    y: body.data.y,
+                    tool: body.data.tool,
+                    color: body.data.color
                 };
                 this.springs = body.data.springs;
+            }
+            if (body.type == 'connect') {
+                this.showToast('<b>User</b> joined the room.', ToastType.JOIN);
+            }
+            if (body.type == 'disconnect') {
+                this.showToast('<b>User</b> left the room.', ToastType.LEAVE);
             }
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
@@ -1895,7 +2011,6 @@ class SimuloClientController {
             }
             if (body.type == 'set_theme') {
                 this.theme = body.data;
-                this.viewer.systemCursor = this.theme.systemCursor;
                 if (this.theme.toolIcons[this.tool]) {
                     this.toolIcon = this.theme.toolIcons[this.tool];
                     this.toolIconSize = this.theme.toolIconSize;

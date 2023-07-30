@@ -2,20 +2,7 @@ import { getRandomColor, randomRange, hsvToRgb } from "./utils.js";
 
 import { SimuloPhysicsServer, SimuloJoint, SimuloMouseSpring, SimuloObject, SimuloSavedObject } from "./SimuloPhysicsServer.js";
 import SimuloTheme from "./SimuloTheme.js";
-var SimuloNetworkServer: any | null = null;
-//import SimuloNetworkServer from "./SimuloNetworkServer.js";
-var isNode = false;
-try {
-    if (process) {
-        isNode = true;
-    }
-} catch (e) {
-    isNode = false;
-}
-if (isNode) {
-    var module = await import("./SimuloNetworkServer.js");
-    SimuloNetworkServer = module.default;
-}
+import SimuloNetworkServer from "./SimuloNetworkServer.js";
 
 import * as http from "http";
 import SimuloStep from "./SimuloStep.js";
@@ -59,14 +46,14 @@ function getDistance(point1: [x: number, y: number], point2: [x: number, y: numb
 
 class SimuloServerController {
     physicsServer: SimuloPhysicsServer;
-    networkServer: any | null = null;
+    networkServer: SimuloNetworkServer | null = null;
     tools: { [key: string]: string } = {};
     //previousStep: SimuloStepExtended | null = null;
     timeScale: number = 1 / 500;
     frameRate: number = 1000 / 60;
     velocityIterations: number = 8;
     positionIterations: number = 3;
-    springs: SimuloMouseSpring[] = []; // this will be an object soon for multiplayer support
+    springs: { [key: string]: SimuloMouseSpring } = {}; // this will be an object soon for multiplayer support
     creatingObjects: { [key: string]: SimuloCreatingObject } = {}; // will be renamed for clarity, but this is all the tool actions in progress. for example, a circle being drawn, selection box, spring being added, etc
     creatingSprings: { [key: string]: { start: [x: number, y: number], image: string | null, end: [x: number, y: number], width: number } } = {};
     timeScaleMultiplier: number = 1;
@@ -74,6 +61,7 @@ class SimuloServerController {
     theme: SimuloTheme;
     localClients: SimuloLocalClient[] = [];
     selectedObjects: { [key: string]: (SimuloJoint | SimuloObject)[] } = {};
+    playerColors: { [key: string]: string } = {};
 
     sendAll(type: string, data: any) {
         if (this.networkServer) {
@@ -132,7 +120,7 @@ class SimuloServerController {
         var render = this.physicsServer.render() as SimuloStep;
 
         var springs1 = render.springs;
-        var springs2 = this.springs.map((s) => {
+        var springs2 = Object.values(this.springs).map((s) => {
             return {
                 p1: s.target,
                 p2: s.anchor,
@@ -169,7 +157,8 @@ class SimuloServerController {
     handleData(formatted: { type: string; data: any }, uuid: string) {
         if (formatted.type == "player mouse") {
             var springsFormatted: SpringData[] = [];
-            this.springs.forEach((spring: SimuloMouseSpring) => {
+            if (this.springs[uuid]) {
+                let spring = this.springs[uuid];
                 spring.target = [formatted.data.x, formatted.data.y];
                 springsFormatted.push({
                     p1: [formatted.data.x, formatted.data.y],
@@ -178,7 +167,21 @@ class SimuloServerController {
                     line: spring.line,
                     width: spring.width
                 });
+            }
+            // push the other springs (skip the one we just added)
+            Object.keys(this.springs).forEach((key: string) => {
+                if (key != uuid) {
+                    let spring = this.springs[key];
+                    springsFormatted.push({
+                        p1: [spring.target[0], spring.target[1]],
+                        p2: [spring.anchor[0], spring.anchor[1]],
+                        image: spring.image,
+                        line: spring.line,
+                        width: spring.width
+                    });
+                }
             });
+
 
             if (this.creatingObjects[uuid]) {
                 if (this.creatingObjects[uuid].shape == 'polygon') {
@@ -240,6 +243,8 @@ class SimuloServerController {
                 springs: springsFormatted2,
                 creating_objects: this.creatingObjects,
                 selected_objects: this.selectedObjectIDs(),
+                color: this.playerColors[uuid],
+                tool: this.tools[uuid]
             });
 
             // 👍 we did it, yay, we're so cool
@@ -369,7 +374,7 @@ class SimuloServerController {
                         4,
                     );
 
-                    this.springs.push(mouseJoint);
+                    this.springs[uuid] = mouseJoint;
                 }
             }
             else if (this.tools[uuid] == 'addSpring') {
@@ -448,10 +453,14 @@ class SimuloServerController {
                 console.log("Unknown tool: " + this.tools[uuid]);
             }
         } else if (formatted.type == "player mouse up") {
-            this.springs.forEach((spring: SimuloMouseSpring) => {
+            /*this.springs.forEach((spring: SimuloMouseSpring) => {
                 this.physicsServer.destroy(spring);
             });
-            this.springs = [];
+            this.springs = [];*/
+            if (this.springs[uuid]) {
+                this.physicsServer.destroy(this.springs[uuid]);
+                delete this.springs[uuid];
+            }
             if (this.creatingSprings[uuid]) {
                 var pointABodies = this.physicsServer.getObjectsAtPoint(this.creatingSprings[uuid].start);
                 var pointBBodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
@@ -677,7 +686,7 @@ class SimuloServerController {
         } else if (formatted.type == "set_theme") {
             if (this.theme !== themes[formatted.data]) {
                 this.theme = themes[formatted.data];
-                var floor = this.physicsServer.getObjectByID(1);
+                var floor = this.physicsServer.getObjectByID(2);
                 if (floor) {
                     floor.color = this.theme.ground.color;
                     floor.border = this.theme.ground.border;
@@ -685,8 +694,8 @@ class SimuloServerController {
                     floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
                 }
                 // get 2 and 3 and set those to person.color and person.border and all that
-                var personBody = this.physicsServer.getObjectByID(2);
-                var personHead = this.physicsServer.getObjectByID(3);
+                var personBody = this.physicsServer.getObjectByID(5);
+                var personHead = this.physicsServer.getObjectByID(7);
                 var personParts = [personBody, personHead];
                 personParts.forEach((part) => {
                     if (part) {
@@ -1020,19 +1029,43 @@ class SimuloServerController {
         return physicsServer;
     }
 
-    constructor(theme: SimuloTheme, server: http.Server | null, localClient: boolean) {
+    constructor(theme: SimuloTheme, multiplayer: boolean, localClient: boolean) {
         this.theme = theme;
         this.physicsServer = this.setupPhysicsServer();
 
-        if (server) {
-            this.networkServer = new SimuloNetworkServer(server);
+        let colors = [
+            '#ff5454',
+            '#ff9147',
+            '#ffe44a',
+            '#82e74c',
+            '#309eff',
+            '#ac58ff',
+            '#ff8eca',
+            '#ffffff',
+        ];
+
+        if (multiplayer) {
+            this.networkServer = new SimuloNetworkServer();
 
             this.networkServer.on("connect", (uuid: string) => {
                 console.log("connect", uuid);
                 this.tools[uuid] = "drag";
+                this.playerColors[uuid] = colors[Math.floor(Math.random() * colors.length)];
+                this.sendAll("connect", uuid);
+            });
+
+            this.networkServer.on("disconnect", (uuid: string) => {
+                console.log("disconnect", uuid);
+                this.sendAll("disconnect", uuid);
             });
 
             this.networkServer.on("data", (data: { formatted: { type: string; data: any }, uuid: string }) => {
+                if (!this.tools[data.uuid]) {
+                    this.tools[data.uuid] = "drag";
+                }
+                if (!this.playerColors[data.uuid]) {
+                    this.playerColors[data.uuid] = colors[Math.floor(Math.random() * colors.length)];
+                }
                 this.handleData(data.formatted, data.uuid);
             });
 
@@ -1043,6 +1076,7 @@ class SimuloServerController {
             var id = 'local';
             this.localClients.push(new SimuloLocalClient(this, id));
             this.tools[id] = "drag";
+            this.playerColors[id] = '#000000';
         }
 
         setInterval(() => {

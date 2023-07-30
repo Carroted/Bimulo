@@ -3,12 +3,9 @@
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
 import SimuloClientController from './SimuloClientController/index.js';
-var clientController = new SimuloClientController(document.getElementById('game') as HTMLCanvasElement); // We don't need to store it as we have no need to access it later.
-// @ts-ignore
-window.clientController = clientController; // so we can access it from the console
 
-var host = false;
-// get query string for host (?host=true, ?host=false or none for false)
+var host = true;
+// get query string for host (?host=true, ?host=false or none for true)
 var queryString = window.location.search;
 if (queryString) {
     queryString = queryString.substring(1);
@@ -22,6 +19,71 @@ if (queryString) {
                 host = false;
             }
         }
+    });
+}
+
+let loadingOverlay = document.getElementById('loading-overlay') as HTMLDivElement;
+let spinner = document.getElementById('spinner') as HTMLDivElement;
+
+// if host, hide the loading overlay
+if (host) {
+    loadingOverlay.style.display = 'none';
+    spinner.style.display = 'none';
+
+    var clientController = new SimuloClientController(document.getElementById('game') as HTMLCanvasElement, true);
+    // @ts-ignore
+    window.clientController = clientController; // so we can access it from the console
+}
+// otherwise, we can show it but hide the spinner and instead show the multiplayer join menu
+else {
+    let startingPopup = document.querySelector('.starting-popup') as HTMLDivElement;
+    startingPopup.style.display = 'none';
+
+    spinner.style.display = 'none';
+    let multiplayerJoinMenu = document.getElementById('multiplayer-join-menu') as HTMLDivElement;
+    multiplayerJoinMenu.style.display = 'flex';
+
+    let clientController = new SimuloClientController(document.getElementById('game') as HTMLCanvasElement, false);
+    // @ts-ignore
+    window.clientController = clientController; // so we can access it from the console
+    // wait for the user to click #submit-join-code (it submits the #join-code textarea)
+    let submitJoinCode = document.getElementById('submit-join-code') as HTMLButtonElement;
+    let joinCode = document.getElementById('join-code') as HTMLTextAreaElement;
+    submitJoinCode.addEventListener('click', function () {
+        // change cursor to loading
+        loadingOverlay.style.cursor = 'wait';
+
+        clientController.client.on('answerSdp', function (encodedSdp: string) {
+            // now we put it in the box
+            let answerCode = document.getElementById('answer-code') as HTMLTextAreaElement;
+            answerCode.value = encodedSdp;
+            // cursor back to normal
+            loadingOverlay.style.cursor = 'default';
+            // make copy-answer-code copy it
+            let copyAnswerCode = document.getElementById('copy-answer-code') as HTMLButtonElement;
+            copyAnswerCode.addEventListener('click', function () {
+                // since its disabled, we cant select, lets make invisible thingy
+                let invisibleAnswerCode = document.createElement('textarea');
+                invisibleAnswerCode.value = answerCode.value;
+                document.body.appendChild(invisibleAnswerCode);
+                invisibleAnswerCode.select();
+                document.execCommand('copy');
+                document.body.removeChild(invisibleAnswerCode);
+                // give #copied-answer-code the .active class
+                let copiedAnswerCode = document.getElementById('copied-answer-code') as HTMLDivElement;
+                copiedAnswerCode.classList.add('active');
+            });
+            // now remove .active from join-step-1 and move it to join-step-2 (the final step)
+            let joinStep1 = document.getElementById('join-step-1') as HTMLDivElement;
+            let joinStep2 = document.getElementById('join-step-2') as HTMLDivElement;
+            joinStep1.classList.remove('active');
+            joinStep2.classList.add('active');
+        });
+        // on ready, hide the loading overlay
+        clientController.client.on('ready', function () {
+            loadingOverlay.style.display = 'none';
+        });
+        clientController.client.connect(decodeURIComponent(joinCode.value.trim()));
     });
 }
 

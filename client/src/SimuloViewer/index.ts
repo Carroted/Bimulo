@@ -12,15 +12,10 @@ const style = `/*canvas.simulo-viewer.fullscreen {
 canvas.simulo-viewer {
     border: none;
     outline: none;
-    /* This is overridden by the cursor class below, which is applied when \`systemCursor\` is true in SimuloViewer */
     cursor: none;
     overflow: hidden;
     margin: 0;
     padding: 0;
-}
-
-canvas.simulo-viewer.cursor {
-    cursor: default;
 }`;
 const viewerClass = 'simulo-viewer';
 
@@ -532,18 +527,6 @@ class SimuloViewer {
     get fullscreen(): boolean {
         return this.canvas.classList.contains("fullscreen");
     }
-    /** Adds or removes `.cursor` class from the canvas element, which has CSS to make it show the system cursor or hide it. */
-    get systemCursor(): boolean {
-        return this.canvas.classList.contains('cursor');
-    }
-    set systemCursor(value: boolean) {
-        if (value) {
-            this.canvas.classList.add('cursor');
-        }
-        else {
-            this.canvas.classList.remove('cursor');
-        }
-    }
 
     drawVerts(verts: { x: number, y: number }[]) {
         this.ctx.beginPath();
@@ -769,6 +752,7 @@ class SimuloViewer {
 
             if (shape.type === 'polygon') {
                 let shapePolygon = shape as SimuloPolygon;
+                /*
                 if (shapePolygon.decomposedParts) {
                     for (var j = 0; j < shapePolygon.decomposedParts.length; j++) {
                         var part = shapePolygon.decomposedParts[j];
@@ -780,7 +764,7 @@ class SimuloViewer {
                         }), shapePolygon.angle);
                     }
                 }
-                else if (!shapePolygon.points) {
+                else */if (!shapePolygon.points) {
                     this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
                 }
                 else {

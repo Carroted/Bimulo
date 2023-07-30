@@ -1,6 +1,6 @@
 interface SimuloClient {
     id: string;
-    connect(): void;
+    connect(data?: any): void;
     on(type: string, callback: Function): void;
     off(type: string, callback: Function): void;
     /** Emit data over WebRTC */

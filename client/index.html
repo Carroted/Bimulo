@@ -43,9 +43,10 @@
 <body>
   <canvas width="300" height="200" id="game" tabindex="1"></canvas>
   <div id="canvas-overlays">
-    <div class="player-cursor" id="player-cursor">
+    <!--<div class="player-cursor" id="player-cursor">
       <img src="assets/textures/cursor.png" alt="Cursor">
-    </div>
+      <img src="assets/textures/tools/box.png" class="cursor-tool" alt="Tool" style="display: none;">
+    </div>-->
   </div>
   <div class="version-info" id="version-info">Simulo Alpha</div>
   <div id="pause-overlay">
@@ -303,6 +304,44 @@
       <button class="update-menu-button">Update</button>
       <button class="update-menu-button secondary">Dismiss</button>
       <button class="update-menu-button tertiary">Remind me later</button>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner" id="spinner">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="20" />
+      </svg>
+    </div>
+    <div class="multiplayer-join-menu" style="display: none;" id="multiplayer-join-menu">
+      <h1>Join Multiplayer</h1>
+      <!-- this is a webrtc game WITHOUT signaling server. -->
+      <!-- for that reason, they have to input an offer SDP, then we give them back an answer SDP a few moments later to send back to the host. -->
+      <div class="step active" id="join-step-1">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <p>Ask your host for the join code, then paste it here.</p>
+        </div>
+        <div class="step-content">
+          <!-- no spellcheck, and we tell browser not to save it -->
+          <textarea placeholder="Paste join code from host here" id="join-code" spellcheck="false"
+            autocomplete="off"></textarea>
+          <button class="button" id="submit-join-code">Submit Join Code</button>
+        </div>
+      </div>
+      <div class="step" id="join-step-2">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <p>Send the answer code back to your host to enter in the host menu. Once they do that, you will automatically
+            join.</p>
+        </div>
+        <div class="step-content">
+          <textarea placeholder="Answer code to send to host" id="answer-code" readonly spellcheck="false"
+            autocomplete="off"></textarea>
+          <button class="button" id="copy-answer-code">Copy Answer Code<div class="copied" id="copied-answer-code">
+              Copied! Send it to the host!</div></button>
+        </div>
+      </div>
     </div>
   </div>
 
