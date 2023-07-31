@@ -2,6 +2,7 @@
 
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
+import e from 'express';
 import SimuloClientController from './SimuloClientController/index.js';
 
 // load all svg data-src images
@@ -34,6 +35,8 @@ if (url.searchParams.get("host")) {
     } else {
         host = false;
     }
+} else {
+    host = false;
 }
 
 let loadingOverlay = document.getElementById('loading-overlay') as HTMLDivElement;
