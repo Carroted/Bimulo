@@ -7,5 +7,6 @@ export default defineConfig({
     target: "esnext",
     bundle: false,
     format: "esm",
-    outDir: "dist"
+    outDir: "dist",
+    sourcemap: true,
 })

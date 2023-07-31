@@ -2,6 +2,8 @@
 
 import SimuloTheme from "./src/SimuloTheme";
 
+type ThemeName = "night" | "sunrise" | "day" | "nostalgia";
+
 export default {
   "night": {
     "displayName": "Night",
