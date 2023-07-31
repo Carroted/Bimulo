@@ -2,8 +2,6 @@
 
 import fs from 'fs';
 import * as url from "url";
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import path from 'path';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
@@ -15,45 +13,36 @@ devServerSocket.on("connection", (socket) => {
     console.log("\n" + chalk.greenBright('->') + " Dev WebSocket connected");
 });
 
-import { exec } from 'child_process';
-
-const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
-
+import { ChildProcess, exec } from 'child_process';
+import { packageJson, __dirname, __filename } from './lib.js';
 // get dev script
 var devScript = packageJson.scripts.dev; // its multiple commands with &&
 
-let process = null;
+let child: ChildProcess;
 
 import kill from 'tree-kill';
 
 async function killAsync(pid) {
     return new Promise((resolve, reject) => {
-        kill(pid, (err) => {
-            if (err) {
-                reject(err);
-            }
-            else {
-                resolve();
-            }
-        });
+        process.kill(pid);
     });
 }
 
 async function runDev(staticChangesOnly = false) {
     console.log(' │');
     console.log(' ├ Running dev server...');
-    if (process) {
+    if (child) {
         //process.kill();
-        await killAsync(process.pid);
+        await killAsync(child.pid);
         console.log(' ├ Killed previous dev server.');
     }
     if (!staticChangesOnly) {
-        process = exec(devScript, { cwd: __dirname });
+        child = exec(devScript, { cwd: __dirname });
     }
     else {
-        process = exec('node dist/server/src/index.js --dev', { cwd: __dirname });
+        child = exec('node dist/server/src/index.js --dev', { cwd: __dirname });
     }
-    process.stdout.on('data', (data) => {
+    child.stdout?.on('data', (data) => {
         // if it contains "Build complete in", log it, otherwise ignore
         if (data.includes('Build complete in')) {
             console.log(' ├ ' + chalk.greenBright(data.trim()).trim());
@@ -67,7 +56,7 @@ async function runDev(staticChangesOnly = false) {
             console.log(' └ Told dev WebSockets to reload');
         }
     });
-    process.stderr.on('data', (data) => {
+    child.stderr?.on('data', (data) => {
         console.error(chalk.redBright(data.trim()).trim() + '\n');
     });
 }

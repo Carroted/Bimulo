@@ -8,6 +8,7 @@ import * as url from "url";
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import path from 'path';
+import { copyFolderRecursiveSync } from './lib.js';
 
 import ghpages from 'gh-pages';
 
@@ -15,8 +16,7 @@ import chalk from 'chalk';
 
 // import child_process
 import { exec } from 'child_process';
-
-const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
+import { packageJson } from './lib.js';
 
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
@@ -97,34 +97,12 @@ var steps = [
                     process.exit(1);
                 }
                 else {
-                    resolve();
+                    resolve(null);
                 }
             });
         });
     }
 ];
-
-function copyFolderRecursiveSync(source, target) {
-    var files = [];
-    // check if folder needs to be created or integrated
-    var targetFolder = target;
-    if (!fs.existsSync(targetFolder)) {
-        fs.mkdirSync(targetFolder);
-    }
-    // copy
-    if (fs.lstatSync(source).isDirectory()) {
-        files = fs.readdirSync(source);
-        files.forEach(function (file) {
-            var curSource = path.join(source, file);
-            if (fs.lstatSync(curSource).isDirectory()) {
-                copyFolderRecursiveSync(curSource, path.join(targetFolder, path.basename(curSource)));
-            }
-            else {
-                fs.copyFileSync(curSource, path.join(targetFolder, path.basename(curSource)));
-            }
-        });
-    }
-}
 
 // run steps
 for (var i = 0; i < steps.length; i++) {

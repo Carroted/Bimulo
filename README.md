@@ -128,33 +128,7 @@ We just cut off `SimuloNetworkServer` and everything connected to it.
 
 Here's a handy diagram of the file structure:
 
-- 📂 **client** - Assets and source for the client all in one
-   - 📂 **assets**
-      - 📂 **fonts**
-      - 📂 **sounds**
-      - 📂 **textures**
-   - 📂 **icons** - Custom icons and overrides of the [MDI icons](https://pictogrammers.com/library/mdi/) we serve at /icons
-   - 📂 **src** - TypeScript source for client-only scripts
-   - 📄 **index.html**
-   - 📄 **index.css**
-   - 📄 **manifest.json**
-   - 📄 **sw.js**
-   - 📄 **tsconfig.json** - Config for the TypeScript compiler
-- 📂 **media** - Icons and logos
-- 📂 **server** - Source for the web server
-   - 📂 **src** - TypeScript source for server-only scripts
-   - 📄 **tsconfig.json** - Config for the TypeScript compiler
-- 📂 **shared** - Source for scripts shared between the client and server
-   - 📂 **src** - TypeScript source for shared scripts
-   - 📄 **themes.ts** - Previously `themes.json` but turned into a module to use `import` for it
-   - 📄 **tsconfig.json** - Config for the TypeScript compiler
-- 📄 **assetFloatEqual.js** - May be deleted soon or converted to TypeScript
-- 📄 **build.js** - Builds Simulo to `📂 dist`
-- 📄 **deploy.js** - If you have write access to the Simulo repo, it will deploy to the `gh-pages` branch
-- 📄 **Inkscape Workspace.svg** - Workspace for Inkscape where logos and textures are made
-- 📄 **package.json**
-- 📄 **README.md** - Look, it's me!
-- 📄 **tsedition** - Just something I'm working on for scripting API, ignore it
+I forgor 💀
 
 ## FAQ
 
