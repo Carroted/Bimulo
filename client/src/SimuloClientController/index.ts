@@ -399,6 +399,17 @@ class SimuloClientController {
 
     constructor(canvas: HTMLCanvasElement, host: boolean) {
         this.theme = themes.night;
+        if ( new URL(document.location.href).searchParams.get("theme") ) {
+            let popup = document.querySelector(".starting-popup") as HTMLDivElement;
+            popup.style.display = "none";
+            let theme = new URL(document.location.href).searchParams.get("theme") as string;
+
+            if (theme in themes) {
+                this.theme = themes[theme];
+            } else {
+                this.theme = themes.night;
+            }
+        }
         if (host) {
             this.serverController = new SimuloServerController(this.theme, true, true);
             this.client = this.serverController.localClients[0];
