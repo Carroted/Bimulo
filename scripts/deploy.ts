@@ -18,7 +18,7 @@ import chalk from 'chalk';
 import { exec } from 'child_process';
 import { packageJson } from './lib.js';
 
-function capitalizeFirstLetter(string) {
+function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
@@ -26,7 +26,7 @@ var buildInfo = chalk.bold('Deploying ' + capitalizeFirstLetter(packageJson.name
 console.log(buildInfo);
 
 var steps = [
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Checking for build...');
         if (!fs.existsSync(path.join(__dirname, 'dist'))) {
             console.log(chalk.redBright('No build found! Please run `npm run build` first.'));
@@ -34,32 +34,32 @@ var steps = [
         }
     },
     // add an empty .nojekyll file to dist so that node_modules is served properly
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Adding .nojekyll file...');
         fs.writeFileSync(path.join(__dirname, 'dist', '.nojekyll'), 'Please don\'t jekyll me.');
     },
     // copy dist/node_modules to dist/client
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying node_modules to client/node_modules...');
         copyFolderRecursiveSync(path.join(__dirname, 'dist', 'node_modules'), path.join(__dirname, 'dist', 'client', 'node_modules'));
     },
     // copy dist/shared to dist/client/shared
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying shared to client/shared...');
         copyFolderRecursiveSync(path.join(__dirname, 'dist', 'shared'), path.join(__dirname, 'dist', 'client', 'shared'));
     },
     // copy dist/media to dist/client/media
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying media to client/media...');
         copyFolderRecursiveSync(path.join(__dirname, 'dist', 'media'), path.join(__dirname, 'dist', 'client', 'media'));
     },
     // copy dist/version.json to dist/client/version (no extension)
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying version.json to client/version...');
         fs.copyFileSync(path.join(__dirname, 'dist', 'version.json'), path.join(__dirname, 'dist', 'client', 'version'));
     },
     // copy node_modules/@mdi/svg/svg to dist/client/icons
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying icons...');
         var nmIcons = path.join(__dirname, 'dist', 'node_modules', '@mdi', 'svg', 'svg');
         var clientIcons = path.join(__dirname, 'dist', 'client', 'icons');
@@ -74,17 +74,17 @@ var steps = [
         copyFolderRecursiveSync(nmIcons, clientIcons);
     },
     // copy website to dist/
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying website...');
         copyFolderRecursiveSync(path.join(__dirname, 'website'), path.join(__dirname, 'dist'));
     },
     // copy client/assets to dist/assets so website can use it
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying assets...');
         copyFolderRecursiveSync(path.join(__dirname, 'dist', 'client', 'assets'), path.join(__dirname, 'dist', 'assets'));
     },
     // deploy to gh-pages
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Deploying to GitHub Pages...');
         await new Promise((resolve, reject) => {
             ghpages.publish(path.join(__dirname, 'dist'), {
