@@ -22,9 +22,9 @@ let child: ChildProcess;
 
 import kill from 'tree-kill';
 
-async function killAsync(pid: any) {
+async function killAsync(pid: number | undefined) {
     return new Promise((resolve, reject) => {
-        kill(pid, (err) => {
+        kill(pid as number, (err) => {
             if (err) {
                 reject(err);
             }

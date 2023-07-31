@@ -18,7 +18,7 @@ function capitalizeFirstLetter(string: string) {
 
 const buildLogPath = path.join(__dirname, 'build-log.json');
 const buildInfo = chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n');
-let prevBuildTime: any = null;
+let prevBuildTime: number;
 if (fs.existsSync(buildLogPath)) {
     const buildLog = JSON.parse(fs.readFileSync(buildLogPath, 'utf8'));
     let timeToBuild;
