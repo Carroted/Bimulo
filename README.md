@@ -128,7 +128,7 @@ We just cut off `SimuloNetworkServer` and everything connected to it.
 
 Here's a handy diagram of the file structure:
 
-I forgor 💀
+I forgoy 💀
 
 ## FAQ
 
