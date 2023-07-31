@@ -25,20 +25,15 @@ svgs.forEach(function (svg) {
 
 var host = true;
 // get query string for host (?host=true, ?host=false or none for true)
-var queryString = window.location.search;
-if (queryString) {
-    queryString = queryString.substring(1);
-    var queryArray = queryString.split('&');
-    queryArray.forEach(function (query) {
-        var queryPair = query.split('=');
-        if (queryPair[0] == 'host') {
-            if (queryPair[1] == 'true') {
-                host = true;
-            } else if (queryPair[1] == 'false') {
-                host = false;
-            }
-        }
-    });
+let url = new URL(window.location.href);
+
+if (url.searchParams.get("host")) {
+    let param = url.searchParams.get("host");
+    if ( param == "true") {
+        host = true;
+    } else {
+        host = false;
+    }
 }
 
 let loadingOverlay = document.getElementById('loading-overlay') as HTMLDivElement;

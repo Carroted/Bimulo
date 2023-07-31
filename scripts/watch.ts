@@ -23,13 +23,13 @@ let child: ChildProcess;
 import kill from 'tree-kill';
 
 async function killAsync(pid: number) {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
         kill(pid, (err) => {
             if (err) {
                 reject(err);
             }
             else {
-                resolve(null);
+                resolve();
             }
         });
     });
@@ -56,7 +56,7 @@ async function runDev(staticChangesOnly = false) {
         }
         // if it includes "HTTP server started on port", we tell the dev server to reload
         else if (data.includes('HTTP server started on port')) {
-            console.log(' ├ ' + chalk.greenBright('Server started on http://localhost:4613/'));
+            console.log(' ├ ' + chalk.greenBright(`Server started on http://localhost:${process.env.PORT}/`));
             devServerSocket.clients.forEach((client) => {
                 client.send("refresh");
             });

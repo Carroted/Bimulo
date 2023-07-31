@@ -870,7 +870,7 @@ class SimuloClientController {
                                 let action = (item as HTMLElement).dataset.action;
                                 if (action == 'delete') {
                                     var deleted = await this.emitDataAsync('delete_object', { id: object.id });
-                                    this.showToast(deleted ? 'Deleted object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
+                                    this.showToast(deleted ? 'Deleted woohoo object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
                                 }
                                 menu.remove();
                                 document.removeEventListener('mousedown', menuRemover);
