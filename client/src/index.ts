@@ -5,6 +5,7 @@ var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 import SimuloClientController from './SimuloClientController/index.js';
 
 var host = true;
+let dev = false;
 // get query string for host (?host=true, ?host=false or none for true)
 var queryString = window.location.search;
 if (queryString) {
@@ -19,7 +20,36 @@ if (queryString) {
                 host = false;
             }
         }
+        else if (queryPair[0] == 'dev') {
+            if (queryPair[1] == 'true') {
+                dev = true;
+            } else if (queryPair[1] == 'false') {
+                dev = false;
+            }
+        }
     });
+}
+
+if (dev) {
+    console.log('dev mode');
+    // websocket to 4614 localhost
+    let setupSocket = function () {
+        let socket = new WebSocket('ws://localhost:4614');
+        socket.onopen = function () {
+            console.log('connected to dev server socket');
+        }
+        socket.onmessage = function (event) {
+            // when it sends "refresh", refresh the page
+            if (event.data == 'refresh') {
+                location.reload();
+            }
+        }
+        socket.onclose = function () {
+            console.log('disconnected from dev server socket');
+            setTimeout(setupSocket, 800);
+        }
+    }
+    setupSocket();
 }
 
 let loadingOverlay = document.getElementById('loading-overlay') as HTMLDivElement;

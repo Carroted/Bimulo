@@ -71,7 +71,7 @@ class SimuloNetworkServer {
                 console.log('returning because e.candidate is not null, which means we are not done yet since we are still getting candidates');
                 return;
             }; // ok
-            alert(encodeURIComponent(pc.localDescription!.sdp)); // if its null we cry about it
+            //alert(encodeURIComponent(pc.localDescription!.sdp)); // if its null we cry about it
             console.log('on ice candidate, the sdp is:', encodeURIComponent(pc.localDescription!.sdp));
         };
         pc.ondatachannel = (e) => {

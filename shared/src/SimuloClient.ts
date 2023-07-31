@@ -1,3 +1,5 @@
+// SimuloClient interface is implemented by LocalClient and NetworkClient
+
 interface SimuloClient {
     id: string;
     connect(data?: any): void;

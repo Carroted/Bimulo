@@ -6,7 +6,8 @@
     "start": "node dist/server/src/index.js",
     "build": "node build.js",
     "deploy": "node build.js && node deploy.js",
-    "dev": "node build.js --dev && node dist/server/src/index.js"
+    "dev": "node build.js --dev && node dist/server/src/index.js --dev",
+    "watch": "node watch.js"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
@@ -14,6 +15,7 @@
     "@types/emscripten": "^1.39.6",
     "box2d-wasm": "file:./box2d-wasm-7.0.0.tgz",
     "chalk": "^5.2.0",
+    "chokidar": "^3.5.3",
     "earcut": "^2.2.4",
     "express": "^4.17.2",
     "node-datachannel": "^0.4.1",
@@ -21,6 +23,7 @@
     "simple-peer": "^9.11.1",
     "socket.io": "^4.6.1",
     "terminal-link": "^3.0.0",
+    "tree-kill": "^1.2.2",
     "wrtc": "^0.4.7",
     "ws": "^8.13.0"
   },
@@ -30,6 +33,7 @@
   "devDependencies": {
     "@types/earcut": "^2.1.1",
     "@types/express": "^4.17.17",
+    "@types/ws": "^8.5.5",
     "gh-pages": "^5.0.0",
     "tsup": "^7.1.0",
     "typescript": "^5.1.6"

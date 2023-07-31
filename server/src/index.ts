@@ -15,7 +15,12 @@ import fs from "fs";
 
 const versionInfo = JSON.parse(fs.readFileSync(__dirname + '/../../version.json', 'utf8'));
 
-console.log(chalk.bold.hex('#99e077')(`Simulo Server v${versionInfo.version}`));
+let dev = false;
+if (process.argv.includes("--dev")) {
+	dev = true;
+}
+
+console.log(chalk.bold.hex('#99e077')(`Simulo ${dev ? 'Development ' : ''}Server v${versionInfo.version}`));
 
 console.log("Node.js server for Simulo with " + terminalLink('Express', 'https://npmjs.com/package/express', {
 	fallback: false
@@ -26,13 +31,37 @@ import log from './log.js';
 
 log.info("Starting servers...") // Servers take a few seconds to start up, so we'll log this to the console
 
-
 const app: any = express(); // TODO: type this
 // make http server (esm import)
 import * as http from "http";
 const server = http.createServer();
 server.on("request", app);
 
+if (dev) {
+	// we will add Cache-Control: no-store, max-age=0 to each response using express middleware:
+	app.use((req: any, res: any, next: any) => {
+		res.set("Cache-Control", "no-store, max-age=0");
+		next();
+	});
+}
+
+// if / request without dev param and we're in dev mode, redirect to with dev param (keeping existing params)
+app.get("/", (req: any, res: any, next: any) => {
+	if (dev && (req.query.dev === undefined || req.query.dev === "")) {
+		let params = "?";
+		for (let key in req.query) {
+			params += key + "=" + req.query[key] + "&";
+		}
+		// add dev param
+		params += "dev=true";
+		// redirect
+		res.redirect("/" + params);
+	}
+	else {
+		// next, we static it later
+		next();
+	}
+});
 
 app.use(express.static(__dirname + "/../../client"));
 
