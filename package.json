@@ -4,16 +4,16 @@
   "main": "dist/server/src/index.js",
   "scripts": {
     "start": "node dist/server/src/index.js",
-    "build": "node build.js",
-    "deploy": "node build.js && node deploy.js",
-    "dev": "node build.js --dev && node dist/server/src/index.js --dev",
-    "watch": "node watch.js"
+    "build": "tsx scripts/build.ts",
+    "deploy": "tsx scripts/build.ts && node deploy.js",
+    "dev": "tsx scripts/build.ts --dev && node dist/server/src/index.js --dev",
+    "watch": "tsx scripts/watch.ts"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",
     "@tabler/icons": "^2.10.0",
     "@types/emscripten": "^1.39.6",
-    "box2d-wasm": "file:./box2d-wasm-7.0.0.tgz",
+    "box2d-wasm": "file:./other/box2d-wasm-7.0.0.tgz",
     "chalk": "^5.2.0",
     "chokidar": "^3.5.3",
     "earcut": "^2.2.4",
@@ -33,9 +33,11 @@
   "devDependencies": {
     "@types/earcut": "^2.1.1",
     "@types/express": "^4.17.17",
+    "@types/node": "^20.4.5",
     "@types/ws": "^8.5.5",
     "gh-pages": "^5.0.0",
     "tsup": "^7.1.0",
+    "tsx": "^3.12.7",
     "typescript": "^5.1.6"
   },
   "type": "module"

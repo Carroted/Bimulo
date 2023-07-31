@@ -346,8 +346,8 @@
     </div>
   </div>
 
-  <div class="loading-overlay" id="loading-overlay">
-    <div class="spinner" id="spinner">
+  <div class="loading-overlay" id="loading-overlaye">
+    <div class="spinner" id="spinner" style="display: none;">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="20" />
       </svg>
@@ -382,12 +382,65 @@
         </div>
       </div>
     </div>
-    <div class="main-menu" style="display: none;" id="main-menu">
+    <div class="main-menu" style="/*display: none;*/" id="main-menu">
       <div class="top-menu"><img src="media/logo.svg" alt="Simulo logo">
         <div class="settings button" id="settings-button">
-          <svg data-src="icons/settings.svg"></svg>
+          <svg data-src="icons/cog.svg"></svg>
         </div>
       </div>
+      <h1>Play</h1>
+      <div class="play-menu">
+        <div class="play-option singleplayer" id="singleplayer">
+          <div class="play-option-icon">
+            <svg data-src="icons/account.svg"></svg>
+          </div>
+          <div class="play-option-text">
+            <h3>Singleplayer</h3>
+            <p>Play by yourself.</p>
+          </div>
+        </div>
+        <div class="play-option multiplayer" id="multiplayer">
+          <div class="play-option-icon">
+            <svg data-src="icons/account-multiple.svg"></svg>
+          </div>
+          <div class="play-option-text">
+            <h3>Multiplayer</h3>
+            <p>Host or join a multiplayer game.</p>
+          </div>
+        </div>
+      </div>
+      <h1>News</h1>
+      <div class="news-menu">
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.9.0 released!</h3>
+            <div class="news-item-date">2023-07-30</div>
+          </div>
+          <div class="news-item-description">
+            <p>New update with multiplayer, main menu, music and more!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Welcome to the News section!</h3>
+            <div class="news-item-date">2023-07-30</div>
+          </div>
+          <div class="news-item-description">
+            <p>Here, you can see the latest updates to Simulo.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.8.0 released!</h3>
+            <div class="news-item-date">2023-07-04</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds shape dimensions, and was made by pkerpo.</p>
+          </div>
+        </div>
+      </div>
+      <h1>Browse</h1>
+      <p>Coming soon! Here there will be public scenes and objects people published.</p>
     </div>
   </div>
 
