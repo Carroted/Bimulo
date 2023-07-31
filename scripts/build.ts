@@ -3,38 +3,36 @@
 
 import fs from 'fs';
 import * as url from "url";
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+
 import path from 'path';
 
 import chalk from 'chalk';
 
 // import child_process
 import { exec } from 'child_process';
+import { packageJson, __dirname, __filename, copyFolderRecursiveSync } from './lib.js';
 
-const packageJson = JSON.parse(fs.readFileSync(__dirname + '/package.json', 'utf8'));
-
-function capitalizeFirstLetter(string) {
+function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-var buildLogPath = path.join(__dirname, 'build-log.json');
-var buildInfo = chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n');
-var prevBuildTime = null;
+const buildLogPath = path.join(__dirname, 'build-log.json');
+const buildInfo = chalk.bold('Building ' + capitalizeFirstLetter(packageJson.name) + ' v' + packageJson.version + '...\n');
+let prevBuildTime: number;
 if (fs.existsSync(buildLogPath)) {
-    var buildLog = JSON.parse(fs.readFileSync(buildLogPath, 'utf8'));
-    var timeToBuild;
+    const buildLog = JSON.parse(fs.readFileSync(buildLogPath, 'utf8'));
+    let timeToBuild;
     if (buildLog.prevBuildTime) {
-        var timeToBuild1 = buildLog.buildTime; // ms
-        var timeToBuild2 = buildLog.prevBuildTime; // ms
+        const timeToBuild1 = buildLog.buildTime; // ms
+        const timeToBuild2 = buildLog.prevBuildTime; // ms
         timeToBuild = (timeToBuild1 + timeToBuild2) / 2; // average
     }
     else {
         timeToBuild = buildLog.buildTime;
     }
-    var timeToBuildSeconds = timeToBuild / 1000;
+    let timeToBuildSeconds = timeToBuild / 1000;
     // ceil it
-    timeToBuildSeconds = timeToBuildSeconds.toFixed(3);
+    timeToBuildSeconds = parseInt(timeToBuildSeconds.toFixed(3));
     console.log(buildInfo + 'Estimated time to build: ' + timeToBuildSeconds + 's\n');
 
     prevBuildTime = timeToBuild;
@@ -42,12 +40,12 @@ if (fs.existsSync(buildLogPath)) {
 else {
     console.log(buildInfo);
 }
-var startTime = Date.now();
+const startTime = Date.now();
 
-function indentLines(str, count) {
-    var lines = str.split('\n');
-    var newLines = [];
-    for (var line of lines) {
+function indentLines(str: string, count: number) {
+    const lines: string[] = str.split('\n');
+    const newLines: string[] = [];
+    for (const line of lines) {
         newLines.push(' '.repeat(count) + line);
     }
     return newLines.join('\n');
@@ -59,9 +57,9 @@ if (process.argv.includes('--dev')) {
     dev = true;
 }
 
-var steps = [
+const steps = [
     // remove dist folder
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         // first, remove dist folder
         const distPath = path.join(__dirname, 'dist');
         if (fs.existsSync(distPath)) {
@@ -73,24 +71,24 @@ var steps = [
         }
     },
     // run tsc
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Compiling TypeScript...');
-        var srcDirs = ['client', 'server', 'shared'];
-        var promises = [];
-        for (var srcDir of srcDirs) {
+        const srcDirs = ['client', 'server', 'shared'];
+        const promises: Promise<any>[] = [];
+        for (const srcDir of srcDirs) {
             promises.push(new Promise((resolve, reject) => {
                 const child = exec('npx tsup', { cwd: __dirname });
-                child.stdout.on('data', (data) => {
+                child.stdout?.on('data', (data) => {
                     console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
                 });
-                child.stderr.on('data', (data) => {
+                child.stderr?.on('data', (data) => {
                     console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
                 });
                 child.on('close', (code) => {
                     if (code !== 0) {
                         reject(new Error(`TypeScript compiler exited with code ${code}`));
                     } else {
-                        resolve();
+                        resolve(null);
                     }
                 });
             }));
@@ -108,10 +106,10 @@ var steps = [
         }
     },*/
     // generate distPackage
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Creating dist-package.json...');
         // create a `dist-package.json` file
-        var distPackage = {
+        const distPackage = {
             name: packageJson.name,
             version: packageJson.version,
             main: 'server/src/index.js',
@@ -127,41 +125,41 @@ var steps = [
         fs.writeFileSync(path.join(__dirname, 'dist', 'package.json'), JSON.stringify(distPackage, null, 4));
     },
     // recursively copy client/assets to dist/client/assets, client/icons to dist/client/icons, client/index.css and client/index.html to dist/client and media to dist/media. finally, node_modules to dist/node_modules and client/src to dist/client/src
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         // we'll do above in separate steps
         console.log(stepInfo, 'Copying client/assets to dist/client/assets...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'assets'), path.join(__dirname, 'dist', 'client', 'assets'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/icons to dist/client/icons...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'icons'), path.join(__dirname, 'dist', 'client', 'icons'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/index.css to dist/client...');
         fs.copyFileSync(path.join(__dirname, 'client', 'index.css'), path.join(__dirname, 'dist', 'client', 'index.css'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/index.html to dist/client...');
         fs.copyFileSync(path.join(__dirname, 'client', 'index.html'), path.join(__dirname, 'dist', 'client', 'index.html'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/manifest.json to dist/client...');
         fs.copyFileSync(path.join(__dirname, 'client', 'manifest.json'), path.join(__dirname, 'dist', 'client', 'manifest.json'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/sw.js to dist/client...');
         fs.copyFileSync(path.join(__dirname, 'client', 'sw.js'), path.join(__dirname, 'dist', 'client', 'sw.js'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying media to dist/media...');
         copyFolderRecursiveSync(path.join(__dirname, 'media'), path.join(__dirname, 'dist', 'media'));
     },
     // copy box2d-wasm-7.0.0.tgz to dist
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying box2d-wasm-7.0.0.tgz to dist...');
-        fs.copyFileSync(path.join(__dirname, 'box2d-wasm-7.0.0.tgz'), path.join(__dirname, 'dist', 'box2d-wasm-7.0.0.tgz'));
+        fs.copyFileSync(path.join(__dirname, 'other/box2d-wasm-7.0.0.tgz'), path.join(__dirname, 'dist', 'box2d-wasm-7.0.0.tgz'));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         if (!dev) {
             console.log(stepInfo, 'Copying node_modules...');
             copyFolderRecursiveSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'));
@@ -190,27 +188,27 @@ var steps = [
             fs.symlinkSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'), 'dir');
         }
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'src'), path.join(__dirname, 'dist', 'client', 'src'));
     },
     // copy shared/src/intersect.js to dist/shared/src
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Copying shared/src/intersect.js to dist/shared/src...');
         fs.copyFileSync(path.join(__dirname, 'shared', 'src', 'intersect.js'), path.join(__dirname, 'dist', 'shared', 'src', 'intersect.js'));
     },
     // read all files in client and list them in dist/client/filelist.txt for serviceworker caching
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Creating dist/client/filelist.txt...');
-        var files = [];
-        var clientPath = path.join(__dirname, 'dist', 'client');
-        var walkSync = function (dir, prepend) {
+        let files: string[] = [];
+        const clientPath = path.join(__dirname, 'dist', 'client');
+        const walkSync = function (dir: string, prepend: string) {
             // get all files of the current directory & iterate over them
-            var dirFiles = fs.readdirSync(dir);
+            const dirFiles = fs.readdirSync(dir);
             dirFiles.forEach(function (file) {
                 // construct whole file-path & retrieve file's stats
-                var filePath = path.join(dir, file);
-                var fileStat = fs.statSync(filePath);
+                const filePath = path.join(dir, file);
+                const fileStat = fs.statSync(filePath);
                 if (fileStat.isDirectory()) {
                     // recursive call if it's a directory
                     walkSync(path.join(dir, file), prepend + file + '/');
@@ -219,7 +217,7 @@ var steps = [
                     // add current file to fileList array
                     if (!filePath.endsWith('.ts')) {
                         // make relative
-                        var relativePath = path.relative(dir, filePath);
+                        const relativePath = path.relative(dir, filePath);
                         files.push(prepend + relativePath);
                     }
                 }
@@ -227,11 +225,11 @@ var steps = [
         };
         // start recursion to fill fileList
         walkSync(clientPath, '/');
-        var sharedPath = path.join(__dirname, 'dist', 'shared');
+        const sharedPath = path.join(__dirname, 'dist', 'shared');
         walkSync(sharedPath, '/shared/');
-        var mediaPath = path.join(__dirname, 'dist', 'media');
+        const mediaPath = path.join(__dirname, 'dist', 'media');
         walkSync(mediaPath, '/media/');
-        var box2DPath = path.join(__dirname, 'dist', 'node_modules', 'box2d-wasm', 'dist');
+        const box2DPath = path.join(__dirname, 'dist', 'node_modules', 'box2d-wasm', 'dist');
         walkSync(box2DPath, '/node_modules/box2d-wasm/dist/');
         // remove /sw.js (its a bit silly to cache the service worker itself, how would it get itself from the cache if its not active to do so? and it seems to cause error too)
         files = files.filter(function (file) { return file !== '/sw.js'; });
@@ -243,18 +241,18 @@ var steps = [
         fs.writeFileSync(path.join(clientPath, 'filelist.txt'), files.join('\n'));
     },
     // add the date to version.json
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Creating dist/version.json...');
-        var version = {
+        const version = {
             date: new Date().getTime(),
             version: packageJson.version
         };
         fs.writeFileSync(path.join(__dirname, 'dist', 'version.json'), JSON.stringify(version, null, 4));
     },
-    async (stepInfo) => {
+    async (stepInfo: string) => {
         console.log(stepInfo, 'Creating log...');
-        var endTime = Date.now();
-        var log;
+        const endTime = Date.now();
+        let log;
         if (prevBuildTime) {
             log = {
                 buildTime: endTime - startTime,
@@ -270,34 +268,10 @@ var steps = [
     }
 ];
 
-function copyFolderRecursiveSync(source, target) {
-    var files = [];
-    // check if folder needs to be created or integrated
-    var targetFolder = target;
-    if (!fs.existsSync(targetFolder)) {
-        fs.mkdirSync(targetFolder);
-    }
-    // copy
-    if (fs.lstatSync(source).isDirectory()) {
-        files = fs.readdirSync(source);
-        files.forEach(function (file) {
-            var curSource = path.join(source, file);
-            if (fs.lstatSync(curSource).isDirectory()) {
-                copyFolderRecursiveSync(curSource, path.join(targetFolder, path.basename(curSource)));
-            }
-            else if (fs.lstatSync(curSource).isSymbolicLink()) {
-                var symlinkFull = fs.readlinkSync(curSource);
-                fs.symlinkSync(symlinkFull, path.join(targetFolder, path.basename(curSource)));
-            }
-            else {
-                fs.copyFileSync(curSource, path.join(targetFolder, path.basename(curSource)));
-            }
-        });
-    }
-}
+
 
 // run steps
-for (var i = 0; i < steps.length; i++) {
+for (let i = 0; i < steps.length; i++) {
     await steps[i]((i + 1) + '/' + steps.length);
 }
 
