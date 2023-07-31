@@ -39,7 +39,7 @@ async function killAsync(pid) {
     });
 }
 
-async function runDev() {
+async function runDev(staticChangesOnly = false) {
     console.log(' │');
     console.log(' ├ Running dev server...');
     if (process) {
@@ -47,7 +47,12 @@ async function runDev() {
         await killAsync(process.pid);
         console.log(' ├ Killed previous dev server.');
     }
-    process = exec(devScript, { cwd: __dirname });
+    if (!staticChangesOnly) {
+        process = exec(devScript, { cwd: __dirname });
+    }
+    else {
+        process = exec('node dist/server/src/index.js --dev', { cwd: __dirname });
+    }
     process.stdout.on('data', (data) => {
         // if it contains "Build complete in", log it, otherwise ignore
         if (data.includes('Build complete in')) {
@@ -94,6 +99,25 @@ for (let watchDir of watchDirs) {
         // make it relative to __dirname
         pathStr = path.relative(__dirname, pathStr);
         console.log(chalk.bold(`\n${pathStr} changed!`));
-        runDev();
+        // check if its in media or in client/assets or in client/icons or its client/index.html or its client/index.css. all those are pretty much the only static files in watchDirs
+        let staticChangesOnly = false;
+        if (pathStr.startsWith('media') || pathStr.startsWith('client/assets') || pathStr.startsWith('client/icons') || pathStr.startsWith('client/index.html') || pathStr.startsWith('client/index.css')) {
+            staticChangesOnly = true;
+        }
+        if (staticChangesOnly) {
+            // remove existing file in dist as long as doesnt start with ..
+            if (!pathStr.startsWith('..')) {
+                let distPath = path.join(__dirname, 'dist', pathStr);
+                if (fs.existsSync(distPath)) {
+                    fs.unlinkSync(distPath);
+                }
+                // copy file to dist
+                fs.copyFileSync(path.join(__dirname, pathStr), distPath);
+            }
+            else {
+                console.log('warning, we are somehow watching external files. this is not good')
+            }
+        }
+        runDev(staticChangesOnly);
     });
 }
