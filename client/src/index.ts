@@ -4,6 +4,25 @@ var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
 import SimuloClientController from './SimuloClientController/index.js';
 
+// load all svg data-src images
+var svgs = document.querySelectorAll('svg[data-src]');
+svgs.forEach(function (svg) {
+    try {
+        var src = svg.getAttribute('data-src');
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', src as string, true);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                svg.outerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+    }
+    catch (e) {
+        console.error(e);
+    }
+});
+
 var host = true;
 // get query string for host (?host=true, ?host=false or none for true)
 var queryString = window.location.search;
@@ -89,25 +108,6 @@ else {
 
 var game = document.getElementById('game');
 
-
-
-
-
-
-
-// load all svg data-src images
-var svgs = document.querySelectorAll('svg[data-src]');
-svgs.forEach(function (svg) {
-    var src = svg.getAttribute('data-src');
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', src as string, true);
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            svg.outerHTML = xhr.responseText;
-        }
-    };
-    xhr.send();
-});
 
 
 

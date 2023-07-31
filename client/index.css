@@ -1393,3 +1393,272 @@ details summary {
 .copied.active {
   opacity: 1;
 }
+
+.main-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* we have rows inside it, aligned to top left of the screen */
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 2.5rem 3rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  user-select: none;
+}
+
+.top-menu {
+  width: 100%;
+  height: 6rem;
+  display: flex;
+  flex-direction: row;
+  /* space between and centered vertically */
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  color: #ffffffcf;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1em;
+  z-index: 10000;
+}
+
+.top-menu>img {
+  /* (logo) */
+  height: 4rem;
+  margin-right: 1rem;
+  pointer-events: none;
+}
+
+.play-menu {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 12rem;
+  gap: 0.8rem;
+  user-select: none;
+  padding-bottom: 0.55rem;
+  overflow-x: auto;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.play-option {
+  background: #99e077d0;
+  color: black;
+  border-radius: 0.8rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 18rem;
+  padding: 0 1.5rem;
+  transition: background 0.1s ease-in-out;
+}
+
+.play-option:hover {
+  background: #99e077;
+}
+
+.play-option:active {
+  background: #99e07780;
+}
+
+.play-option.multiplayer {
+  background: #8c67f2d0;
+}
+
+.play-option.multiplayer:hover {
+  background: #8c67f2;
+}
+
+.play-option.multiplayer:active {
+  background: #8c67f280;
+}
+
+.play-option-icon {
+  width: 3rem;
+  height: 3rem;
+  animation: bob 2s ease-in-out infinite;
+}
+
+.play-option.multiplayer .play-option-icon {
+  /* we reverse it so they go opposite directions (it looks epic) */
+  animation: bob2 2s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0% {
+    transform: translateY(-0.1rem) rotate(2deg);
+  }
+
+  50% {
+    transform: translateY(0.1rem) rotate(-2deg);
+  }
+
+  100% {
+    transform: translateY(-0.1rem) rotate(2deg);
+  }
+}
+
+@keyframes bob2 {
+  0% {
+    transform: translateY(0.1rem) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-0.1rem) rotate(2deg);
+  }
+
+  100% {
+    transform: translateY(0.1rem) rotate(-2deg);
+  }
+}
+
+.play-option-text h3 {
+  margin-top: 0.5rem;
+  font-size: 1.4em;
+  font-weight: 700;
+}
+
+.news-menu {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  height: 12rem;
+  gap: 0.8rem;
+  user-select: none;
+  padding-bottom: 0.55rem;
+  overflow-x: auto;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+@media (max-width: 590px) {
+  .news-menu {
+    margin: 0 -1.8rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    width: calc(100% + (1.8rem * 2));
+  }
+
+  .play-menu {
+    margin: 0 -1.8rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    width: calc(100% + (1.8rem * 2));
+  }
+
+  .main-menu {
+    padding: 2.5rem 1.8rem;
+  }
+
+  .top-menu>img {
+    height: 3.2rem;
+  }
+}
+
+.news-item {
+  background: #ffffff20;
+  color: #ffffffbf;
+  border-radius: 0.8rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 18rem;
+  padding: 1.7rem 1.5rem;
+  transition: background 0.1s ease-in-out;
+}
+
+.news-item-header {
+  font-size: 1.1em;
+  margin-bottom: 0;
+}
+
+.news-item-header h3 {
+  margin: 0;
+}
+
+.news-item-date {
+  font-size: 0.8em;
+  margin-top: 0.4rem;
+  margin-bottom: 0.9rem;
+  color: #ffffff80;
+}
+
+.news-item-description p {
+  font-size: 0.9em;
+  margin-top: 0rem;
+  color: #ffffffaf;
+}
+
+.main-menu h1 {
+  margin-top: 1.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.news-item:hover {
+  background: #ffffff30;
+}
+
+.news-item:active {
+  background: #ffffff40;
+}
+
+.top-menu .settings {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 0.8rem;
+  fill: #ffffffa0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: fill 0.1s ease-in-out, background 0.1s ease-in-out;
+}
+
+.top-menu .settings:hover {
+  fill: #ffffff;
+}
+
+.top-menu .settings:active {
+  fill: #ffffff80;
+}
+
+.top-menu .settings:focus {
+  fill: #ffffff80;
+}
+
+.top-menu .settings svg {
+  height: 2rem;
+  width: 2rem;
+}
+
+/* play menu and news menu scrollbars at once using comma */
+.play-menu::-webkit-scrollbar,
+.news-menu::-webkit-scrollbar {
+  height: 0.25rem;
+  left: 3rem;
+  width: calc(100% - 6rem);
+}
+
+.play-menu::-webkit-scrollbar-thumb,
+.news-menu::-webkit-scrollbar-thumb {
+  background: #ffffff80;
+  border-radius: 1000rem;
+}
