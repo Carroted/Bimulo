@@ -2,7 +2,6 @@
 
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
-import e from 'express';
 import SimuloClientController from './SimuloClientController/index.js';
 
 // load all svg data-src images
