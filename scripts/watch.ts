@@ -22,9 +22,9 @@ let child: ChildProcess;
 
 import kill from 'tree-kill';
 
-async function killAsync(pid: number | undefined) {
+async function killAsync(pid: number) {
     return new Promise((resolve, reject) => {
-        kill(pid as number, (err) => {
+        kill(pid, (err) => {
             if (err) {
                 reject(err);
             }
@@ -40,7 +40,7 @@ async function runDev(staticChangesOnly = false) {
     console.log(' ├ Running dev server...');
     if (child) {
         //process.kill();
-        await killAsync(child.pid);
+        await killAsync(child.pid!);
         console.log(' ├ Killed previous dev server.');
     }
     if (!staticChangesOnly) {
