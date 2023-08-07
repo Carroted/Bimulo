@@ -1,0 +1,17 @@
+// tsup.config.ts
+import { defineConfig } from "tsup";
+var tsup_config_default = defineConfig({
+  entry: ["server/**/*.ts", "shared/**/*.ts", "client/**/*.ts"],
+  minify: true,
+  platform: "browser",
+  target: "esnext",
+  bundle: false,
+  format: "esm",
+  outDir: "dist",
+  sourcemap: true,
+  silent: true
+});
+export {
+  tsup_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidHN1cC5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9faW5qZWN0ZWRfZmlsZW5hbWVfXyA9IFwiL2hvbWUvc29tZW9uZS9Eb2N1bWVudHMvU2ltdWxvL3RzdXAuY29uZmlnLnRzXCI7Y29uc3QgX19pbmplY3RlZF9kaXJuYW1lX18gPSBcIi9ob21lL3NvbWVvbmUvRG9jdW1lbnRzL1NpbXVsb1wiO2NvbnN0IF9faW5qZWN0ZWRfaW1wb3J0X21ldGFfdXJsX18gPSBcImZpbGU6Ly8vaG9tZS9zb21lb25lL0RvY3VtZW50cy9TaW11bG8vdHN1cC5jb25maWcudHNcIjtpbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tIFwidHN1cFwiO1xuXG5leHBvcnQgZGVmYXVsdCBkZWZpbmVDb25maWcoe1xuICAgIGVudHJ5OiBbXCJzZXJ2ZXIvKiovKi50c1wiLCBcInNoYXJlZC8qKi8qLnRzXCIsIFwiY2xpZW50LyoqLyoudHNcIl0sXG4gICAgbWluaWZ5OiB0cnVlLFxuICAgIHBsYXRmb3JtOiBcImJyb3dzZXJcIixcbiAgICB0YXJnZXQ6IFwiZXNuZXh0XCIsXG4gICAgYnVuZGxlOiBmYWxzZSxcbiAgICBmb3JtYXQ6IFwiZXNtXCIsXG4gICAgb3V0RGlyOiBcImRpc3RcIixcbiAgICBzb3VyY2VtYXA6IHRydWUsXG4gICAgc2lsZW50OiB0cnVlLFxufSkiXSwKICAibWFwcGluZ3MiOiAiO0FBQXdPLFNBQVMsb0JBQW9CO0FBRXJRLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQ3hCLE9BQU8sQ0FBQyxrQkFBa0Isa0JBQWtCLGdCQUFnQjtBQUFBLEVBQzVELFFBQVE7QUFBQSxFQUNSLFVBQVU7QUFBQSxFQUNWLFFBQVE7QUFBQSxFQUNSLFFBQVE7QUFBQSxFQUNSLFFBQVE7QUFBQSxFQUNSLFFBQVE7QUFBQSxFQUNSLFdBQVc7QUFBQSxFQUNYLFFBQVE7QUFDWixDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=
