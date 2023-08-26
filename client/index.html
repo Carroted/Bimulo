@@ -99,25 +99,12 @@
       </div>
       <h4>Reminder:</h4>
       <ul>
-        <li>This Alpha version is not stable enough to build anything serious with, treat it mostly as a demo of the
-          Simulo
-          game
-          engine.</li>
-        <li>Using Firefox is NOT recommended, as it is very slow with this kind of intensive Canvas game, we recommend a
-          Chromium
-          browser.
-          <ul>
-            <li>Don't report lag in Firefox! The game runs up to 50x slower in Firefox and there's nothing we can do
-              about
-              it.</li>
-            <li>Chromium browsers include Chrome, Brave, Edge, Opera and many more.</li>
-          </ul>
-        </li>
         <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
           toolbars. If a toolbar is disabled, you won't be able to open it.</li>
         <li>You can save objects by dragging them to the Objects tab of the toolbar. You can also copy-paste objects
           with
           CTRL+C and CTRL+V after selecting them with the Move Tool.</li>
+        <li>There's a right-click menu</li>
       </ul>
       <h4>Pick a theme!</h4>
       <div class="themes"></div>
@@ -346,7 +333,7 @@
     </div>
   </div>
 
-  <div class="loading-overlay" id="loading-overlay">
+  <div class="non-game-overlay" id="non-game-overlay">
     <div class="spinner" id="spinner" style="display: none;">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="20" />
@@ -382,7 +369,7 @@
         </div>
       </div>
     </div>
-    <div class="main-menu" style="/*display: none;*/" id="main-menu">
+    <div class="main-menu" style="display: none;" id="main-menu">
       <div class="top-menu"><img src="media/logo.svg" alt="Simulo logo">
         <div class="settings button" id="settings-button">
           <svg data-src="icons/cog.svg"></svg>

@@ -476,7 +476,7 @@ class SimuloClientController {
 
         let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
         let dismissPopup = (e: MouseEvent | undefined) => {
-            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.loading-overlay'))) return;
+            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.non-game-overlay'))) return;
             startingPopup.style.opacity = '0';
             startingPopup.style.pointerEvents = 'none';
             document.removeEventListener('click', dismissPopup);
@@ -883,7 +883,7 @@ class SimuloClientController {
                                 let action = (item as HTMLElement).dataset.action;
                                 if (action == 'delete') {
                                     var deleted = await this.emitDataAsync('delete_object', { id: object.id });
-                                    this.showToast(deleted ? 'Deleted woohoo object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
+                                    this.showToast(deleted ? 'Deleted object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
                                 }
                                 menu.remove();
                                 document.removeEventListener('mousedown', menuRemover);
@@ -1218,7 +1218,7 @@ class SimuloClientController {
     }
 
     deleteSelection() {
-        this.client.emitData('delete_selection', null);
+        this.client.emitData('delete_selection', {});
     }
 
     async saveSelectionToObjects() {

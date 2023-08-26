@@ -29,16 +29,14 @@ let url = new URL(window.location.href);
 
 if (url.searchParams.get("host")) {
     let param = url.searchParams.get("host");
-    if ( param == "true") {
+    if (param == "true") {
         host = true;
     } else {
         host = false;
     }
-} else {
-    host = false;
 }
 
-let loadingOverlay = document.getElementById('loading-overlay') as HTMLDivElement;
+let loadingOverlay = document.getElementById('non-game-overlay') as HTMLDivElement;
 let spinner = document.getElementById('spinner') as HTMLDivElement;
 
 // if host, hide the loading overlay

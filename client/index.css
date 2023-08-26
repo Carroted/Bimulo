@@ -29,6 +29,10 @@ body {
   position: absolute;
   width: 2.5rem;
   height: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .player-cursor img,
@@ -69,6 +73,108 @@ body {
 
 #player-cursor {
   z-index: 10000000;
+}
+
+/* we have 2 chat message classes: chat-message-world and chat-message-li.
+chat-message-world is for messages that are in the world and children of the player cursors, and chat-message-li is for messages that are in the list. */
+
+.chat-messages-world {
+  position: absolute;
+  bottom: 3rem;
+  left: -10rem;
+  right: -10rem;
+  /* dont define left or right since itll default to the flex centered thing */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+  gap: 0.3rem;
+}
+
+
+
+/* 2 bounces and slightly scale and fade in */
+@keyframes chat-message-world-in {
+  0% {
+    transform: scale(0);
+    opacity: 0.2;
+  }
+
+  25% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+
+  75% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes chat-message-world-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+.chat-message-world {
+  /* dont define left or right since itll default to the flex centered thing */
+  display: inline-block;
+  max-width: 16rem;
+  background: #ffffffff;
+  border-radius: 1rem;
+  padding: 0.5rem 1rem;
+  font-family: "Urbanist", sans-serif;
+  font-size: 1rem;
+  color: #000000;
+  pointer-events: none;
+  z-index: 100000000;
+  box-shadow: 0px 2px 10px #00000050;
+  /*animation: chat-message-world-in 0.7s ease-in-out;*/
+  animation-name: chat-message-world-in, chat-message-world-out;
+  animation-delay: 0s, 1s;
+  animation-duration: 0.8s;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-in-out;
+  text-align: center;
+  position: relative;
+}
+
+/* before it, triangle w/ clip path, pointing up */
+.chat-message-world:last-child::before {
+  content: "";
+  position: absolute;
+  bottom: -0.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1rem;
+  height: 0.5rem;
+  background: #ffffffff;
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+  z-index: 100000000;
+  pointer-events: none;
 }
 
 /* bold */
@@ -360,8 +466,8 @@ details summary {
   perspective: 1000;
   transform: translate3d(0, 0, 0);
   transform: translateZ(0);
-  background: linear-gradient(180deg, #15192bd0 0%, #050814d0 100%);
-  backdrop-filter: blur(50px);
+  background: #03081dc0;
+  backdrop-filter: blur(35px);
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -917,26 +1023,26 @@ details summary {
 .toolbar .tool svg {
   flex-grow: 0;
   flex-shrink: 0;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.1s ease-in-out;
 }
 
 .toolbar .tool:hover svg {
   fill: #ddddddb0;
-  filter: drop-shadow(0px 0px 20px #ffffff);
+  filter: drop-shadow(0px 0px 20px #ffffffa0);
 }
 
 .toolbar .tool:active svg {
-  fill: #8594ff;
-  filter: drop-shadow(0px 0px 15px #8594ff);
+  fill: #ffffff;
+  filter: drop-shadow(0px 0px 15px #ffffffa0);
 }
 
 .toolbar .tool.active svg {
-  fill: #8594ff;
-  filter: drop-shadow(0px 0px 10px #8594ff);
+  fill: #ffffff;
+  filter: drop-shadow(0px 0px 10px #ffffffa0);
 }
 
 .toolbar.primary .tool .bar {
-  background: #8594ff;
+  background: #ffffff;
   /* round top, not bottom */
   border-radius: 0.2rem 0.2rem 0 0;
   height: 0.3rem;
@@ -946,7 +1052,7 @@ details summary {
   bottom: 0;
   flex-grow: 0;
   flex-shrink: 0;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.1s ease-in-out;
 }
 
 .toolbar.primary .tool:hover .bar {
@@ -962,7 +1068,7 @@ details summary {
 .toolbar.primary .tool.active .bar {
   width: 1.2rem;
   opacity: 1;
-  filter: drop-shadow(0px 0px 10px #8594ff);
+  filter: drop-shadow(0px 0px 10px #ffffffa0);
 }
 
 .toolbar.primary .tool {
@@ -1182,7 +1288,7 @@ details summary {
   align-items: center;
 }
 
-.loading-overlay {
+.non-game-overlay {
   position: absolute;
   top: 0;
   left: 0;

@@ -5,10 +5,8 @@
 
 import fs from 'fs';
 import * as url from "url";
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 import path from 'path';
-import { copyFolderRecursiveSync } from './lib.js';
+import { copyFolderRecursiveSync, __dirname, packageJson } from './lib.js';
 
 import ghpages from 'gh-pages';
 
@@ -16,7 +14,6 @@ import chalk from 'chalk';
 
 // import child_process
 import { exec } from 'child_process';
-import { packageJson } from './lib.js';
 
 function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
