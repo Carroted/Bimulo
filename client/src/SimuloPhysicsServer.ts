@@ -33,7 +33,7 @@ import * as earcut from "../../node_modules/earcut/dist/earcut.min.js"; // cant 
 console.log('earcut:', earcut);
 console.log('earcut.default:', earcut.default);*/
 // @ts-ignore
-import earcut from 'https://cdn.jsdelivr.net/npm/earcut@2.2.4/+esm'
+import earcut from '../../node_modules/earcut/dist/earcut.min.js';
 
 const box2D = await Box2DFactory();
 
@@ -44,7 +44,7 @@ import SimuloTheme from "./SimuloTheme.js";
 import { randomRange } from "./utils.js";
 
 import { SimuloShape, SimuloEdge, SimuloPolygon, SimuloCircle } from "./SimuloShape.js";
-import SimuloStep from "./SimuloStep.js";
+import type SimuloStep from "./SimuloStep.js";
 
 // One PhysicsServer per world/room should be used. This makes things simple and secure since events like `physicsServer.on("collision", ...)` will only be called for collisions in that room.
 

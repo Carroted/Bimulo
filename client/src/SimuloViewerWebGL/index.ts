@@ -1,6 +1,7 @@
 // WebGL edition of simuloviewer, super stable and way more readable code
 
-import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
+import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../SimuloShape.js';
+import SimuloViewer from '../SimuloViewer.js';
 
 interface WebGLShaderUniforms {
     resolution: WebGLUniformLocation;
@@ -22,7 +23,7 @@ interface WebGLShaderAttributes {
 }
 
 // super minimal simuloviewer that only has draw function
-class SimuloViewer {
+class SimuloViewerWebGL implements SimuloViewer {
     shapes: SimuloShape[] = [];
     canvas: HTMLCanvasElement;
 
@@ -274,4 +275,4 @@ class SimuloViewer {
 
 }
 
-export default SimuloViewer;
+export default SimuloViewerWebGL;

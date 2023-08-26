@@ -1,4 +1,4 @@
-import SimuloClient from "../../../shared/src/SimuloClient";
+import SimuloClient from "../SimuloClient.js";
 
 class SimuloNetworkClient implements SimuloClient {
     activeDc: RTCDataChannel | null = null;

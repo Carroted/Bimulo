@@ -4,14 +4,13 @@
     "target": "ES2021",
     "esModuleInterop": true,
     "sourceMap": true,
-    "outDir": "../dist",
-    "rootDir": "../",
+    "rootDir": "./",
     "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

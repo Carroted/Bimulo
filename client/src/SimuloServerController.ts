@@ -4,8 +4,7 @@ import { SimuloPhysicsServer, SimuloJoint, SimuloMouseSpring, SimuloObject, Simu
 import SimuloTheme from "./SimuloTheme.js";
 import SimuloNetworkServer from "./SimuloNetworkServer.js";
 
-import * as http from "http";
-import SimuloStep from "./SimuloStep.js";
+import type SimuloStep from "./SimuloStep.js";
 import SimuloLocalClient from "./SimuloLocalClient.js";
 
 interface SimuloStepExtended extends SimuloStep {
@@ -36,7 +35,7 @@ import SimuloShape, { SimuloPolygon } from "./SimuloShape.js";
 import { SimuloCircle } from "./SimuloShape.js";
 import { SimuloRectangle } from "./SimuloShape.js";
 
-import themes from "../themes.js";
+import themes from "./themes.js";
 
 function getDistance(point1: [x: number, y: number], point2: [x: number, y: number]): number {
     const xDiff = point2[0] - point1[0];

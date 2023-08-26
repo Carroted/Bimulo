@@ -1,5 +1,5 @@
-import SimuloClient from "./SimuloClient";
-import SimuloServerController from "./SimuloServerController";
+import SimuloClient from "./SimuloClient.js";
+import SimuloServerController from "./SimuloServerController.js";
 
 class SimuloLocalClient implements SimuloClient {
     listeners: { [key: string]: Function[] } = {};

@@ -6,7 +6,7 @@ export const __filename = url.fileURLToPath(import.meta.url);
 export const __dirname = url.fileURLToPath(new URL("../.", import.meta.url));
 export const packageJson = JSON.parse(fs.readFileSync(__dirname + 'package.json', 'utf8'));
 
-export function copyFolderRecursiveSync(source, target) {
+export function copyFolderRecursiveSync(source: string, target: string) {
     let files: string[] = [];
     // check if folder needs to be created or integrated
     const targetFolder = target;

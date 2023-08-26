@@ -2,29 +2,32 @@
 // Node.js backend for Simulo with server-side physics, WebRTC signaling, etc.
 
 import express from "express";
+import path from "path";
 
 import chalk from "chalk";
-import terminalLink from 'terminal-link';
 
-// This is ESM, let's get back __dirname and __filename
-import * as url from "url";
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+let __dirname = import.meta.dir;
 
 import fs from "fs";
-
-const versionInfo = JSON.parse(fs.readFileSync(__dirname + '/../../version.json', 'utf8'));
 
 let dev = false;
 if (process.argv.includes("--dev")) {
 	dev = true;
 }
 
+// if it has --dir, set dirname to it
+if (process.argv.includes("--dir")) {
+	let dirIndex = process.argv.indexOf("--dir");
+	if (process.argv[dirIndex + 1]) {
+		__dirname = process.argv[dirIndex + 1];
+	}
+}
+
+const versionInfo = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'version.json'), 'utf8'));
+
 console.log(chalk.bold.hex('#99e077')(`Simulo ${dev ? 'Development ' : ''}Server v${versionInfo.version}`));
 
-console.log("Node.js server for Simulo with " + terminalLink('Express', 'https://npmjs.com/package/express', {
-	fallback: false
-}) + ", WebSocket and WebRTC");
+console.log("Bun server for Simulo");
 
 // Get log from log.ts
 import log from './log.js';
@@ -63,24 +66,19 @@ app.get("/", (req: any, res: any, next: any) => {
 	}
 });
 
-app.use(express.static(__dirname + "/../../client"));
+app.use(express.static(path.join(__dirname, '..', '..', "client")));
 
 // static serve node_modules/@tabler/icons/icons
-app.use("/icons", express.static(__dirname + "/../../node_modules/@mdi/svg/svg"));
+app.use("/icons", express.static(path.join(__dirname, '..', '..', "node_modules/@mdi/svg/svg")));
 
 // static serve media
-app.use("/media", express.static(__dirname + "/../../media"));
+app.use("/media", express.static(path.join(__dirname, '..', '..', "media")));
 
 // static serve /../../node_modules/box2d-wasm/dist/es to /box2d-wasm
-app.use("/node_modules", express.static(__dirname + "/../../node_modules"));
+app.use("/node_modules", express.static(path.join(__dirname, '..', '..', "node_modules")));
 
 // note the two ../ because it'll end up in dist. if you ever run the TS directly without transpiling to a different directory, you'll need to remove one of the ../
 
-import SimuloServerController from "../../shared/src/SimuloServerController.js"; // when this isnt imported, most files dont get transpiled. to be investigated more
-//var serverController = new SimuloServerController(themes["default"], server, false);
-
-// static serve the shared folder
-app.use("/shared", express.static(__dirname + "/../../shared"));
 app.get("/version", (req: any, res: any) => {
 	res.send(versionInfo);
 });
@@ -102,9 +100,7 @@ if (process.env.PORT) {
 }
 
 server.listen(port, () => {
-	console.log(chalk.bold.greenBright(`\nHTTP server started on port ${port}!`) + '\nSee it on ' + terminalLink('http://localhost:' + port, 'http://localhost:' + port, {
-		fallback: false
-	}) + ' directly');
+	console.log(chalk.bold.greenBright(`\nHTTP server started on port ${port}!`) + '\nSee it on ' + 'http://localhost:' + port + ' directly');
 });
 
 server.on('error', (e: any) => {

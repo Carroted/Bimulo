@@ -51,12 +51,6 @@ function indentLines(str: string, count: number) {
     return newLines.join('\n');
 }
 
-// if --dev param
-let dev = false;
-if (process.argv.includes('--dev')) {
-    dev = true;
-}
-
 const steps = [
     // remove dist folder
     async (stepInfo: string) => {
@@ -73,66 +67,33 @@ const steps = [
     // run tsc
     async (stepInfo: string) => {
         console.log(stepInfo, 'Compiling TypeScript...');
-        const srcDirs = ['client', 'server', 'shared'];
-        const promises: Promise<any>[] = [];
-        for (const srcDir of srcDirs) {
-            promises.push(new Promise((resolve, reject) => {
-                const child = exec('npx tsup', { cwd: __dirname });
-                child.stdout?.on('data', (data) => {
-                    console.log(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
-                });
-                child.stderr?.on('data', (data) => {
-                    console.error(chalk.bold(chalk.redBright(indentLines(data.toString(), 4))));
-                });
-                child.on('close', (code) => {
-                    if (code !== 0) {
-                        reject(new Error(`TypeScript compiler exited with code ${code}`));
-                    } else {
-                        resolve(null);
-                    }
-                });
-            }));
+        // mkdir dist
+        if (!fs.existsSync(path.join(__dirname, 'dist'))) {
+            fs.mkdirSync(path.join(__dirname, 'dist'));
         }
-        await Promise.all(promises);
-    },
-    /*// make dist/client folder if doesnt exist
-    async (stepInfo) => {
         if (!fs.existsSync(path.join(__dirname, 'dist', 'client'))) {
-            console.log(stepInfo, 'Creating dist/client folder...');
             fs.mkdirSync(path.join(__dirname, 'dist', 'client'));
         }
-        else {
-            console.log(stepInfo, 'dist/client folder already exists');
-        }
-    },*/
-    // generate distPackage
-    async (stepInfo: string) => {
-        console.log(stepInfo, 'Creating dist-package.json...');
-        // create a `dist-package.json` file
-        const distPackage = {
-            name: packageJson.name,
-            version: packageJson.version,
-            main: 'server/src/index.js',
-            scripts: {
-                start: 'node server/src/index.js',
-                build: 'echo "This is a build, run this on the source" && exit 1' // for convenience since people will likely accidentally run this
-            },
-            dependencies: packageJson.dependencies,
-            engines: packageJson.engines,
-            type: packageJson.type
-        };
-        // write to dist/package.json with 4 spaces
-        fs.writeFileSync(path.join(__dirname, 'dist', 'package.json'), JSON.stringify(distPackage, null, 4));
+
+        let info = await Bun.build({
+            target: "bun",
+            entrypoints: ['./client/src/index.ts'],
+            outdir: './dist/client/src',
+            sourcemap: 'external'
+        });
+
+        info.logs.forEach((log) => { console.log('log:', log); });
+
+        // copy node_modules/box2d-wasm/dist/es/Box2D.wasm to dist/client/src
+        fs.copyFileSync(path.join(__dirname, 'node_modules', 'box2d-wasm', 'dist', 'es', 'Box2D.wasm'), path.join(__dirname, 'dist', 'client', 'src', 'Box2D.wasm'));
+        // same for simd
+        fs.copyFileSync(path.join(__dirname, 'node_modules', 'box2d-wasm', 'dist', 'es', 'Box2D.simd.wasm'), path.join(__dirname, 'dist', 'client', 'src', 'Box2D.simd.wasm'));
     },
     // recursively copy client/assets to dist/client/assets, client/icons to dist/client/icons, client/index.css and client/index.html to dist/client and media to dist/media. finally, node_modules to dist/node_modules and client/src to dist/client/src
     async (stepInfo: string) => {
         // we'll do above in separate steps
         console.log(stepInfo, 'Copying client/assets to dist/client/assets...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'assets'), path.join(__dirname, 'dist', 'client', 'assets'));
-    },
-    async (stepInfo: string) => {
-        console.log(stepInfo, 'Copying client/icons to dist/client/icons...');
-        copyFolderRecursiveSync(path.join(__dirname, 'client', 'icons'), path.join(__dirname, 'dist', 'client', 'icons'));
     },
     async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/index.css to dist/client...');
@@ -152,50 +113,20 @@ const steps = [
     },
     async (stepInfo: string) => {
         console.log(stepInfo, 'Copying media to dist/media...');
-        copyFolderRecursiveSync(path.join(__dirname, 'media'), path.join(__dirname, 'dist', 'media'));
-    },
-    // copy box2d-wasm-7.0.0.tgz to dist
-    async (stepInfo: string) => {
-        console.log(stepInfo, 'Copying box2d-wasm-7.0.0.tgz to dist...');
-        fs.copyFileSync(path.join(__dirname, 'other/box2d-wasm-7.0.0.tgz'), path.join(__dirname, 'dist', 'box2d-wasm-7.0.0.tgz'));
-    },
-    async (stepInfo: string) => {
-        if (!dev) {
-            console.log(stepInfo, 'Copying node_modules...');
-            copyFolderRecursiveSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'));
-            // now we have to scan the devDependencies of package.json and remove them if they arent also in dependencies
-            let devDependencies = packageJson.devDependencies;
-            let dependencies = packageJson.dependencies;
-            Object.keys(devDependencies).forEach((devDependency) => {
-                if (!dependencies[devDependency]) {
-                    console.log('Removing devDependency', devDependency);
-                    // if its a dir
-                    if (fs.existsSync(path.join(__dirname, 'dist', 'node_modules', devDependency))) {
-                        if (fs.lstatSync(path.join(__dirname, 'dist', 'node_modules', devDependency)).isDirectory()) {
-                            fs.rmdirSync(path.join(__dirname, 'dist', 'node_modules', devDependency), { recursive: true });
-                        }
-                        // it could be a symlink
-                        else if (fs.lstatSync(path.join(__dirname, 'dist', 'node_modules', devDependency)).isSymbolicLink()) {
-                            fs.unlinkSync(path.join(__dirname, 'dist', 'node_modules', devDependency));
-                        }
-                    }
-                }
-            });
-        }
-        else {
-            console.log(stepInfo, 'Symbolically linking node_modules...');
-            // symlink node_modules
-            fs.symlinkSync(path.join(__dirname, 'node_modules'), path.join(__dirname, 'dist', 'node_modules'), 'dir');
-        }
+        copyFolderRecursiveSync(path.join(__dirname, 'media'), path.join(__dirname, 'dist', 'client', 'media'));
     },
     async (stepInfo: string) => {
         console.log(stepInfo, 'Copying client/src to dist/client/src...');
         copyFolderRecursiveSync(path.join(__dirname, 'client', 'src'), path.join(__dirname, 'dist', 'client', 'src'));
     },
-    // copy shared/src/intersect.js to dist/shared/src
+    // copy node_modules/@mdi/svg/svg to dist/icons
     async (stepInfo: string) => {
-        console.log(stepInfo, 'Copying shared/src/intersect.js to dist/shared/src...');
-        fs.copyFileSync(path.join(__dirname, 'shared', 'src', 'intersect.js'), path.join(__dirname, 'dist', 'shared', 'src', 'intersect.js'));
+        console.log(stepInfo, 'Copying node_modules/@mdi/svg/svg to dist/icons...');
+        copyFolderRecursiveSync(path.join(__dirname, 'node_modules', '@mdi', 'svg', 'svg'), path.join(__dirname, 'dist', 'client', 'icons'));
+    },
+    async (stepInfo: string) => {
+        console.log(stepInfo, 'Copying client/icons to dist/icons...');
+        copyFolderRecursiveSync(path.join(__dirname, 'client', 'icons'), path.join(__dirname, 'dist', 'client', 'icons'));
     },
     // read all files in client and list them in dist/client/filelist.txt for serviceworker caching
     async (stepInfo: string) => {
@@ -225,12 +156,8 @@ const steps = [
         };
         // start recursion to fill fileList
         walkSync(clientPath, '/');
-        const sharedPath = path.join(__dirname, 'dist', 'shared');
-        walkSync(sharedPath, '/shared/');
-        const mediaPath = path.join(__dirname, 'dist', 'media');
+        const mediaPath = path.join(__dirname, 'dist', 'client', 'media');
         walkSync(mediaPath, '/media/');
-        const box2DPath = path.join(__dirname, 'dist', 'node_modules', 'box2d-wasm', 'dist');
-        walkSync(box2DPath, '/node_modules/box2d-wasm/dist/');
         // remove /sw.js (its a bit silly to cache the service worker itself, how would it get itself from the cache if its not active to do so? and it seems to cause error too)
         files = files.filter(function (file) { return file !== '/sw.js'; });
         files.push('/Simulo');
@@ -248,6 +175,16 @@ const steps = [
             version: packageJson.version
         };
         fs.writeFileSync(path.join(__dirname, 'dist', 'version.json'), JSON.stringify(version, null, 4));
+    },
+    // copy website to dist
+    async (stepInfo: string) => {
+        console.log(stepInfo, 'Copying website to dist...');
+        copyFolderRecursiveSync(path.join(__dirname, 'website'), path.join(__dirname, 'dist'));
+    },
+    // add an empty .nojekyll file to dist so github pages works properly
+    async (stepInfo: string) => {
+        console.log(stepInfo, 'Adding .nojekyll file...');
+        fs.writeFileSync(path.join(__dirname, 'dist', '.nojekyll'), 'Please don\'t jekyll me.');
     },
     async (stepInfo: string) => {
         console.log(stepInfo, 'Creating log...');

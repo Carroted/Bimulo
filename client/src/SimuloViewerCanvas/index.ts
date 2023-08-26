@@ -1,5 +1,7 @@
-import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../../../shared/src/SimuloShape';
-import SimuloText from '../../../shared/src/SimuloText';
+import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../SimuloShape.js';
+import SimuloText from '../SimuloText.js';
+import SimuloViewer from '../SimuloViewer.js';
+
 const style = `/*canvas.simulo-viewer.fullscreen {
     position: fixed;
     top: 0;
@@ -51,8 +53,8 @@ function rotateVerts(verts: { x: number, y: number }[], angle: number) {
     return rotatedVertices;
 }
 
-/** Displays shapes and images on a canvas at high performance, typically paired with `SimuloClientController` or a custom controller. */
-class SimuloViewer {
+/** Displays shapes and images on a canvas at low performance, typically paired with `SimuloClientController` or a custom controller. */
+class SimuloViewerCanvas implements SimuloViewer {
     /** Whether the viewer is currently running, should only be altered by `start()` and `stop()` */
     private running: boolean = false;
     /** The drawing context of the canvas. You can use it directly for low-level drawing, but this should rarely be needed. */
@@ -896,4 +898,4 @@ class SimuloViewer {
     }
 }
 
-export default SimuloViewer;
+export default SimuloViewerCanvas;

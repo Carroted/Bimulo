@@ -1,5 +1,3 @@
-import * as http from "http";
-
 interface Peer {
     pc: RTCPeerConnection;
     dc: RTCDataChannel;

@@ -1,11 +1,12 @@
-import SimuloTheme from '../../../shared/src/SimuloTheme.js';
+import SimuloTheme from '../SimuloTheme.js';
 import Box2DFactory from '../../../node_modules/box2d-wasm/dist/es/entry.js';
-import SimuloClient from '../../../shared/src/SimuloClient.js';
-import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.js";
-import SimuloViewer from '../SimuloViewer/index.js';
-import themes from '../../../shared/themes.js';
-import { hsvToRgb } from '../../../shared/src/utils.js';
+import SimuloClient from '../SimuloClient.js';
+import SimuloServerController from '../SimuloServerController.js';
+import themesJSON from "../themes.js";
+import SimuloViewer from '../SimuloViewer.js';
+import SimuloViewerCanvas from '../SimuloViewerCanvas/index.js';
+import themes from '../themes.js';
+import { hsvToRgb } from '../utils.js';
 
 function queryParent(element: HTMLElement, className: string): HTMLElement | null {
     var parent: HTMLElement = element.parentNode as HTMLElement;
@@ -32,9 +33,9 @@ function getCursorSVG(fillColor: string) {
     return cursorSVG.split('#00FF00').join(fillColor).split('#0000FF').join(strokeColor);
 }
 
-import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../../../shared/src/SimuloShape.js';
-import SimuloText from '../../../shared/src/SimuloText';
-import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../../shared/src/SimuloCreatingObject.js';
+import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../SimuloShape.js';
+import SimuloText from '../SimuloText.js';
+import SimuloCreatingObject, { SimuloCreatingPolygon } from '../SimuloCreatingObject.js';
 import SimuloNetworkClient from '../SimuloNetworkClient/index.js';
 
 const personPoints = [{
@@ -398,7 +399,7 @@ class SimuloClientController {
     }
 
     constructor(canvas: HTMLCanvasElement, host: boolean) {
-        if ( new URL(document.location.href).searchParams.get("theme") ) {
+        if (new URL(document.location.href).searchParams.get("theme")) {
             let popup = document.querySelector(".starting-popup") as HTMLDivElement;
             popup.style.display = "none";
             let theme = new URL(document.location.href).searchParams.get("theme") as string;
@@ -422,7 +423,7 @@ class SimuloClientController {
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
         // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
-        fetch('version').then(async (response) => {
+        fetch('../../version.json').then(async (response) => {
             if (response.ok) {
                 let versionInfo = document.getElementById('version-info');
                 if (versionInfo) {
@@ -829,7 +830,7 @@ class SimuloClientController {
             this.setPaused(this.pauseButton.classList.contains('checked'));
         });
 
-        this.viewer = new SimuloViewer(canvas);
+        this.viewer = new SimuloViewerCanvas(canvas);
         this.player.zoom = this.viewer.cameraZoom;
         this.viewer.setFullscreen(true);
         this.viewer.on('mouseMove', (pos: { x: number, y: number }) => {

@@ -1,6 +1,6 @@
 // This file was originally named themes.json. Treat it similarly to a JSON file, except that it can be imported as a module.
 
-import SimuloTheme from "./src/SimuloTheme";
+import SimuloTheme from "./SimuloTheme.js";
 
 export default {
   "night": {
