@@ -43,7 +43,52 @@ function getDistance(point1: [x: number, y: number], point2: [x: number, y: numb
     return Math.sqrt(xDiff ** 2 + yDiff ** 2);
 }
 
+type Seconds = number;
+
+interface Music {
+    name: string;
+    artist: string;
+    url: string;
+    duration: Seconds;
+}
+
 class SimuloServerController {
+    ambientMusicTracks: Music[] = [
+        { name: 'Infinity', artist: 'DreadOrpheus', url: 'assets/music/infinity.ogg', duration: 224 },
+        {
+            name: 'Stasis', artist: 'DreadOrpheus', url: 'assets/music/stasis.ogg', duration: 199
+        },
+        {
+            name: 'Techno Vibes (Slowed)', artist: 'DreadOrpheus', url: 'assets/music/techno_vibes_slowed.ogg', duration: 135
+        },
+        {
+            name: 'Stars (Slowed)', artist: 'DreadOrpheus', url: 'assets/music/stars_slowed.ogg', duration: 601
+        },
+        { name: 'Back To The Past (Slowed)', artist: 'DreadOrpheus', url: 'assets/music/menu_slowed.ogg', duration: 220 },
+    ];
+    shuffleAmbientMusic() {
+        // shuffle the array in place
+        for (let i = this.ambientMusicTracks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.ambientMusicTracks[i], this.ambientMusicTracks[j]] = [this.ambientMusicTracks[j], this.ambientMusicTracks[i]];
+        }
+    }
+    ambientMusicIndex = 0;
+    playAmbientMusic() {
+        this.sendAll('play_ambient_music', this.ambientMusicTracks[this.ambientMusicIndex]);
+        this.ambientMusicIndex++;
+        if (this.ambientMusicIndex >= this.ambientMusicTracks.length) {
+            this.ambientMusicIndex = 0;
+            this.shuffleAmbientMusic();
+        }
+        setTimeout(() => {
+            let timeUntilNext = randomRange(5, 150);
+            setTimeout(() => {
+                this.playAmbientMusic();
+            }, timeUntilNext * 1000);
+        }, this.ambientMusicTracks[this.ambientMusicIndex].duration * 1000);
+    }
+
     physicsServer: SimuloPhysicsServer;
     networkServer: SimuloNetworkServer | null = null;
     tools: { [key: string]: string } = {};
@@ -1028,7 +1073,14 @@ class SimuloServerController {
         return physicsServer;
     }
 
+    loopInterval: any;
+
     constructor(theme: SimuloTheme, multiplayer: boolean, localClient: boolean) {
+        setTimeout(() => {
+            this.shuffleAmbientMusic();
+            this.playAmbientMusic();
+        }, randomRange(60, 300) * 1000);
+
         this.theme = theme;
         this.physicsServer = this.setupPhysicsServer();
 
@@ -1078,7 +1130,7 @@ class SimuloServerController {
             this.playerColors[id] = '#000000';
         }
 
-        setInterval(() => {
+        this.loopInterval = setInterval(() => {
             this.loop(this.frameRate);
         }, this.frameRate);
         //let handle: number;
@@ -1091,6 +1143,9 @@ class SimuloServerController {
         loop(window.performance.now());*/
     }
 
+    stop() {
+        clearInterval(this.loopInterval);
+    }
 }
 
 export default SimuloServerController;

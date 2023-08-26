@@ -3,10 +3,10 @@
   "version": "0.9.0",
   "main": "dist/server/src/index.js",
   "scripts": {
-    "start": "bun dist/server/src/index.js",
+    "start": "bun server/src/index.ts",
     "build": "bun scripts/build.ts",
     "deploy": "bun scripts/build.ts && bun scripts/deploy.ts",
-    "dev": "bun scripts/build.ts && bun run server/src/index.ts --dev --dir dist/server/src/",
+    "dev": "bun scripts/build.ts && bun run server/src/index.ts",
     "watch": "bun scripts/watch.ts"
   },
   "dependencies": {

@@ -9,6 +9,9 @@ class SimuloLocalClient implements SimuloClient {
         this.emit("connect", null);
         this.emit("ready", null);
     }
+    disconnect(): void {
+        this.emit("disconnect", null);
+    }
     emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {

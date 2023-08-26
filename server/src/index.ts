@@ -6,7 +6,7 @@ import path from "path";
 
 import chalk from "chalk";
 
-let __dirname = import.meta.dir;
+let dirname = 'dist';
 
 import fs from "fs";
 
@@ -19,11 +19,14 @@ if (process.argv.includes("--dev")) {
 if (process.argv.includes("--dir")) {
 	let dirIndex = process.argv.indexOf("--dir");
 	if (process.argv[dirIndex + 1]) {
-		__dirname = process.argv[dirIndex + 1];
+		dirname = process.argv[dirIndex + 1];
 	}
 }
 
-const versionInfo = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'version.json'), 'utf8'));
+// make absolute
+dirname = path.join(process.cwd(), dirname);
+
+const versionInfo = JSON.parse(fs.readFileSync(path.join(dirname, 'version.json'), 'utf8'));
 
 console.log(chalk.bold.hex('#99e077')(`Simulo ${dev ? 'Development ' : ''}Server v${versionInfo.version}`));
 
@@ -49,7 +52,7 @@ if (dev) {
 }
 
 // if / request without dev param and we're in dev mode, redirect to with dev param (keeping existing params)
-app.get("/", (req: any, res: any, next: any) => {
+app.get("/client", (req: any, res: any, next: any) => {
 	if (dev && (req.query.dev === undefined || req.query.dev === "")) {
 		let params = "?";
 		for (let key in req.query) {
@@ -58,7 +61,7 @@ app.get("/", (req: any, res: any, next: any) => {
 		// add dev param
 		params += "dev=true";
 		// redirect
-		res.redirect("/" + params);
+		res.redirect("/client" + params);
 	}
 	else {
 		// next, we static it later
@@ -66,28 +69,7 @@ app.get("/", (req: any, res: any, next: any) => {
 	}
 });
 
-app.use(express.static(path.join(__dirname, '..', '..', "client")));
-
-// static serve node_modules/@tabler/icons/icons
-app.use("/icons", express.static(path.join(__dirname, '..', '..', "node_modules/@mdi/svg/svg")));
-
-// static serve media
-app.use("/media", express.static(path.join(__dirname, '..', '..', "media")));
-
-// static serve /../../node_modules/box2d-wasm/dist/es to /box2d-wasm
-app.use("/node_modules", express.static(path.join(__dirname, '..', '..', "node_modules")));
-
-// note the two ../ because it'll end up in dist. if you ever run the TS directly without transpiling to a different directory, you'll need to remove one of the ../
-
-app.get("/version", (req: any, res: any) => {
-	res.send(versionInfo);
-});
-
-// for anything under ../../*, redirect to /*
-app.get("../../:anything", (req: any, res: any) => {
-	// redirect to /*
-	res.redirect("/" + req.params.anything);
-});
+app.use(express.static(path.join(dirname)));
 
 var port = 4613;
 // override with env var

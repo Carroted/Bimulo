@@ -271,6 +271,7 @@ class SimuloClientController {
         });
     }
     async update() {
+        let workerUpdate = true;
         if ('serviceWorker' in navigator) {
             if (navigator.serviceWorker.controller) {
                 console.log('Telling worker to update')
@@ -282,13 +283,50 @@ class SimuloClientController {
                 window.location.reload(); // TODO: once saving is added, we need to temporarily save the world, then after the page reloads, load the world again so nothing is lost
             }
             else {
-                // error out
-                throw new Error('Service worker not supported or not yet registered');
+                workerUpdate = false;
             }
         }
         else {
-            // error out
-            throw new Error('Service worker not supported or not yet registered');
+            workerUpdate = false;
+        }
+
+        if (!workerUpdate) {
+            // try to get everything in filelist.txt with no-cache headers, then reload
+            let headers = new Headers();
+            headers.append('pragma', 'no-cache');
+            headers.append('cache-control', 'no-cache');
+            let response = await fetch('filelist.txt', {
+                headers
+            });
+            if (response.ok) {
+                let fileList = await response.text();
+                let files = fileList.trim().split('\n');
+                // filter out the ones that start with icons/
+                files = files.filter((file) => {
+                    return !file.startsWith('icons/');
+                });
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    await fetch(file, {
+                        headers
+                    }).catch(() => { });
+                    // progress bar
+                    let activeChar = '█';
+                    let inactiveChar = '░';
+                    let percent = Math.round((i / files.length) * 100);
+                    let bar = '';
+                    for (let j = 0; j < 70; j++) {
+                        if (j < percent / 100 * 70) {
+                            bar += activeChar;
+                        }
+                        else {
+                            bar += inactiveChar;
+                        }
+                    }
+                    console.log(`[${bar}] ${percent}%`);
+                }
+            }
+            window.location.reload();
         }
     }
 
@@ -397,8 +435,45 @@ class SimuloClientController {
         this.serverController!.networkServer!.useAnswerSdp(sdp);
         console.log('we relayed it, dunno if it worked');
     }
+    ambientMusic: HTMLAudioElement | null = null;
 
-    constructor(canvas: HTMLCanvasElement, host: boolean) {
+    playAmbientMusic(track: { name: string, artist: string, url: string }) {
+        if (this.ambientMusic) {
+            this.ambientMusic.pause();
+            this.ambientMusic.currentTime = 0;
+            this.ambientMusic.remove();
+            this.ambientMusic = null;
+        }
+        this.ambientMusic = new Audio(track.url);
+        try {
+            // no loop, that would be insane
+            this.ambientMusic.volume = 0.001; // we fade from 0 to 0.4
+            this.ambientMusic.play();
+            this.showToast('Now playing <b>' + track.name + '</b> by <b>' + track.artist + '</b>', ToastType.INFO);
+        }
+        catch (e) {
+            console.error(e);
+        }
+
+        // fade in once its ready
+        let fadeInterval = setInterval(() => {
+            if (this.ambientMusic) {
+                if (this.ambientMusic!.volume < 0.4) {
+                    this.ambientMusic!.volume += 0.005;
+                }
+                else {
+                    clearInterval(fadeInterval);
+                }
+            }
+        }, 100);
+        setTimeout(() => {
+            if (this.ambientMusic) {
+                this.ambientMusic!.volume = 0.4;
+            }
+        }, 8000);
+    }
+
+    constructor(canvas: HTMLCanvasElement, host: boolean, ambientMusic: boolean) {
         if (new URL(document.location.href).searchParams.get("theme")) {
             let popup = document.querySelector(".starting-popup") as HTMLDivElement;
             popup.style.display = "none";
@@ -422,21 +497,62 @@ class SimuloClientController {
         }
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-        // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
+        // try to fetch /version and set #version-info text
         fetch('../../version.json').then(async (response) => {
             if (response.ok) {
+                let version = await response.json();
                 let versionInfo = document.getElementById('version-info');
                 if (versionInfo) {
-                    // the result is json, so parse it
-                    let version = await response.json();
                     // we want month name, then day, then year. no time
                     let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
                     this.version = version.version;
                     this.versionTimestamp = version.date; // we can use it for comparison later of which build is newer
-                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
+                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate})`;
+                }
+                // now fetch it again but no-cache
+                let headers = new Headers();
+                headers.append('pragma', 'no-cache');
+                headers.append('cache-control', 'no-cache');
+                let response2 = await fetch('../../version.json', {
+                    headers
+                });
+                // make sure also ok, otherwise just keep old one
+                if (response2.ok) {
+                    let version2 = await response2.json();
+                    // compare `new Date(version*.date).getTime()`s, if the new one is newer, that means cache is interfering
+                    if (new Date(version2.date).getTime() > new Date(version.date).getTime()) {
+                        // cache is interfering, lets show .update-menu
+                        let updateMenu = document.querySelector('.update-menu') as HTMLElement;
+                        updateMenu.style.display = 'block';
+                        // set #old-version and #new-version text
+                        let oldVersion = document.getElementById('old-version') as HTMLElement;
+                        let newVersion = document.getElementById('new-version') as HTMLElement;
+                        oldVersion.innerText = version.version;
+                        newVersion.innerText = version2.version;
+                        // get #update-button, #update-dismiss-button and #update-remindme-button
+                        let updateButton = document.getElementById('update-button') as HTMLElement;
+                        let updateDismissButton = document.getElementById('update-dismiss-button') as HTMLElement;
+                        let updateRemindMeButton = document.getElementById('update-remindme-button') as HTMLElement;
+                        // add event listeners
+                        updateButton.addEventListener('click', () => {
+                            // update
+                            // add loading cursor
+                            document.body.style.cursor = 'wait';
+                            updateButton.style.cursor = 'wait';
+                            this.update();
+                        });
+                        updateDismissButton.addEventListener('click', () => {
+                            // dismiss
+                            updateMenu.style.display = 'none';
+                        });
+                        updateRemindMeButton.addEventListener('click', () => {
+                            // remind me
+                            updateMenu.style.display = 'none';
+                        });
+                    }
                 }
             }
-        }).catch(() => { });
+        }).catch((e) => { console.log('Failed to fetch version.json', e) });
 
 
         this.client.on('connect', () => { // Connect fires when the WebSocket connects
@@ -716,6 +832,39 @@ class SimuloClientController {
                     if (action == 'new-scene') {
                         this.defaultWorld();
                         this.showToast('Loaded default scene', ToastType.INFO);
+                    }
+                    else if (action == 'main-menu') {
+                        let mainMenu = document.getElementById('main-menu') as HTMLDivElement;
+                        let nonGameOverlay = document.getElementById('non-game-overlay') as HTMLDivElement;
+                        mainMenu.style.display = 'flex';
+                        nonGameOverlay.style.display = 'flex';
+
+                        // we did it, now its time to self destruct
+                        this.viewer.stop();
+                        this.viewer.destroy();
+                        // clear canvas
+                        // @ts-ignore
+                        if (this.viewer.ctx) {
+                            // @ts-ignore
+                            this.viewer.ctx.clearRect(0, 0, this.viewer.canvas.width, this.viewer.canvas.height);
+                        }
+                        else {
+                            this.viewer.canvas.getContext('2d')!.clearRect(0, 0, this.viewer.canvas.width, this.viewer.canvas.height);
+                        }
+                        // @ts-ignore
+                        this.viewer = null;
+                        this.client.disconnect();
+                        if (this.serverController) {
+                            this.serverController.physicsServer.destroyPhysicsServer();
+                            this.serverController.networkServer = null;
+                            this.serverController.stop();
+                            this.serverController = null;
+                        }
+                        // @ts-ignore
+                        this.client = null;
+
+                        //@ts-ignore
+                        window.playMenuMusic();
                     }
                     else if (action == 'save-scene') {
                         var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene. (Note: this box will be replaced with a UI in a future update)") || new Date().getTime().toString();
@@ -2036,6 +2185,9 @@ class SimuloClientController {
                 }
                 //this.themeSelect.value = this.theme;
                 console.log('Theme changed to ' + body.data);
+            }
+            if (body.type == 'play_ambient_music') {
+                this.playAmbientMusic(body.data);
             }
         }
     }

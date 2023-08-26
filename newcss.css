@@ -189,7 +189,7 @@ body {
   backdrop-filter: blur(35px);
 }
 
-.update-menu-button {
+.menu-button {
   background-color: #99e077;
   border-radius: 10000rem;
   padding: 0.5rem 1rem;
@@ -235,19 +235,19 @@ details summary {
 
 
 
-.update-menu-button:hover {
+.menu-button:hover {
   background-color: #b7f899;
 }
 
-.update-menu-button.secondary {
+.menu-button.secondary {
   background-color: #8c67f2;
 }
 
-.update-menu-button.secondary:hover {
+.menu-button.secondary:hover {
   background-color: #ab8dff;
 }
 
-.update-menu-button.tertiary {
+.menu-button.tertiary {
   background-color: #dadada4d;
   flex-grow: 1;
   flex-shrink: 1;
@@ -259,7 +259,7 @@ details summary {
   padding: 0.5rem 0;
 }
 
-.update-menu-button.tertiary:hover {
+.menu-button.tertiary:hover {
   background-color: #f9f9f980;
 }
 

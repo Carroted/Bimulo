@@ -123,6 +123,12 @@ class SimuloNetworkClient implements SimuloClient {
         });
     }
 
+    disconnect() {
+        if (this.ws) {
+            this.ws.close();
+        }
+    }
+
     // on func
     /**
      * Add an event listener for a specific event type

@@ -5,7 +5,7 @@ import SimuloText from "./SimuloText.js";
  * Class that displays SimuloShapes and SimuloTexts on a canvas or other drawing context, typically paired with `SimuloClientController` or a custom controller.
  */
 export default interface SimuloViewer {
-    canvas: any;
+    canvas: HTMLCanvasElement;
     cameraOffset: { x: number; y: number; };
     cameraZoom: number;
     touchStartElement: any;
@@ -70,4 +70,6 @@ export default interface SimuloViewer {
      * Draw the current state of the world to the canvas or other drawing context.
      */
     draw(): void;
+
+    destroy(): void;
 }

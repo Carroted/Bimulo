@@ -16,7 +16,7 @@ devServerSocket.on("connection", (socket) => {
 import { ChildProcess, exec } from 'child_process';
 import { packageJson, __dirname, __filename } from './lib.js';
 // get dev script
-var devScript = packageJson.scripts.dev; // its multiple commands with &&
+var devScript = `bun scripts/build.ts && bun run server/src/index.ts --dev`;
 
 let child: ChildProcess;
 
@@ -47,7 +47,7 @@ async function runDev(staticChangesOnly = false) {
         child = exec(devScript, { cwd: __dirname });
     }
     else {
-        child = exec('node dist/server/src/index.js --dev', { cwd: __dirname });
+        child = exec('bun server/src/index.ts --dev', { cwd: __dirname });
     }
     child.stdout?.on('data', (data) => {
         // if it contains "Build complete in", log it, otherwise ignore
@@ -56,7 +56,7 @@ async function runDev(staticChangesOnly = false) {
         }
         // if it includes "HTTP server started on port", we tell the dev server to reload
         else if (data.includes('HTTP server started on port')) {
-            console.log(' ├ ' + chalk.greenBright(`Server started on http://localhost:${process.env.PORT}/`));
+            console.log(' ├ ' + chalk.greenBright(`Server started on http://localhost:4613/`));
             devServerSocket.clients.forEach((client) => {
                 client.send("refresh");
             });
@@ -75,10 +75,9 @@ runDev();
 let watchDirs = [
     'client',
     'server',
-    'shared',
     'package.json',
     'media',
-    //'website', // dev server doesnt serve that
+    'website'
 ];
 
 // watch for changes

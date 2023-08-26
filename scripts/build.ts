@@ -184,7 +184,7 @@ const steps = [
     // add an empty .nojekyll file to dist so github pages works properly
     async (stepInfo: string) => {
         console.log(stepInfo, 'Adding .nojekyll file...');
-        fs.writeFileSync(path.join(__dirname, 'dist', '.nojekyll'), 'Please don\'t jekyll me.');
+        fs.writeFileSync(path.join(__dirname, 'dist', '.nojekyll'), 'This file is added so GitHub Pages doesn\'t try to build the website, but instead serves the files as-is.\n\nWithout this, node_modules will be deleted and the website won\'t work.');
     },
     async (stepInfo: string) => {
         console.log(stepInfo, 'Creating log...');

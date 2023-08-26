@@ -62,7 +62,8 @@ body {
     object-fit: cover;
 }
 
-.background img, .background video {
+.background img,
+.background video {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -229,7 +230,8 @@ header>nav a {
     padding: 0;
 }
 
-header>nav a:link, header>nav a:visited {
+header>nav a:link,
+header>nav a:visited {
     color: #fff;
 }
 

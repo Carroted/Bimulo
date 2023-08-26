@@ -295,7 +295,7 @@ body {
   backdrop-filter: blur(35px);
 }
 
-.update-menu-button {
+.menu-button {
   background-color: #99e077;
   border-radius: 10000rem;
   padding: 0.5rem 1rem;
@@ -309,6 +309,7 @@ body {
   flex-grow: 0;
   flex-shrink: 0;
   user-select: none;
+  cursor: pointer;
 }
 
 .update-menu .comparison {
@@ -341,20 +342,23 @@ details summary {
 
 
 
-.update-menu-button:hover {
+.menu-button:hover {
   background-color: #b7f899;
 }
 
-.update-menu-button.secondary {
+.menu-button.secondary {
   background-color: #8c67f2;
 }
 
-.update-menu-button.secondary:hover {
+.menu-button.secondary:hover {
   background-color: #ab8dff;
 }
 
-.update-menu-button.tertiary {
+.menu-button.tertiary {
   background-color: #dadada4d;
+}
+
+.update-menu-button .menu-button.tertiary {
   flex-grow: 1;
   flex-shrink: 1;
   margin-right: 0;
@@ -365,7 +369,7 @@ details summary {
   padding: 0.5rem 0;
 }
 
-.update-menu-button.tertiary:hover {
+.menu-button.tertiary:hover {
   background-color: #f9f9f980;
 }
 
@@ -1652,6 +1656,31 @@ details summary {
   flex-grow: 0;
 }
 
+/* play menu and news menu scrollbars at once using comma */
+.play-menu::-webkit-scrollbar,
+.news-menu::-webkit-scrollbar {
+  height: 0.6rem;
+  left: 3rem;
+  width: calc(100% - 6rem);
+}
+
+.play-menu::-webkit-scrollbar-thumb,
+.news-menu::-webkit-scrollbar-thumb {
+  background: #ffffff30;
+  border-radius: 1000rem;
+}
+
+.play-menu::-webkit-scrollbar-thumb:hover,
+.news-menu::-webkit-scrollbar-thumb:hover {
+  background: #ffffff40;
+}
+
+.play-menu::-webkit-scrollbar-thumb:active,
+.news-menu::-webkit-scrollbar-thumb:active {
+  background: #ffffff50;
+}
+
+/* hide scrollbars on mobile */
 @media (max-width: 590px) {
   .news-menu {
     margin: 0 -1.8rem;
@@ -1673,6 +1702,11 @@ details summary {
 
   .top-menu>img {
     height: 3.2rem;
+  }
+
+  .play-menu::-webkit-scrollbar,
+  .news-menu::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -1755,16 +1789,63 @@ details summary {
   width: 2rem;
 }
 
-/* play menu and news menu scrollbars at once using comma */
-.play-menu::-webkit-scrollbar,
-.news-menu::-webkit-scrollbar {
-  height: 0.25rem;
-  left: 3rem;
-  width: calc(100% - 6rem);
+#dialog {
+  transition: transform 0.2s ease-in-out;
+  transform: scale(0);
+  background: #1f1929;
+  max-width: 50rem;
+  text-align: center;
+  padding: 2rem;
+  border-radius: 1rem;
 }
 
-.play-menu::-webkit-scrollbar-thumb,
-.news-menu::-webkit-scrollbar-thumb {
-  background: #ffffff80;
-  border-radius: 1000rem;
+#dialog h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+
+#dialog .buttons {
+  margin-top: 2rem;
+}
+
+#page-mask {
+  z-index: 30000000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* fill the entire screen with the background */
+  min-height: 100vh;
+  background: #00000000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  transition: background-color 0.2s ease-in-out;
+  pointer-events: none;
+  font-family: "Urbanist", sans-serif;
+  color: #ffffff;
+}
+
+#page-mask.hidden {
+  background: #00000000;
+}
+
+#page-mask.visible {
+  background: #000000e0;
+  pointer-events: all;
+  cursor: default;
+}
+
+#page-mask.visible #dialog {
+  transform: scale(1);
+}
+
+#page-mask.hidden #dialog {
+  pointer-events: none;
 }

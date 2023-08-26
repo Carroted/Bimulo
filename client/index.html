@@ -20,12 +20,12 @@
   <meta property="og:title" content="Simulo Alpha">
   <meta property="og:description"
     content="Online 2D physics sandbox where you can build and share anything in an infinite 2D world. It even has liquid!">
-  <meta property="og:image" content="https://carroted.github.io/Simulo/media/icon_square.png">
+  <meta property="og:image" content="https://carroted.github.io/Simulo/client/media/icon_square.png">
   <meta property="twitter:url" content="https://carroted.github.io/Simulo/">
   <meta property="twitter:title" content="Simulo Alpha">
   <meta property="twitter:description"
     content="Online 2D physics sandbox where you can build and share anything in an infinite 2D world. It even has liquid!">
-  <meta property="twitter:image" content="https://carroted.github.io/Simulo/media/icon_square.png">
+  <meta property="twitter:image" content="https://carroted.github.io/Simulo/client/media/icon_square.png">
   <meta http-equiv="Cache-Control" content="no-store, max-age=0">
   <script>
     let dev = false;
@@ -92,7 +92,7 @@
     <svg data-src="icons/pause.svg"></svg>
   </div>
   <div class="popup-container">
-    <div class="starting-popup">
+    <div class="starting-popup" style="display: none;">
       <div class="popup-top">
         <img src="media/logo.svg" alt="Simulo logo">
         <h3>Welcome back</h3>
@@ -276,6 +276,7 @@
       <li class="button" data-file="load-scene"><svg data-src="icons/folder.svg"></svg>Load scene</li>
       <li class="button" data-file="import"><svg data-src="icons/upload.svg"></svg>Import</li>
       <li class="button" data-file="export-scene"><svg data-src="icons/download.svg"></svg>Export scene</li>
+      <li class="button" data-file="main-menu"><svg data-src="icons/exit-to-app.svg"></svg>Exit to main menu</li>
     </ul>
   </div>
   <div class="file-menu-content" id="settings">
@@ -283,7 +284,6 @@
       <li class="button">Coming soon!</li>
     </ul>
   </div>
-
 
   <div class="chat" style="display: none;">
     <div class="messages">
@@ -313,11 +313,11 @@
       </div>
     </div>
     <div class="comparison">
-      <span class="version">v0.0.0</span>
+      <span class="version" id="old-version">v0.0.0</span>
       <svg data-src="icons/arrow-right.svg"></svg>
-      <span class="version">v0.0.0</span>
+      <span class="version" id="new-version">v0.0.0</span>
     </div>
-    <p>Your current scene will not be lost, but
+    <p>Your current scene will be lost, and
       multiplayer connections will be disconnected.</p>
     <!-- changes -->
     <details>
@@ -327,14 +327,15 @@
       </summary>
     </details>
     <div class="update-menu-bottom">
-      <button class="update-menu-button">Update</button>
-      <button class="update-menu-button secondary">Dismiss</button>
-      <button class="update-menu-button tertiary">Remind me later</button>
+      <button class="menu-button" id="update-button">Update</button>
+      <button class="menu-button secondary" id="update-dismiss-button">Dismiss</button>
+      <button class="menu-button tertiary" id="update-remindme-button">Remind me later</button>
     </div>
+    <progress id="update-progress" value="0" max="100" style="display: none; width: 100%;"></progress>
   </div>
 
   <div class="non-game-overlay" id="non-game-overlay">
-    <div class="spinner" id="spinner" style="display: none;">
+    <div class="spinner" id="spinner">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="20" />
       </svg>
@@ -371,7 +372,7 @@
     </div>
     <div class="main-menu" style="display: none;" id="main-menu">
       <div class="top-menu"><img src="media/logo.svg" alt="Simulo logo">
-        <div class="settings button" id="settings-button">
+        <div class="settings button" id="settings-button" onclick="alert('Coming soon!')">
           <svg data-src="icons/cog.svg"></svg>
         </div>
       </div>
@@ -400,11 +401,11 @@
       <div class="news-menu">
         <div class="news-item">
           <div class="news-item-header">
-            <h3>Simulo v0.9.0 released!</h3>
+            <h3>Simulo v0.9.0 release</h3>
             <div class="news-item-date">2023-07-30</div>
           </div>
           <div class="news-item-description">
-            <p>New update with multiplayer, main menu, music and more!</p>
+            <p>New update with multiplayer, main menu, music, new cursor, and more!</p>
           </div>
         </div>
         <div class="news-item">
@@ -418,11 +419,159 @@
         </div>
         <div class="news-item">
           <div class="news-item-header">
-            <h3>Simulo v0.8.0 released!</h3>
+            <h3>Simulo v0.8.0 release</h3>
             <div class="news-item-date">2023-07-04</div>
           </div>
           <div class="news-item-description">
             <p>It adds shape dimensions, and was made by pkerpo.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.7.0 release</h3>
+            <div class="news-item-date">2023-06-29</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds a basic right click menu, and more stable physics (first time the physics engine was modified).
+            </p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo public alpha release</h3>
+            <div class="news-item-date">2023-06-30</div>
+          </div>
+          <div class="news-item-description">
+            <p>Simulo is officially released to the public in alpha!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.6.0 release</h3>
+            <div class="news-item-date">2023-06-29</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds saving/loading scenes, import/export, stability, file menu,
+              axles & bolts, joints on bg, object options and more.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.5.0 release</h3>
+            <div class="news-item-date">2023-06-25</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds super basic mobile support and an official Simulo website!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.4.1 release</h3>
+            <div class="news-item-date">2023-06-23</div>
+          </div>
+          <div class="news-item-description">
+            <p>It stops you from selecting the ground when your selection box touches it, you can still select it by
+              clicking it directly.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.4.0 release</h3>
+            <div class="news-item-date">2023-06-23</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds saving objects, saving joints, free car and the introduction of purple person!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.3.0 release</h3>
+            <div class="news-item-date">2023-06-22</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds basic copy pasting of objects, but not joints or particles like liquid.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.2.2 release</h3>
+            <div class="news-item-date">2023-06-22</div>
+          </div>
+          <div class="news-item-description">
+            <p>Just some bug fixes.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.2.1 release</h3>
+            <div class="news-item-date">2023-06-22</div>
+          </div>
+          <div class="news-item-description">
+            <p>Fix for spring rendering (accidentally left debug code in).</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.2.0 release</h3>
+            <div class="news-item-date">2023-06-22</div>
+          </div>
+          <div class="news-item-description">
+            <p>It adds liquid simulation, toast system, theme picker and the ability to drag an object by clicking near
+              it instead of just directly on it.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo v0.1.0 release</h3>
+            <div class="news-item-date">2023-06-15</div>
+          </div>
+          <div class="news-item-description">
+            <p>First ever release of Simulo!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo June 2023 release announced</h3>
+            <div class="news-item-date">2023-05-04</div>
+          </div>
+          <div class="news-item-description">
+            <p>It was announced that Simulo will be released in June 2023.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Rewrite in Web instead of Unity Confirmed</h3>
+            <div class="news-item-date">2023-03-03</div>
+          </div>
+          <div class="news-item-description">
+            <p>This was a pivotal moment for Simulo.</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo Discord server created</h3>
+            <div class="news-item-date">2022-01-10</div>
+          </div>
+          <div class="news-item-description">
+            <p>Woo!</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Simulo development started</h3>
+            <div class="news-item-date">2021-03-03</div>
+          </div>
+          <div class="news-item-description">
+            <p>The game's development started under the name "Android World".</p>
+          </div>
+        </div>
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Basic prototypes for a physics app in Unity are made</h3>
+            <div class="news-item-date">2020-2021</div>
+          </div>
+          <div class="news-item-description">
+            <p>Exact dates unknown</p>
           </div>
         </div>
       </div>
@@ -430,6 +579,28 @@
       <p>Coming soon! Here there will be public scenes and objects people published.</p>
     </div>
   </div>
+  <div id="page-mask" class="hidden">
+    <div id="dialog">
+      <div class="dialog-content">
+        <h1>Want music?</h1>
+        <p>
+          Simulo has main menu music and ambient music. What do you want?
+        </p>
+        <p>
+          This will be saved, and will be possible to change once we add settings.
+        </p>
+        <div class="buttons">
+          <button class="menu-button primary" id="all-music">Enable all music</button>
+          <button class="menu-button secondary" id="menu-music">Just menu music</button>
+          <button class="menu-button tertiary" id="no-music">No music</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio preload="auto">
+    <source src="assets/music/menu.ogg" type="audio/ogg">
+  </audio>
 
   <script src="src/index.js" type="module" defer></script>
 
