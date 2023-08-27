@@ -52,6 +52,94 @@
             <a href="https://discord.gg/5Q7AAvRp8H" class="discord">Discord</a>
         </div>
     </div>
+    <div class="section image-preview">
+        <div class="image column">
+            <img src="img1.png" alt="image 1" class="preview-image">
+            <div class="scattered-textures">
+                <img src="client/assets/textures/person.png" alt="person" style="bottom: 0rem;
+    right: 1rem;
+    position: absolute;
+    height: 7rem;
+    transform: rotate(3deg);" />
+                <div style="top: 0rem;
+    left: 1rem;
+    position: absolute;
+    height: 7rem;
+    transform: rotate(-15deg); background-color: #cf4184; height: 7rem; width: 3.5rem;"></div>
+            </div>
+        </div>
+        <div class="info column">
+            <h1>
+                Multiplayer Enabled
+            </h1>
+            <p>
+                Play with as many friends as you want in real-time.
+            </p>
+        </div>
+    </div>
+    <div class="section image-preview">
+        <div class="image column">
+            <img src="img2.png" alt="image 2" class="preview-image">
+            <div class="scattered-textures">
+                <img src="client/assets/textures/cursor.png" alt="cursor" style="bottom: 0rem;
+        right: 1rem;
+        position: absolute;
+        height: 5rem;
+        transform: rotate(-3deg);" />
+                <div style="top: 5rem;
+        left: -1rem;
+        position: absolute;
+        height: 7rem;
+        transform: rotate(20deg); background: rgb(64, 128, 128);
+    border: 1px solid rgba(17, 17, 17, 0.627); height: 5rem; width: 5rem;"></div>
+            </div>
+        </div>
+        <div class="info column">
+            <h1>
+                Build Anything
+            </h1>
+            <p>
+                Use various tools to build anything you can imagine.
+            </p>
+        </div>
+    </div>
+    <div class="section image-preview">
+        <div class="image column">
+            <img src="img3.png" alt="image 3" class="preview-image">
+            <div class="scattered-textures">
+                <img src="client/assets/textures/basic_car.png" alt="basic car" style="bottom: 0.5rem;
+            right: 1rem;
+            position: absolute;
+            height: 4.5rem;
+            transform: rotate(5deg);" />
+                <img src="client/assets/textures/person_purple.png" alt="purple person" style="top: 0rem;
+                            left: 1rem;
+                            position: absolute;
+                            height: 7rem;
+                            transform: rotate(10deg);" />
+            </div>
+        </div>
+        <div class="info column">
+            <h1>
+                Simple, Yet Powerful
+            </h1>
+            <p>
+                Quickly build anything with a simple tabbed interface.
+            </p>
+        </div>
+    </div>
+    <div class="section play-game">
+        <h1>
+            Play online for free!
+        </h1>
+        <h2>
+            Downloads coming soon, join the <a href="https://discord.gg/5Q7AAvRp8H">Discord</a> for updates on that.
+        </h2>
+        <div class="buttons">
+            <a href="javascript:void(0)" class="play" onclick="play();">Play</a>
+            <a href="https://discord.gg/5Q7AAvRp8H" class="discord">Discord</a>
+        </div>
+    </div>
     <div class="section open-source">
         <h1>
             It's free and open-source!
@@ -67,6 +155,9 @@
             Open-source means that anyone can view and edit the code that makes up Simulo. This means that anyone can
             contribute to the project and make it better for everyone!
         </p>
+    </div>
+    <div class="section footer">
+        <h2>Simulo is a game by <a href="https://github.com/Carroted">Carroted</a></h2>
     </div>
 
     <div id="page-mask" class="hidden">
@@ -95,7 +186,7 @@
         var header = document.querySelector("header");
         function checkScroll() {
             var scrollPos = window.scrollY;
-            if (scrollPos > 0 && window.innerWidth < 1410) {
+            if (scrollPos > 0) {
                 header.classList.add("scrolled");
             } else {
                 header.classList.remove("scrolled");
