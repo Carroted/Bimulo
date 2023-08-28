@@ -210,5 +210,161 @@ export default {
     "systemCursor": true,
     "toolIconSize": 1.8,
     "toolIconOffset": [-1.5, -0.8]
+  },
+  "autumn": {
+    "displayName": "Autumn",
+    "author": "asour",
+    "description": "hmmmm",
+    "background": "#6491d9",
+    "person": {
+      "color": "#99e077",
+      "border": "#111111a0",
+      "borderWidth": 1,
+      "borderScaleWithZoom": true
+    },
+    "ground": {
+      "color": "#a3b00d",
+      "border": "#111111a0",
+      "borderWidth": 1,
+      "borderScaleWithZoom": true
+    },
+    "newObjects": {
+      "color": {
+        "hueMin": 0,
+        "hueMax": 65,
+        "satMin": 79,
+        "satMax": 100,
+        "valMin": 43,
+        "valMax": 100,
+        "alpMin": 1,
+        "alpMax": 1
+      },
+      "border": "#111111a0",
+      "borderWidth": 1,
+      "borderScaleWithZoom": true,
+      "circleCake": true,
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/tools/axle.png",
+      "boltImage": "assets/textures/tools/bolt.png"
+    },
+    "toolIcons": {
+      "drag": "assets/textures/tools/drag.png",
+      "addRectangle": "assets/textures/tools/box.png",
+      "addCircle": "assets/textures/tools/circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/tools/polygon.png",
+      "addSpring": "assets/textures/tools/spring.png",
+      "addAxle": "assets/textures/tools/hinge.png",
+      "addBolt": "assets/textures/tools/fixjoint.png",
+      "select": "assets/textures/tools/move.png",
+      "addParticle": "assets/textures/add_particle.png"
+    },
+    "systemCursor": true,
+    "toolIconSize": 1.8,
+    "toolIconOffset": [-1.5, -0.8]
+  },
+  "original": {
+    "displayName": "Original",
+    "author": "asour",
+    "description": "Original Simulo theme from 2021",
+    "background": "#092f42",
+    "person": {
+      "color": "#7be891",
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false
+    },
+    "ground": {
+      "color": "#d8efff",
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false
+    },
+    "newObjects": {
+      "color": {
+        "hueMin": 0,
+        "hueMax": 360,
+        "satMin": 40,
+        "satMax": 50,
+        "valMin": 90,
+        "valMax": 100,
+        "alpMin": 1,
+        "alpMax": 1
+      },
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false,
+      "circleCake": false,
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
+    },
+    "toolIcons": {
+      "drag": null,
+      "addRectangle": "assets/textures/add_rectangle.png",
+      "addCircle": "assets/textures/add_circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/add_polygon.png",
+      "addSpring": "assets/textures/add_spring.png",
+      "addAxle": "assets/textures/add_axle.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
+      "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
+    },
+    "systemCursor": false,
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
+  },
+  "X-ray": {
+    "displayName": "X-ray",
+    "author": "asour",
+    "description": "if you use it too much it damages your cells",
+    "background": "#000000",
+    "person": {
+      "color": "#ffffff00",
+      "border": '#ffffff',
+      "borderWidth": 1,
+      "borderScaleWithZoom": true
+    },
+    "ground": {
+      "color": "#ffffff00",
+      "border": '#ffffff',
+      "borderWidth": 1,
+      "borderScaleWithZoom": true
+    },
+    "newObjects": {
+      "color": {
+        "hueMin": 0,
+        "hueMax": 0,
+        "satMin": 0,
+        "satMax": 0,
+        "valMin": 100,
+        "valMax": 100,
+        "alpMin": 0,
+        "alpMax": 0
+      },
+      "border": '#ffffff',
+      "borderWidth": 1,
+      "borderScaleWithZoom": true,
+      "circleCake": false,
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
+    },
+    "toolIcons": {
+      "drag": null,
+      "addRectangle": "assets/textures/add_rectangle.png",
+      "addCircle": "assets/textures/add_circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/add_polygon.png",
+      "addSpring": "assets/textures/add_spring.png",
+      "addAxle": "assets/textures/add_axle.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
+      "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
+    },
+    "systemCursor": false,
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
   }
 } as { [key: string]: SimuloTheme };

@@ -20,6 +20,7 @@ interface SimuloObjectData {
     /** We sort shapes with this for almost everything, including rendering. Newer shapes get a higher Z Depth. At the start of a scene, IDs and Z Depths will be the same, but user interaction can change this. */
     zDepth: number;
     decomposedParts?: [x: number, y: number][][];
+    flipImage?: boolean;
 }
 
 interface SimuloParentData extends Box2D.b2BodyUserData {

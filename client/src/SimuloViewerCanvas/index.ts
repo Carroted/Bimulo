@@ -1,6 +1,7 @@
 import SimuloShape, { SimuloCircle, SimuloEdge, SimuloPolygon, SimuloRectangle } from '../SimuloShape.js';
 import SimuloText from '../SimuloText.js';
 import SimuloViewer from '../SimuloViewer.js';
+import SimuloRendererCanvas from './renderer.js';
 
 const style = `/*canvas.simulo-viewer.fullscreen {
     position: fixed;
@@ -35,24 +36,6 @@ function getEventLocation(e: MouseEvent | TouchEvent) {
     return { x: 0, y: 0 };
 }
 
-function rotateVerts(verts: { x: number, y: number }[], angle: number) {
-    // Whoah there! hold up, if (angle % 2pi) is 0, then we don't need to rotate anything!
-    if (angle % (2 * Math.PI) == 0) {
-        return verts; // This will slightly improve performance when rotating a lot of verts all the time, which we do every frame
-    }
-
-    // rotate the vertices at the origin (0,0)
-    var rotatedVertices: { x: number, y: number }[] = [];
-    for (var i = 0; i < verts.length; i++) {
-        // use math to rotate the vertices
-        var rotatedX = verts[i].x * Math.cos(angle) - verts[i].y * Math.sin(angle);
-        var rotatedY = verts[i].x * Math.sin(angle) + verts[i].y * Math.cos(angle);
-        // add the rotated vertices to the array
-        rotatedVertices.push({ x: rotatedX, y: rotatedY });
-    }
-    return rotatedVertices;
-}
-
 /** Displays shapes and images on a canvas at low performance, typically paired with `SimuloClientController` or a custom controller. */
 class SimuloViewerCanvas implements SimuloViewer {
     /** Whether the viewer is currently running, should only be altered by `start()` and `stop()` */
@@ -82,19 +65,6 @@ class SimuloViewerCanvas implements SimuloViewer {
     keysDown: { [key: number]: boolean } = {};
 
     previousPinchDistance: number | null = null;
-
-    private cachedImages: { [key: string]: HTMLImageElement } = {};
-    getImage(src: string) {
-        if (this.cachedImages[src] != undefined) {
-            return this.cachedImages[src];
-        }
-        else {
-            var img = new Image();
-            img.src = src;
-            this.cachedImages[src] = img;
-            return img;
-        }
-    }
 
     listeners: { [key: string]: Function[] } = {};
     /** Emit data to listeners. Call `on` to add listeners and `off` to remove them. */
@@ -178,9 +148,12 @@ class SimuloViewerCanvas implements SimuloViewer {
         }
     }
 
+    renderer: SimuloRendererCanvas;
+
     constructor(canvas: HTMLCanvasElement) {
         console.log("SimuloViewer constructor");
         this.canvas = canvas;
+        this.renderer = new SimuloRendererCanvas(canvas);
         var dpr = window.devicePixelRatio || 1;
         var rect = canvas.getBoundingClientRect();
         this.canvas.width = rect.width * dpr;
@@ -331,61 +304,7 @@ class SimuloViewerCanvas implements SimuloViewer {
             y: mousePos.y
         });
     }
-    drawVertsAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
-        this.ctx.beginPath();
-        verts = rotateVerts(verts, rotation);
-        verts.forEach(e => {
-            this.ctx.lineTo((e.x + x), (e.y + y));
-        });
-        this.ctx.closePath();
-        //ctx.strokeStyle = '#000000a0';
 
-        this.ctx.save();
-        this.ctx.clip();
-        this.ctx.lineWidth *= 2;
-        this.ctx.fill();
-        this.ctx.stroke();
-        this.ctx.restore();
-        /*
-            ctx.fill();
-            ctx.stroke();
-            */
-    }
-    drawVertsNoFillAt(x: number, y: number, verts: { x: number, y: number }[], rotation = 0) {
-        this.ctx.beginPath();
-        verts = rotateVerts(verts, rotation);
-        verts.forEach(e => {
-            this.ctx.lineTo((e.x + x), (e.y + y));
-        });
-        this.ctx.closePath();
-        // set stroke color
-        this.ctx.strokeStyle = '#9ac4f1';
-        // set line width
-        this.ctx.lineWidth = 0.01;
-        this.ctx.stroke();
-        // reset to transparent
-        this.ctx.strokeStyle = 'transparent';
-    }
-
-    drawCircleAt(x: number, y: number, radius: number, rotation = 0, circleCake = false) {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
-        this.ctx.fill();
-        this.ctx.stroke();
-        // if circleCake, draw a partial circle (20 degrees)
-        if (circleCake) {
-            // fill color darker
-            this.ctx.fillStyle = '#00000080';
-            this.ctx.strokeStyle = 'transparent';
-            this.ctx.beginPath();
-            //ctx.arc(x, y, radius, 0, 20 * Math.PI / 180);
-            // offset based on rotation
-            this.ctx.arc(x, y, radius, rotation, rotation + 23 * Math.PI / 180);
-            this.ctx.lineTo(x, y);
-            this.ctx.closePath();
-            this.ctx.fill();
-        }
-    }
 
 
 
@@ -545,38 +464,6 @@ class SimuloViewerCanvas implements SimuloViewer {
         return this.canvas.classList.contains("fullscreen");
     }
 
-    drawVerts(verts: { x: number, y: number }[]) {
-        this.ctx.beginPath();
-        verts.forEach(e => this.ctx.lineTo(e.x, e.y));
-        this.ctx.closePath();
-        this.ctx.fill();
-        this.ctx.stroke();
-    }
-
-    drawStretchedImageLine(image: HTMLImageElement, x1: number, y1: number, x2: number, y2: number, useHeight: boolean, otherAxisLength: number) {
-        // if useHeight is true, we will stretch along height between p1 and p2. if false, we will stretch along width between p1 and p2
-        if (useHeight) {
-            // draw between 2 points, offsetting other axis by half of otherAxisLength
-            var angle = Math.atan2(y2 - y1, x2 - x1);
-            var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            var halfOtherAxisLength = otherAxisLength / 2;
-            this.ctx.save();
-            this.ctx.translate(x1, y1);
-            this.ctx.rotate(angle);
-            this.ctx.drawImage(image, -halfOtherAxisLength, 0, otherAxisLength, length);
-            this.ctx.restore();
-        } else {
-            // draw between 2 points, offsetting other axis by half of otherAxisLength
-            var angle = Math.atan2(y2 - y1, x2 - x1);
-            var length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            var halfOtherAxisLength = otherAxisLength / 2;
-            this.ctx.save();
-            this.ctx.translate(x1, y1);
-            this.ctx.rotate(angle);
-            this.ctx.drawImage(image, 0, -halfOtherAxisLength, length, otherAxisLength);
-            this.ctx.restore();
-        }
-    }
 
     lineBetweenPoints(x1: number, y1: number, x2: number, y2: number, center: boolean = false): { x: number, y: number, angle: number, length: number } {
         if (!center) {
@@ -592,75 +479,6 @@ class SimuloViewerCanvas implements SimuloViewer {
         }
     }
 
-
-    drawRect(x: number, y: number, width: number, height: number) {
-        this.ctx.fillRect(x, y, width, height);
-    }
-
-    drawText(text: string, x: number, y: number, size: number, color: string, font: string = "urbanist",
-        align: "left" | "center" | "right" = "left", baseline: "alphabetic" | "top" | "middle" | "bottom" = "alphabetic") {
-        this.ctx.fillStyle = color;
-        this.ctx.textAlign = align;
-        this.ctx.textBaseline = baseline;
-        this.ctx.font = `${size}px ${font}`;
-        this.ctx.fillText(text, x, y);
-    }
-
-    outlinedImage(img: HTMLImageElement, s: number, color: string, x: number, y: number, width: number, height: number) {
-        var canvas2 = document.createElement('canvas');
-        var ctx2 = canvas2.getContext('2d') as CanvasRenderingContext2D;
-        canvas2.width = width + (s * 4);
-        canvas2.height = height + (s * 4);
-        ctx2.imageSmoothingEnabled = false;
-        // @ts-ignore
-        ctx2.mozImageSmoothingEnabled = false; // we ignore because typescript doesnt know about these
-        // @ts-ignore
-        ctx2.webkitImageSmoothingEnabled = false;
-        // @ts-ignore
-        ctx2.msImageSmoothingEnabled = false;
-
-        var dArr = [-1, -1, 0, -1, 1, -1, -1, 0, 1, 0, -1, 1, 0, 1, 1, 1], // offset array
-            i = 0;  // iterator
-
-        // draw images at offsets from the array scaled by s
-        for (; i < dArr.length; i += 2)
-            ctx2.drawImage(img, (1 + dArr[i] * s) + s, (1 + dArr[i + 1] * s) + s, width, height);
-
-        // fill with color
-        ctx2.globalCompositeOperation = "source-in";
-        ctx2.fillStyle = color;
-        ctx2.fillRect(0, 0, width + (s * 4), height + (s * 40));
-
-        // draw original image in normal mode
-        ctx2.globalCompositeOperation = "source-over";
-        ctx2.drawImage(img, 1 + s, 1 + s, width, height);
-
-        this.ctx.drawImage(canvas2, x - 1 - s, y - 1 - s);
-    }
-
-    // polyfill for roundRect
-    roundRect(x: number, y: number, w: number, h: number, r: number) {
-        if (w < 2 * r) r = w / 2;
-        if (h < 2 * r) r = h / 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x + r, y);
-        this.ctx.arcTo(x + w, y, x + w, y + h, r);
-        this.ctx.arcTo(x + w, y + h, x, y + h, r);
-        this.ctx.arcTo(x, y + h, x, y, r);
-        this.ctx.arcTo(x, y, x + w, y, r);
-        this.ctx.closePath();
-        return this.ctx;
-    }
-
-    roundTri(x: number, y: number, w: number, h: number) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.ctx.arcTo(x + w, y, x + w, y + h, 10);
-        this.ctx.arcTo(x + w, y + h, x, y + h, 10);
-        this.ctx.arcTo(x, y + h, x, y, 10);
-        this.ctx.closePath();
-        return this.ctx;
-    }
     shapes: SimuloShape[] = [];
     texts: SimuloText[] = [];
     /** Draw the current state of the world to the canvas or other drawing context. */
@@ -677,149 +495,7 @@ class SimuloViewerCanvas implements SimuloViewer {
         // Translate to the canvas centre before zooming - so you'll always zoom on what you're looking directly at
         this.ctx.setTransform(this.cameraZoom, 0, 0, this.cameraZoom, this.cameraOffset.x, this.cameraOffset.y);
 
-        //ctx.fillStyle = '#151832';
-        var origin = this.transformPoint(0, 0);
-        var end = this.transformPoint(this.canvas.width, this.canvas.height);
-        var width = end.x - origin.x;
-        var height = end.y - origin.y;
-        //this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // draw map
-        //ctx.drawImage(canvasMap, 0, 0);
-
-
-        var mousePos = this.transformPoint(this.lastX, this.lastY); // this is also the last touch position, however we will only use it for mouse hover effects in this function so touch isnt gonna be very relevant (hence the name mousePos)
-
-        var cursor = this.getImage('assets/textures/cursor.png');
-
-        // fill
-        this.ctx.fillStyle = '#a1acfa';
-        // no border
-        this.ctx.strokeStyle = 'transparent';
-        // the shapes are verts
-        for (var i = 0; i < this.shapes.length; i++) {
-            var shape = this.shapes[i];
-            var shapeSize = 1; // width of shape
-            this.ctx.fillStyle = shape.color;
-            if (shape.border) {
-                this.ctx.strokeStyle = shape.border;
-                this.ctx.lineWidth = shape.borderWidth as number / (shape.borderScaleWithZoom ? this.cameraZoom : 1);
-            }
-            else {
-                this.ctx.strokeStyle = 'transparent';
-            }
-
-            if (shape.type === 'polygon') {
-                let shapePolygon = shape as SimuloPolygon;
-                if (!shapePolygon.points) {
-                    shapePolygon.vertices.forEach(function (vert) {
-                        if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
-                        if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
-                    });
-                }
-                else {
-                    shapePolygon.points.forEach(function (vert) {
-                        if (Math.abs(vert.x) > shapeSize) shapeSize = Math.abs(vert.x);
-                        if (Math.abs(vert.y) > shapeSize) shapeSize = Math.abs(vert.y);
-                    });
-                }
-            }
-            else if (shape.type === 'rectangle') {
-                let shapeRectangle = shape as SimuloRectangle;
-                shapeSize = Math.abs(shapeRectangle.width / 2);
-            }
-
-            shapeSize = Math.abs(shapeSize / 2.1);
-
-            if (shape.image) {
-                var image = this.getImage(shape.image);
-                if (image) {
-                    this.ctx.save();
-                    this.ctx.translate(shape.x, shape.y);
-                    this.ctx.rotate(shape.angle);
-                    // rotate 180deg
-                    this.ctx.rotate(Math.PI);
-                    // width is determined based on shape size. height is determined based on image aspect ratio
-                    if (!shape.stretchImage) {
-                        try {
-                            this.ctx.drawImage(image, -shapeSize, -shapeSize * (image.height / image.width), shapeSize * 2, shapeSize * 2 * (image.height / image.width));
-                        }
-                        catch (e) {
-                            console.error(e);
-                        }
-                    }
-                    else {
-                        try {
-                            // instead we use the rect height for height of the image. if its not a rectangle, shapesize
-                            if (shape.type === 'rectangle') {
-                                let shapeRectangle = shape as SimuloRectangle;
-                                this.ctx.drawImage(image, -shapeSize, -shapeSize * (shapeRectangle.height / shapeRectangle.width), shapeSize * 2, shapeSize * 2 * (shapeRectangle.height / shapeRectangle.width));
-                            }
-                            else {
-                                this.ctx.drawImage(image, -shapeSize, -shapeSize, shapeSize * 2, shapeSize * 2);
-                            }
-                        }
-                        catch (e) {
-                            console.error(e);
-                        }
-                    }
-                    this.ctx.restore();
-                }
-            }
-
-            if (shape.type === 'polygon') {
-                let shapePolygon = shape as SimuloPolygon;
-                /*
-                if (shapePolygon.decomposedParts) {
-                    for (var j = 0; j < shapePolygon.decomposedParts.length; j++) {
-                        var part = shapePolygon.decomposedParts[j];
-                        this.ctx.fillStyle = '#ffffff30';
-                        this.ctx.strokeStyle = '#ffffffff';
-                        this.ctx.lineWidth = 1 / this.cameraZoom;
-                        this.drawVertsAt(shapePolygon.x, shapePolygon.y, part.map(function (vert) {
-                            return { x: vert[0], y: vert[1] };
-                        }), shapePolygon.angle);
-                    }
-                }
-                else */if (!shapePolygon.points) {
-                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.vertices, shapePolygon.angle);
-                }
-                else {
-                    this.drawVertsAt(shapePolygon.x, shapePolygon.y, shapePolygon.points, shapePolygon.angle);
-                }
-            }
-            else if (shape.type === 'circle') {
-                let shapeCircle = shape as SimuloCircle;
-                // console.log('drawing circle');
-                this.drawCircleAt(shapeCircle.x, shapeCircle.y, shapeCircle.radius as number, shapeCircle.angle, shapeCircle.circleCake);
-            }
-            else if (shape.type === 'edge') {
-                let shapeEdge = shape as SimuloEdge;
-                //console.log('drawing edge');
-                this.drawVertsNoFillAt(shapeEdge.x, shapeEdge.y, shapeEdge.vertices, shapeEdge.angle);
-            }
-            else if (shape.type === 'rectangle') {
-                let shapeRectangle = shape as SimuloRectangle;
-                //console.log('drawing rectangle');
-                var verts = [
-                    { x: 0, y: 0 },
-                    { x: shapeRectangle.width, y: 0 },
-                    { x: shapeRectangle.width, y: shapeRectangle.height },
-                    { x: 0, y: shapeRectangle.height }
-                ];
-                this.drawVertsAt(shapeRectangle.x, shapeRectangle.y, verts, shapeRectangle.angle);
-            }
-
-            if (shape.text) {
-                this.drawText(shape.text.text, shape.x, shape.y, shape.text.fontSize, shape.text.color, shape.text.fontFamily, shape.text.align, shape.text.baseline);
-            }
-        }
-
-        // Draw any text that is not attached to a shape
-        for (var i = 0; i < this.texts.length; i++) {
-            var text = this.texts[i];
-            this.drawText(text.text, text.x, text.y, text.fontSize, text.color, text.fontFamily, text.align, text.baseline);
-        }
+        this.renderer.render(this.shapes, this.texts, this.cameraZoom);
 
 
         /*
@@ -906,10 +582,6 @@ class SimuloViewerCanvas implements SimuloViewer {
         // draw text that says mouse pos in world space
         this.ctx.fillStyle = 'white';
         this.ctx.font = '0.2px Arial';
-        // round to 1 decimal place
-        var mousePosXRound = Math.round(mousePos.x * 10) / 10;
-        var mousePosYRound = Math.round(mousePos.y * 10) / 10;
-        //ctx.fillText('(' + mousePosXRound + ', ' + mousePosYRound + ')', mousePos.x + 0.2, mousePos.y);
     }
 
     destroy() {

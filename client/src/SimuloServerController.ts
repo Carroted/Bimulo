@@ -139,7 +139,7 @@ class SimuloServerController {
         }*/
 
         if (!this.paused) {
-            var succeeded = false;
+            let succeeded = false;
             try {
                 succeeded = this.physicsServer.step(
                     delta * this.timeScale * this.timeScaleMultiplier,
@@ -161,21 +161,27 @@ class SimuloServerController {
                 this.savedWorld = this.physicsServer.saveWorld();
             }
         }
-        var render = this.physicsServer.render() as SimuloStep;
+        let render = this.physicsServer.render() as SimuloStep;
 
-        var springs1 = render.springs;
-        var springs2 = Object.values(this.springs).map((s) => {
+        let springs1 = render.springs.map((s) => {
+            return {
+                ...s,
+                targetLength: s.targetLength
+            };
+        });
+        let springs2 = Object.values(this.springs).map((s) => {
             return {
                 p1: s.target,
                 p2: s.anchor,
                 image: s.image,
                 line: s.line,
-                width: s.width
+                width: s.width,
+                targetLength: 0
             };
         });
-        var springs3 = springs1.concat(springs2);
+        let springs3 = springs1.concat(springs2);
 
-        var thisStep: SimuloStepExtended = {
+        let thisStep: SimuloStepExtended = {
             shapes: render.shapes,
             creating_objects: this.creatingObjects,
             background: this.theme.background,
@@ -200,7 +206,7 @@ class SimuloServerController {
     }
     handleData(formatted: { type: string; data: any }, uuid: string) {
         if (formatted.type == "player mouse") {
-            var springsFormatted: SpringData[] = [];
+            let springsFormatted: SpringData[] = [];
             if (this.springs[uuid]) {
                 let spring = this.springs[uuid];
                 spring.target = [formatted.data.x, formatted.data.y];
@@ -229,10 +235,10 @@ class SimuloServerController {
 
             if (this.creatingObjects[uuid]) {
                 if (this.creatingObjects[uuid].shape == 'polygon') {
-                    var polygon = this.creatingObjects[uuid] as SimuloCreatingPolygon;
+                    let polygon = this.creatingObjects[uuid] as SimuloCreatingPolygon;
                     if (polygon.vertices.length > 1) {
-                        var prevPoint = polygon.vertices[polygon.vertices.length - 1];
-                        var distance = getDistance(prevPoint, [formatted.data.x, formatted.data.y]);
+                        let prevPoint = polygon.vertices[polygon.vertices.length - 1];
+                        let distance = getDistance(prevPoint, [formatted.data.x, formatted.data.y]);
                         if (distance > 0.2) {
                             polygon.vertices.push([formatted.data.x, formatted.data.y]);
                         }
@@ -258,23 +264,44 @@ class SimuloServerController {
                                     x: dx * 10,
                                     y: dy * 10
                                 };
-                                var touchingBodies = this.physicsServer.getTouchingObjects(obj);
-                                for (var i = 0; i < touchingBodies.length; i++) {
+                                let touchingBodies = this.physicsServer.getTouchingObjects(obj);
+                                for (let i = 0; i < touchingBodies.length; i++) {
                                     touchingBodies[i].wakeUp();
                                 }
                             }
                         });
                     }
                 }
-                this.creatingObjects[uuid].currentX = formatted.data.x;
-                this.creatingObjects[uuid].currentY = formatted.data.y;
+                // ok so basically, if formatted.data.shift, we make this square
+                // we will do that with difference between currentX and formatted.data.x, etc, and math.max
+                if (!formatted.data.shift) {
+                    // not square
+                    this.creatingObjects[uuid].currentX = formatted.data.x;
+                    this.creatingObjects[uuid].currentY = formatted.data.y;
+                }
+                else {
+                    // square
+                    let dx = formatted.data.x - this.creatingObjects[uuid].x;
+                    let dy = formatted.data.y - this.creatingObjects[uuid].y;
+                    let size = Math.max(Math.abs(dx), Math.abs(dy));
+                    let posX = this.creatingObjects[uuid].x + size;
+                    let posY = this.creatingObjects[uuid].y + size;
+                    if (dx < 0) {
+                        posX = this.creatingObjects[uuid].x - size;
+                    }
+                    if (dy < 0) {
+                        posY = this.creatingObjects[uuid].y - size;
+                    }
+                    this.creatingObjects[uuid].currentX = posX;
+                    this.creatingObjects[uuid].currentY = posY;
+                }
             }
 
             if (this.creatingSprings[uuid]) {
                 this.creatingSprings[uuid].end = [formatted.data.x, formatted.data.y];
             }
 
-            var springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
+            let springsFormatted2: SpringData[] = this.physicsServer.getAllSprings().springs as SpringData[];
             springsFormatted2.forEach((spring: SpringData) => {
                 //console.log('SERVERCONTROLLER SPRING img:', spring.image);
             });
@@ -354,8 +381,8 @@ class SimuloServerController {
                         if (obj instanceof SimuloObject) {
                             wasStatic[obj.id] = obj.isStatic;
                             obj.isStatic = true;
-                            var touchingBodies = this.physicsServer.getTouchingObjects(obj);
-                            for (var i = 0; i < touchingBodies.length; i++) {
+                            let touchingBodies = this.physicsServer.getTouchingObjects(obj);
+                            for (let i = 0; i < touchingBodies.length; i++) {
                                 touchingBodies[i].wakeUp();
                             }
                         }
@@ -388,10 +415,10 @@ class SimuloServerController {
             } else if (this.tools[uuid] == "drag") {
                 // instead, start a spring
 
-                var bodies: SimuloObject[] = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
-                var radius = 20 / formatted.data.zoom; // its a square but we call it radius anyway
+                let bodies: SimuloObject[] = this.physicsServer.getStuffAtPoint([formatted.data.x, formatted.data.y]).objects;
+                let radius = 20 / formatted.data.zoom; // its a square but we call it radius anyway
                 if (bodies.length === 0 || bodies[0].isStatic) {
-                    bodies = this.physicsServer.getObjectsInRect([formatted.data.x - radius, formatted.data.y - radius], [formatted.data.x + radius, formatted.data.y + radius]);
+                    bodies = this.physicsServer.getStuffInRect([formatted.data.x - radius, formatted.data.y - radius], [formatted.data.x + radius, formatted.data.y + radius]).objects;
                     // filter it put bodies with .isStatic true at the end, and those with .isStatic false at the beginning
                     bodies = bodies.sort((a, b) => {
                         if (a.isStatic && !b.isStatic) {
@@ -407,9 +434,9 @@ class SimuloServerController {
                 }
 
                 if (bodies.length > 0) {
-                    var selectedBody = bodies[0];
+                    let selectedBody = bodies[0];
 
-                    var mouseJoint = this.physicsServer.addMouseSpring(
+                    let mouseJoint = this.physicsServer.addMouseSpring(
                         selectedBody,
                         [formatted.data.x, formatted.data.y],
                         30,
@@ -426,7 +453,7 @@ class SimuloServerController {
             }
             else if (this.tools[uuid] == "addPerson") {
                 // just run this.physicsServer.addPerson
-                var person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
+                let person = this.physicsServer.addPerson([formatted.data.x, formatted.data.y]);
             }
             else if (this.tools[uuid] == "addPolygon") {
                 this.creatingObjects[uuid] = {
@@ -455,7 +482,7 @@ class SimuloServerController {
             }
             else if (this.tools[uuid] == "addAxle") {
                 // get 2 objects at point
-                var bodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                let bodies = this.physicsServer.getStuffAtPoint([formatted.data.x, formatted.data.y]).objects;
                 if (bodies.length >= 2) {
                     let bodyA = bodies[0];
                     let bodyB = bodies[1];
@@ -475,7 +502,7 @@ class SimuloServerController {
             }
             else if (this.tools[uuid] == "addBolt") {
                 // get 2 objects at point
-                var bodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                let bodies = this.physicsServer.getStuffAtPoint([formatted.data.x, formatted.data.y]).objects;
                 if (bodies.length >= 2) {
                     let bodyA = bodies[0];
                     let bodyB = bodies[1];
@@ -506,8 +533,8 @@ class SimuloServerController {
                 delete this.springs[uuid];
             }
             if (this.creatingSprings[uuid]) {
-                var pointABodies = this.physicsServer.getObjectsAtPoint(this.creatingSprings[uuid].start);
-                var pointBBodies = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
+                let pointABodies = this.physicsServer.getStuffAtPoint(this.creatingSprings[uuid].start).objects;
+                let pointBBodies = this.physicsServer.getStuffAtPoint([formatted.data.x, formatted.data.y]).objects;
                 if (pointABodies.length > 0 || pointBBodies.length > 0) {
                     if (pointABodies.length === 0) {
                         pointABodies = [this.physicsServer.getGroundBody()];
@@ -516,25 +543,25 @@ class SimuloServerController {
                         pointBBodies = [this.physicsServer.getGroundBody()];
                     }
                     /*// Calculate rotated anchor points
-                    var anchorAPosition = [
+                    let anchorAPosition = [
                         this.creatingSprings[uuid][0] - pointABodies[0].position[0],
                         this.creatingSprings[uuid][1] - pointABodies[0].position[1]
                     ];
-                    var anchorBPosition = [
+                    let anchorBPosition = [
                         formatted.data.x - pointBBodies[0].position[0],
                         formatted.data.y - pointBBodies[0].position[1]
                     ];
  
-                    var rotatedAnchorA = rotatePoint(anchorAPosition as [x: number, y: number], pointABodies[0].rotation);
-                    var rotatedAnchorB = rotatePoint(anchorBPosition as [x: number, y: number], pointBBodies[0].rotation);*/
+                    let rotatedAnchorA = rotatePoint(anchorAPosition as [x: number, y: number], pointABodies[0].rotation);
+                    let rotatedAnchorB = rotatePoint(anchorBPosition as [x: number, y: number], pointBBodies[0].rotation);*/
 
                     // just getlocalpoint
-                    var rotatedAnchorA = this.physicsServer.getLocalPoint(pointABodies[0], this.creatingSprings[uuid].start);
-                    var rotatedAnchorB = this.physicsServer.getLocalPoint(pointBBodies[0], [formatted.data.x, formatted.data.y]);
+                    let rotatedAnchorA = this.physicsServer.getLocalPoint(pointABodies[0], this.creatingSprings[uuid].start);
+                    let rotatedAnchorB = this.physicsServer.getLocalPoint(pointBBodies[0], [formatted.data.x, formatted.data.y]);
 
                     // Add the spring with rotated anchor points
                     if (this.creatingSprings[uuid].image == undefined) {
-                        var spring = this.physicsServer.addSpring(
+                        let spring = this.physicsServer.addSpring(
                             rotatedAnchorA as [x: number, y: number],
                             rotatedAnchorB as [x: number, y: number],
                             pointABodies[0],
@@ -550,7 +577,7 @@ class SimuloServerController {
                         );
                     }
                     else {
-                        var spring = this.physicsServer.addSpring(
+                        let spring = this.physicsServer.addSpring(
                             rotatedAnchorA as [x: number, y: number],
                             rotatedAnchorB as [x: number, y: number],
                             pointABodies[0],
@@ -583,14 +610,33 @@ class SimuloServerController {
                 }
                 if (this.creatingObjects[uuid].shape == "rectangle") {
                     // Calculate the size of the new rectangle
-                    const width = Math.abs(
-                        formatted.data.x - this.creatingObjects[uuid].x
+
+                    let pointB = [formatted.data.x, formatted.data.y];
+                    if (formatted.data.shift) {
+                        let dx = formatted.data.x - this.creatingObjects[uuid].x;
+                        let dy = formatted.data.y - this.creatingObjects[uuid].y;
+                        let size = Math.max(Math.abs(dx), Math.abs(dy));
+                        let posX = this.creatingObjects[uuid].x + size;
+                        let posY = this.creatingObjects[uuid].y + size;
+                        if (dx < 0) {
+                            posX = this.creatingObjects[uuid].x - size;
+                        }
+                        if (dy < 0) {
+                            posY = this.creatingObjects[uuid].y - size;
+                        }
+                        pointB = [posX, posY];
+                    }
+
+                    let width = Math.abs(
+                        pointB[0] - this.creatingObjects[uuid].x
                     );
-                    const height = Math.abs(
-                        formatted.data.y - this.creatingObjects[uuid].y
+                    let height = Math.abs(
+                        pointB[1] - this.creatingObjects[uuid].y
                     );
 
-                    var bodyData: object = {
+
+
+                    let bodyData: object = {
                         color: this.creatingObjects[uuid].color,
                         border: this.theme.newObjects.border,
                         borderWidth: this.theme.newObjects.borderWidth,
@@ -599,7 +645,7 @@ class SimuloServerController {
                         id: 92797981789171,
                         sound: 'impact.wav',
                         image: null,
-
+                        flipImage: true
                     };
                     // define verts of the rectangle
                     const verts: [x: number, y: number][] = [
@@ -609,31 +655,48 @@ class SimuloServerController {
                         [-width / 2, height / 2],
                     ];
 
-                    let rectangle = this.physicsServer.addPolygon(verts, [(formatted.data.x + this.creatingObjects[uuid].x) / 2, (formatted.data.y + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false, false);
+                    let rectangle = this.physicsServer.addPolygon(verts, [(pointB[0] + this.creatingObjects[uuid].x) / 2, (pointB[1] + this.creatingObjects[uuid].y) / 2], 0, 1, 0.5, 0.5, bodyData, false, false);
 
                     // Remove the creatingObject for this uuid
                     delete this.creatingObjects[uuid];
                 } else if (this.creatingObjects[uuid].shape == "select") {
                     // select draws a box with the same properties, but instead of creating a new object, it selects all objects in the box. for now, we'll just console.log the objects since we dont have a selection system yet
                     if (!this.creatingObjects[uuid].moving) {
+                        let pointB = [formatted.data.x, formatted.data.y];
+                        // square
+                        if (formatted.data.shift) {
+                            let dx = formatted.data.x - this.creatingObjects[uuid].x;
+                            let dy = formatted.data.y - this.creatingObjects[uuid].y;
+                            let size = Math.max(Math.abs(dx), Math.abs(dy));
+                            let posX = this.creatingObjects[uuid].x + size;
+                            let posY = this.creatingObjects[uuid].y + size;
+                            if (dx < 0) {
+                                posX = this.creatingObjects[uuid].x - size;
+                            }
+                            if (dy < 0) {
+                                posY = this.creatingObjects[uuid].y - size;
+                            }
+                            pointB = [posX, posY];
+                        }
                         // now we query world
-                        var bodies = this.physicsServer.getObjectsInRect(
+                        let bodies = this.physicsServer.getStuffInRect(
                             // point A
                             [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y],
                             // point B
-                            [formatted.data.x, formatted.data.y]
+                            pointB as [x: number, y: number]
                         );
 
                         // if theres more than one body, ignore id 1 (the floor)
-                        if (bodies.length > 1) {
-                            bodies = bodies.filter((body) => body.id != 1);
+                        if (bodies.objects.length > 1) {
+                            bodies.objects = bodies.objects.filter((body) => body.id != 1);
                         }
 
                         /*// on each object, set color to red
-                        for (var i = 0; i < bodies.length; i++) {
+                        for (let i = 0; i < bodies.length; i++) {
                             bodies[i].color = "#ff0000"; // trolled :uber_troll:
                         }*/
-                        this.selectedObjects[uuid] = bodies;
+                        let stuffArray = (bodies.objects as (SimuloObject | SimuloJoint)[]).concat(bodies.joints);
+                        this.selectedObjects[uuid] = stuffArray;
 
                         delete this.creatingObjects[uuid]; // void
                     }
@@ -643,13 +706,13 @@ class SimuloServerController {
                         // make them original static again
                         Object.keys(wasStatic).forEach((key) => {
                             // find the body
-                            var body = this.physicsServer.getObjectByID(parseInt(key));
+                            let body = this.physicsServer.getObjectByID(parseInt(key));
                             if (body) {
                                 body.isStatic = wasStatic[parseInt(key)];
                                 body.velocity = initialVelocity;
                                 // wake touching bodies
-                                var touchingBodies = this.physicsServer.getTouchingObjects(body);
-                                for (var i = 0; i < touchingBodies.length; i++) {
+                                let touchingBodies = this.physicsServer.getTouchingObjects(body);
+                                for (let i = 0; i < touchingBodies.length; i++) {
                                     touchingBodies[i].wakeUp();
                                 }
                             }
@@ -659,14 +722,14 @@ class SimuloServerController {
                             Math.abs(formatted.data.x - this.creatingObjects[uuid].x) < 0.001 &&
                             Math.abs(formatted.data.y - this.creatingObjects[uuid].y) < 0.001
                         ) {
-                            var bodies = this.physicsServer.getObjectsInRect(
+                            let bodies = this.physicsServer.getStuffInRect(
                                 // point A
                                 [this.creatingObjects[uuid].x, this.creatingObjects[uuid].y],
                                 // point B
                                 [formatted.data.x, formatted.data.y]
                             );
 
-                            this.selectedObjects[uuid] = bodies;
+                            this.selectedObjects[uuid] = (bodies.objects as (SimuloObject | SimuloJoint)[]).concat(bodies.joints);
                         }
                         delete this.creatingObjects[uuid];
                     }
@@ -680,8 +743,8 @@ class SimuloServerController {
                     const dy = formatted.data.y - this.creatingObjects[uuid].y;
                     const radius = Math.max(Math.abs(dx), Math.abs(dy)) / 2;
 
-                    var posX = this.creatingObjects[uuid].x + radius;
-                    var posY = this.creatingObjects[uuid].y + radius;
+                    let posX = this.creatingObjects[uuid].x + radius;
+                    let posY = this.creatingObjects[uuid].y + radius;
                     if (dx < 0) {
                         posX = this.creatingObjects[uuid].x - radius;
                     }
@@ -689,7 +752,7 @@ class SimuloServerController {
                         posY = this.creatingObjects[uuid].y - radius;
                     }
 
-                    var bodyData: object = {
+                    let bodyData: object = {
                         color: this.creatingObjects[uuid].color,
                         border: this.theme.newObjects.border,
                         borderWidth: this.theme.newObjects.borderWidth,
@@ -698,7 +761,8 @@ class SimuloServerController {
                         id: 92797981789171,
                         sound: 'impact.wav',
                         image: null,
-                        circleCake: this.creatingObjects[uuid].circleCake
+                        circleCake: this.creatingObjects[uuid].circleCake,
+                        flipImage: true
                     };
 
                     let circle = this.physicsServer.addCircle(radius, [posX, posY], 0, 1, 0.5, 0.5, bodyData, false);
@@ -708,8 +772,8 @@ class SimuloServerController {
                 }
                 else if (this.creatingObjects[uuid].shape == "polygon") {
                     // just addPolygon with the points
-                    var polygon = this.creatingObjects[uuid] as SimuloCreatingPolygon;
-                    var pointsLocal = polygon.vertices;
+                    let polygon = this.creatingObjects[uuid] as SimuloCreatingPolygon;
+                    let pointsLocal = polygon.vertices;
                     pointsLocal.forEach((point) => {
                         point[0] = point[0] - this.creatingObjects[uuid].x;
                         point[1] = point[1] - this.creatingObjects[uuid].y;
@@ -722,6 +786,7 @@ class SimuloServerController {
                             this.theme.newObjects.borderScaleWithZoom,
                         sound: 'impact.wav',
                         image: null,
+                        flipImage: true
                     }, false);
 
                     delete this.creatingObjects[uuid];
@@ -730,7 +795,7 @@ class SimuloServerController {
         } else if (formatted.type == "set_theme") {
             if (this.theme !== themes[formatted.data]) {
                 this.theme = themes[formatted.data];
-                var floor = this.physicsServer.getObjectByID(2);
+                let floor = this.physicsServer.getObjectByID(2);
                 if (floor) {
                     floor.color = this.theme.ground.color;
                     floor.border = this.theme.ground.border;
@@ -738,9 +803,9 @@ class SimuloServerController {
                     floor.borderScaleWithZoom = this.theme.ground.borderScaleWithZoom;
                 }
                 // get 2 and 3 and set those to person.color and person.border and all that
-                var personBody = this.physicsServer.getObjectByID(5);
-                var personHead = this.physicsServer.getObjectByID(7);
-                var personParts = [personBody, personHead];
+                let personBody = this.physicsServer.getObjectByID(5);
+                let personHead = this.physicsServer.getObjectByID(7);
+                let personParts = [personBody, personHead];
                 personParts.forEach((part) => {
                     if (part) {
                         part.color = this.theme.person.color;
@@ -773,7 +838,7 @@ class SimuloServerController {
             this.sendAll("set_paused", this.paused);
         }
         else if (formatted.type == "save_selection") {
-            var selectedObjects = this.selectedObjects[uuid];
+            let selectedObjects = this.selectedObjects[uuid];
             if (selectedObjects) {
                 /*console.log('saved objects:', JSON.stringify(this.physicsServer.save(selectedObjects.filter((object) => {
                     return object instanceof SimuloObject;
@@ -801,7 +866,7 @@ class SimuloServerController {
         }
         else if (formatted.type == "load_save_data") {
             // load saved objects
-            var savedObjects = JSON.parse(formatted.data.data);
+            let savedObjects = JSON.parse(formatted.data.data);
             let position = { x: formatted.data.x, y: formatted.data.y };
             for (let i = 0; i < savedObjects.length; i++) {
                 let objectPosition = { x: savedObjects[i].position.x, y: savedObjects[i].position.y };
@@ -812,7 +877,7 @@ class SimuloServerController {
             this.physicsServer.load(savedObjects, position);
         }
         else if (formatted.type == "delete_selection") {
-            var selectedObjects = this.selectedObjects[uuid];
+            let selectedObjects = this.selectedObjects[uuid];
             if (selectedObjects) {
                 selectedObjects.forEach((object) => {
                     this.physicsServer.destroy(object);
@@ -840,14 +905,34 @@ class SimuloServerController {
             });
         }
         else if (formatted.type == 'get_object_at_point') {
-            let objects = this.physicsServer.getObjectsAtPoint([formatted.data.x, formatted.data.y]);
-            if (objects.length >= 1 && formatted.data.key !== undefined) {
-                this.send(uuid, 'get_object_at_point', {
-                    key: formatted.data.key,
-                    data: { id: objects[0].id, color: objects[0].color, image: objects[0].image, name: objects[0].name }
+            let objects = this.physicsServer.getStuffAtPoint([formatted.data.x, formatted.data.y]);
+            if ((objects.objects.length >= 1 || objects.joints.length >= 1) && formatted.data.key !== undefined) {
+                // get the thing with lowest zdepth in either one
+                let best: (SimuloObject | SimuloJoint) = objects.objects[0] as (SimuloObject | SimuloJoint);
+                let isObject = true;
+                let bestZDepth = best.zDepth;
+                objects.objects.forEach((object) => {
+                    if (object.zDepth < bestZDepth) {
+                        best = object;
+                        bestZDepth = object.zDepth;
+                    }
                 });
+                /*objects.joints.forEach((joint) => {
+                    if (joint.zDepth < bestZDepth) {
+                        best = joint;
+                        bestZDepth = joint.zDepth;
+                        isObject = false;
+                    }
+                });*/
+                if (isObject) {
+                    let bestObject = best as SimuloObject;
+                    this.send(uuid, 'get_object_at_point', {
+                        key: formatted.data.key,
+                        data: { id: bestObject.id, color: bestObject.color, image: bestObject.image, name: bestObject.name, type: 'object' }
+                    });
+                }
             }
-            else if (objects.length == 0 && formatted.data.key !== undefined) {
+            else if (objects.objects.length == 0 && formatted.data.key !== undefined) {
                 this.send(uuid, 'get_object_at_point', {
                     key: formatted.data.key,
                     data: { id: null }
@@ -938,10 +1023,10 @@ class SimuloServerController {
     }
 
     addScript(code: string) {
-        var cachedObjects: { [key: number]: any } = {};
-        var cachedObjectID = -1;
+        let cachedObjects: { [key: number]: any } = {};
+        let cachedObjectID = -1;
 
-        var worker = new Worker('worker.js');
+        let worker = new Worker('worker.js');
 
         worker.onmessage = async (event) => {
             if (event.data.type === 'get') {
@@ -976,7 +1061,7 @@ class SimuloServerController {
             else if (event.data.type === 'call') {
                 if (cachedObjects[event.data.cachedObjectID]) {
                     try {
-                        var returned = cachedObjects[event.data.cachedObjectID][event.data.key](...event.data.args); // this might error if its not a function or doesn't exist, but we're in try-catch and this way it'll send real error to the worker
+                        let returned = cachedObjects[event.data.cachedObjectID][event.data.key](...event.data.args); // this might error if its not a function or doesn't exist, but we're in try-catch and this way it'll send real error to the worker
                         worker.postMessage({
                             type: 'response',
                             key: event.data.key,
@@ -1033,7 +1118,7 @@ class SimuloServerController {
                 console.log(event.data.msg);
             }
             else if (event.data.type === 'getObject') {
-                var gottenObj = this.physicsServer.getObjectByID(event.data.id);
+                let gottenObj = this.physicsServer.getObjectByID(event.data.id);
                 if (gottenObj) {
                     cachedObjectID++;
                     cachedObjects[cachedObjectID] = this.physicsServer.getProxy(gottenObj);
@@ -1124,7 +1209,7 @@ class SimuloServerController {
         }
 
         if (localClient) {
-            var id = 'local';
+            let id = 'local';
             this.localClients.push(new SimuloLocalClient(this, id));
             this.tools[id] = "drag";
             this.playerColors[id] = '#000000';
@@ -1134,7 +1219,7 @@ class SimuloServerController {
             this.loop(this.frameRate);
         }, this.frameRate);
         //let handle: number;
-        /*var loop = (prevMs: number) => {
+        /*let loop = (prevMs: number) => {
             const nowMs = window.performance.now();
             handle = requestAnimationFrame(loop.bind(null, nowMs));
             const deltaMs = nowMs - prevMs;

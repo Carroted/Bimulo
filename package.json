@@ -5,9 +5,11 @@
   "scripts": {
     "start": "bun server/src/index.ts",
     "build": "bun scripts/build.ts",
-    "deploy": "bun scripts/build.ts && bun scripts/deploy.ts",
     "dev": "bun scripts/build.ts && bun run server/src/index.ts",
-    "watch": "bun scripts/watch.ts"
+    "watch": "bun scripts/watch.ts",
+    "desktop": "bun scripts/desktop.ts",
+    "all": "bun scripts/all-pre.ts && bun run scripts/build.ts && bun run scripts/desktop.ts && node scripts/deploy.js",
+    "canary": "bun scripts/all-pre.ts && bun run scripts/build.ts && bun run scripts/desktop.ts && node scripts/deploy.js --canary"
   },
   "dependencies": {
     "@mdi/svg": "^7.2.96",

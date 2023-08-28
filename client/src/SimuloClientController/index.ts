@@ -7,6 +7,7 @@ import SimuloViewer from '../SimuloViewer.js';
 import SimuloViewerCanvas from '../SimuloViewerCanvas/index.js';
 import themes from '../themes.js';
 import { hsvToRgb } from '../utils.js';
+import SimuloRendererCanvas from '../SimuloViewerCanvas/renderer.js';
 
 function queryParent(element: HTMLElement, className: string): HTMLElement | null {
     var parent: HTMLElement = element.parentNode as HTMLElement;
@@ -198,6 +199,7 @@ class SimuloClientController {
         name: 'Anonymous',
         down: false,
         zoom: 1,
+        shift: false,
     };
 
     viewer: SimuloViewer;
@@ -235,6 +237,7 @@ class SimuloClientController {
             scale_with_zoom: boolean;
         } | null;
         width: number;
+        targetLength: number;
     }[] = [];
 
     private toolIcon: string | null = null;
@@ -498,7 +501,7 @@ class SimuloClientController {
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
         // try to fetch /version and set #version-info text
-        fetch('../../version.json').then(async (response) => {
+        fetch('../version.json').then(async (response) => {
             if (response.ok) {
                 let version = await response.json();
                 let versionInfo = document.getElementById('version-info');
@@ -513,7 +516,7 @@ class SimuloClientController {
                 let headers = new Headers();
                 headers.append('pragma', 'no-cache');
                 headers.append('cache-control', 'no-cache');
-                let response2 = await fetch('../../version.json', {
+                let response2 = await fetch('../version.json', {
                     headers
                 });
                 // make sure also ok, otherwise just keep old one
@@ -988,7 +991,8 @@ class SimuloClientController {
                 y: pos.y,
                 down: this.viewer.pointerDown,
                 name: this.player.name,
-                zoom: this.viewer.cameraZoom
+                zoom: this.viewer.cameraZoom,
+                shift: this.player.shift
             };
             this.mousePos = pos;
             this.client.emitData("player mouse", this.player);
@@ -1000,7 +1004,8 @@ class SimuloClientController {
                     y: data.y,
                     down: this.viewer.pointerDown,
                     name: this.player.name,
-                    zoom: this.viewer.cameraZoom
+                    zoom: this.viewer.cameraZoom,
+                    shift: this.player.shift
                 };
                 this.mousePos = { x: data.x, y: data.y };
                 this.client.emitData("player mouse down", this.player);
@@ -1100,7 +1105,8 @@ class SimuloClientController {
                 y: pos.y,
                 down: this.viewer.pointerDown,
                 name: this.player.name,
-                zoom: this.viewer.cameraZoom
+                zoom: this.viewer.cameraZoom,
+                shift: this.player.shift
             };
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
@@ -1193,6 +1199,21 @@ class SimuloClientController {
             if (e.key == 'Delete') {
                 this.deleteSelection();
                 this.showToast('Deleted selection', ToastType.INFO);
+            }
+
+            // if its shift
+            if (e.key == 'Shift') {
+                this.player.shift = true;
+                // yes its a bit weird to use mouse update, but thats where the logic for updating shapes is, so this is best
+                // if this bothers you too much, consider making a PR renaming `player mouse` to a better name
+                // but `player update` wouldnt work that well since this is just for mouse or shift
+                this.client.emitData("player mouse", this.player);
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key == 'Shift') {
+                this.player.shift = false;
+                this.client.emitData("player mouse", this.player);
             }
         });
 
@@ -1396,6 +1417,110 @@ class SimuloClientController {
         this.showToast('Saved ' + JSON.parse(selectedObjects).length + ' objects', ToastType.INFO);
     }
 
+    shapesFromSaved(saved: string) {
+        let shapes: SimuloShape[] = [];
+        let savedObjects: {
+            id: number;
+            type: "POLYGON" | "CIRCLE" | "EDGE";
+            position: { x: number; y: number; };
+            rotation: number;
+            velocity: { x: number; y: number; };
+            angularVelocity: number;
+            density: number;
+            friction: number;
+            restitution: number;
+            border: string | null;
+            borderWidth: number | null;
+            borderScaleWithZoom: boolean | null | undefined;
+            circleCake: boolean | null | undefined;
+            sound: string | null;
+            color: string;
+            isStatic: boolean;
+            mass: number;
+            joints: any[]; // not important to this ghost rendering
+            radius: number | undefined;
+            image: string | null | undefined;
+            points: [x: number, y: number][];
+            flipImage: boolean | undefined;
+        }[] = JSON.parse(saved);
+        savedObjects.forEach((savedObject) => {
+            if (savedObject.type == 'POLYGON') {
+                shapes.push({
+                    x: savedObject.position.x,
+                    y: savedObject.position.y,
+                    angle: savedObject.rotation,
+                    type: 'polygon',
+                    color: savedObject.color,
+                    border: savedObject.border,
+                    borderWidth: savedObject.borderWidth,
+                    borderScaleWithZoom: savedObject.borderScaleWithZoom,
+                    points: savedObject.points.map((point) => { return { x: point[0], y: point[1] } }),
+                    id: savedObject.id,
+                    image: savedObject.image,
+                    imageTransformations: {
+                        rotate: savedObject.flipImage ? Math.PI : 0,
+                        scale: 1,
+                        translate: [0, 0]
+                    }
+                } as SimuloPolygon);
+            }
+            else if (savedObject.type == 'CIRCLE') {
+                shapes.push({
+                    x: savedObject.position.x,
+                    y: savedObject.position.y,
+                    angle: savedObject.rotation,
+                    type: 'circle',
+                    color: savedObject.color,
+                    border: savedObject.border,
+                    borderWidth: savedObject.borderWidth,
+                    borderScaleWithZoom: savedObject.borderScaleWithZoom,
+                    circleCake: savedObject.circleCake,
+                    radius: savedObject.radius,
+                    id: savedObject.id,
+                    image: savedObject.image,
+                    imageTransformations: {
+                        rotate: savedObject.flipImage ? Math.PI : 0,
+                        scale: 1,
+                        translate: [0, 0]
+                    }
+                } as SimuloCircle);
+            }
+
+        });
+        // now get center
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+        shapes.forEach((shape) => {
+            if (shape.type == 'polygon') {
+                let polygon = shape as SimuloPolygon;
+                polygon.points.forEach((point) => {
+                    if (point.x < minX) minX = point.x;
+                    if (point.x > maxX) maxX = point.x;
+                    if (point.y < minY) minY = point.y;
+                    if (point.y > maxY) maxY = point.y;
+                });
+            }
+            else if (shape.type == 'circle') {
+                let circle = shape as SimuloCircle;
+                if (circle.x - circle.radius! < minX) minX = circle.x - circle.radius!;
+                if (circle.x + circle.radius! > maxX) maxX = circle.x + circle.radius!;
+                if (circle.y - circle.radius! < minY) minY = circle.y - circle.radius!;
+                if (circle.y + circle.radius! > maxY) maxY = circle.y + circle.radius!;
+            }
+        });
+        let centerX = (minX + maxX) / 2;
+        let centerY = (minY + maxY) / 2;
+        // now move all shapes to center
+        shapes.forEach((shape) => {
+            shape.x -= centerX;
+            shape.y -= centerY;
+        });
+
+        return shapes;
+    }
+
     async updateObjectsList() {
         let grid = document.querySelector('#objects .object-grid') as HTMLElement;
         grid.innerHTML = '';
@@ -1423,9 +1548,23 @@ class SimuloClientController {
                 this.spawningSavedObject = i;
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
-            let img = document.createElement('img');
-            img.src = object.image;
-            div.appendChild(img);
+            let objCanvas = document.createElement('canvas');
+            // 128x128
+            objCanvas.width = 128;
+            objCanvas.height = 128;
+            let objCanvasRenderer = new SimuloRendererCanvas(objCanvas);
+            let shapes = this.shapesFromSaved(object.data);
+            objCanvasRenderer.updateTransform(20);
+            let center = objCanvasRenderer.transformPoint(64, 64);
+            shapes.forEach((shape) => {
+                shape.x += center.x;
+                shape.y += center.y;
+            });
+            // 
+            objCanvasRenderer.render(shapes, [], 20, true);
+
+            //img.src = object.image;
+            div.appendChild(objCanvas);
             // add icons/dots-vertical.svg
             let res = await fetch('icons/dots-vertical.svg');
             let svg = await res.text();
@@ -1902,6 +2041,57 @@ class SimuloClientController {
                     }
                 });
 
+                let tileBetweenPoints = (pointA: [x: number, y: number], pointB: [x: number, y: number], image: string, size: number, targetLength: number | null = null) => {
+                    // ok so basically, see this?
+                    /*let height = creatingSpring.width;
+                    // stretch between the two points
+                    var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
+
+                    shapes.push({
+                        x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                    } as SimuloRectangle);*/
+                    // well basically, we do that but we tile it
+                    // first lets get all the point pairs
+                    let pointPairs: { p1: [x: number, y: number], p2: [x: number, y: number] }[] = [];
+                    //let segments = 3;
+                    // get segments from length (distance between points)
+                    if (targetLength == null) {
+                        targetLength = Math.sqrt(Math.pow(pointB[0] - pointA[0], 2) + Math.pow(pointB[1] - pointA[1], 2));
+                    }
+                    // round number of segments, distance / 5
+
+                    let segments = Math.ceil(targetLength / 5);
+                    if (segments < 1) segments = 1;
+                    for (let i = 0; i < segments; i++) {
+                        let p1 = pointA;
+                        let p2 = pointB;
+                        let dx = p2[0] - p1[0];
+                        let dy = p2[1] - p1[1];
+                        let x = p1[0] + dx * (i / segments);
+                        let y = p1[1] + dy * (i / segments);
+                        let p3 = [x, y];
+                        let p4 = [x + dx / segments, y + dy / segments];
+                        pointPairs.push({ p1: p3 as [number, number], p2: p4 as [number, number] });
+                    }
+                    // now we have all the point pairs, lets do it each time
+
+                    pointPairs.forEach((pointPair) => {
+                        let height = size;
+                        // stretch between the two points
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(pointPair.p1[0], pointPair.p1[1], pointPair.p2[0], pointPair.p2[1], true);
+
+                        shapes.push({
+                            x, y, width: length / 4, height: size / 4, angle, type: 'rectangle', color: '#00000000', image: image,
+                            border: null,
+                            borderWidth: null,
+                            borderScaleWithZoom: false,
+                        } as SimuloRectangle);
+                    });
+                }
+
                 Object.keys(this.creatingSprings).forEach((key) => {
                     let creatingSpring = this.creatingSprings[key];
                     /* if (creatingSprings[client.id]) {
@@ -1919,17 +2109,17 @@ class SimuloClientController {
                 }
             }*/
                     if (creatingSpring.image) {
-                        let height = creatingSpring.width;
+                        let size = creatingSpring.width;
                         // stretch between the two points
-                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
+                        /*var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
 
                         shapes.push({
-                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                            x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false,
-                            stretchImage: true
-                        } as SimuloRectangle);
+                        } as SimuloRectangle);*/
+                        tileBetweenPoints(creatingSpring.start, creatingSpring.end, creatingSpring.image, size);
 
                         if (creatingSpring.image !== null && creatingSpring.image !== undefined) {
                             // put a circle at each end, transparent but with solid white border
@@ -1964,15 +2154,15 @@ class SimuloClientController {
                 // same for real springs, yo
                 this.springs.forEach((spring) => {
                     if (spring.image) {
-                        let height = spring.width;
+                        /*let height = spring.width;
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], true);
                         shapes.push({
-                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: spring.image,
+                            x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: spring.image,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false,
-                            stretchImage: true
-                        } as SimuloRectangle);
+                        } as SimuloRectangle);*/
+                        tileBetweenPoints(spring.p1 as [x: number, y: number], spring.p2 as [x: number, y: number], spring.image, spring.width, spring.targetLength);
 
                         if (spring.image !== null && spring.image !== undefined) {
                             // put a circle at each end, transparent but with solid white border

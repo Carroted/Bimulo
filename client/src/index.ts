@@ -1,5 +1,3 @@
-
-
 var tintedImages: { [key: string]: HTMLCanvasElement } = {};
 
 import SimuloClientController from './SimuloClientController/index.js';

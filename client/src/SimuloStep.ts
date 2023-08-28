@@ -7,7 +7,7 @@ interface SimuloStep {
         p1: number[], p2: number[], width: number, image: string | null, line: {
             color: string;
             scale_with_zoom: boolean;
-        } | null
+        } | null, targetLength: number
     }[];
     mouseSprings: {
         p1: number[], p2: number[], width: number, image: string | null, line: {
