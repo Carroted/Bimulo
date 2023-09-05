@@ -12,6 +12,7 @@
     "canary": "bun scripts/all-pre.ts && bun run scripts/build.ts && bun run scripts/desktop.ts && node scripts/deploy.js --canary"
   },
   "dependencies": {
+    "@dimforge/rapier2d": "^0.11.2",
     "@mdi/svg": "^7.2.96",
     "@tabler/icons": "^2.10.0",
     "@types/emscripten": "^1.39.6",

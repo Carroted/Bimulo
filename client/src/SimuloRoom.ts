@@ -1,5 +1,5 @@
 // SimuloRoom class has PhysicsServer, NetworkServer and ServerController
-import SimuloPhysicsServer from "./SimuloPhysicsServer.js";
+import SimuloPhysicsServer from "./SimuloPhysicsServerBox2D.js";
 import SimuloTheme from "./SimuloTheme.js";
 import type SimuloStep from "./SimuloStep.js";
 // import SimuloNetworkServer from "./SimuloNetworkServer"; // doesnt exist yet lmao i just dont want IDE errors

@@ -1,6 +1,6 @@
 import { getRandomColor, randomRange, hsvToRgb } from "./utils.js";
 
-import { SimuloPhysicsServer, SimuloJoint, SimuloMouseSpring, SimuloObject, SimuloSavedObject } from "./SimuloPhysicsServer.js";
+import { SimuloPhysicsServer, SimuloJoint, SimuloMouseSpring, SimuloObject, SimuloSavedObject } from "./SimuloPhysicsServerBox2D.js";
 import SimuloTheme from "./SimuloTheme.js";
 import SimuloNetworkServer from "./SimuloNetworkServer.js";
 

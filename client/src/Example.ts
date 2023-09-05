@@ -1,4 +1,4 @@
-import SimuloPhysicsServer from "./SimuloPhysicsServer";
+import SimuloPhysicsServer from "./SimuloPhysicsServerBox2D";
 import SimuloTheme from "./SimuloTheme";
 const physicsServer = new SimuloPhysicsServer({
 
