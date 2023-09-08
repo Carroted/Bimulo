@@ -10,6 +10,7 @@ export default class SimuloPhysicsServerRapier {
     //graphics: Graphics;
     //mouse: { x: number; y: number };
     listeners: { [key: string]: Function[] } = {};
+    colliders: Rapier.Collider[] = [];
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -73,7 +74,7 @@ export default class SimuloPhysicsServerRapier {
         let body = this.world.createRigidBody(bodyDesc);
         let colliderDesc = RAPIER.ColliderDesc.cuboid(25.0, 5.0);
         let coll = this.world.createCollider(colliderDesc, body);
-        this.graphics.addCollider(RAPIER, this.world, coll);
+        //this.graphics.addCollider(RAPIER, this.world, coll);
 
         // revolute to world
         let anchor = new RAPIER.Vector2(0.0, 0.0);
@@ -88,9 +89,6 @@ export default class SimuloPhysicsServerRapier {
 
         let JointData = RAPIER.JointData.revolute(anchor, anchor);
         world.createImpulseJoint(JointData, groundBody, body, true);
-
-        // add to graphicy
-        this.graphics.addCollider(RAPIER, this.world, coll);
 
         /*
          * Create the convex polygons
@@ -150,14 +148,14 @@ export default class SimuloPhysicsServerRapier {
             }
         }
 
-        this.mouse = { x: 0, y: 0 };
+        /*this.mouse = { x: 0, y: 0 };
 
         window.addEventListener("mousemove", (event) => {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             this.mouse.y = 1 - (event.clientY / window.innerHeight) * 2;
         });
 
-        this.graphics.viewport.moveCenter(-100.0, -300.0);
+        this.graphics.viewport.moveCenter(-100.0, -300.0);*/
 
         this.loop();
     }
@@ -176,8 +174,8 @@ export default class SimuloPhysicsServerRapier {
         let colliderDesc = RAPIER.ColliderDesc.convexHull(
             new Float32Array(points.flat()),
         );
-        let coll = this.world.createCollider(colliderDesc, body);
-        this.graphics.addCollider(RAPIER, this.world, coll);
+        let coll = this.world.createCollider(colliderDesc!, body);
+        //this.graphics.addCollider(RAPIER, this.world, coll);
     }
 
     addRectangle(width: number, height: number, data: SimuloObjectData, position: [x: number, y: number], isStatic: boolean) {
@@ -189,8 +187,8 @@ export default class SimuloPhysicsServerRapier {
         bodyDesc.setUserData(data);
         let body = this.world.createRigidBody(bodyDesc);
         let colliderDesc = RAPIER.ColliderDesc.cuboid(width, height);
-        let coll = this.world.createCollider(colliderDesc, body);
-        this.graphics.addCollider(RAPIER, this.world, coll);
+        let coll = this.world.createCollider(colliderDesc!, body);
+        //this.graphics.addCollider(RAPIER, this.world, coll);
     }
 
     loop() {
@@ -201,7 +199,16 @@ export default class SimuloPhysicsServerRapier {
         let t0 = new Date().getTime();
         this.world.step();
 
-        this.graphics.render(this.world, false);
+        //this.graphics.render(this.world, false);
+        this.emit("world", this.colliders.map((collider) => {
+            let body = collider.parent()!;
+            let bodyPosition = body.translation();
+            let bodyRotation = body.rotation();
+            let colliderPosition = collider.translation();
+            let colliderRotation = collider.rotation();
+
+
+        }));
 
         requestAnimationFrame(() => this.loop());
     }
