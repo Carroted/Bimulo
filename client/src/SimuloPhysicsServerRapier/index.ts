@@ -1,16 +1,40 @@
-import SimuloViewerPIXI from "../SimuloViewerPIXI";
-
 const RAPIER = await import("@dimforge/rapier2d");
 import type Rapier from "@dimforge/rapier2d";
 
 import SimuloObjectData from "../SimuloObjectData";
 
+interface Shape {
+    e: "e";
+}
 export default class SimuloPhysicsServerRapier {
     world: Rapier.World;
     //graphics: Graphics;
     //mouse: { x: number; y: number };
     listeners: { [key: string]: Function[] } = {};
     colliders: Rapier.Collider[] = [];
+    previousData: Shape[] = [];
+    getDelta(newData: Shape[]): Shape[] {
+        let delta: Shape[] = [];
+        let i = 0;
+        while (i < newData.length) {
+            let newShape = newData[i];
+            /*if (this.previousData[i] != newShape) {
+                delta.push(newShape);
+            }*/
+            // deep compare object.keys and whatever
+            let newObj = newShape as any;
+            let prevObj = this.previousData[i] as any;
+            for (let key in newObj) {
+                if (newObj[key] != prevObj[key]) {
+                    delta.push(newShape);
+                    break;
+                }
+            }
+            i++;
+        }
+        this.previousData = newData;
+        return delta;
+    }
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
