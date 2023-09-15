@@ -1,7 +1,7 @@
 import Box2DFactory from "../../node_modules/box2d-wasm/dist/es/entry.js";
 
 interface SimuloObjectData {
-    id: number;
+    id: string;
     /**
      * Path to a sound file for collisions. Relative to /assets/sounds/
     */

@@ -3,38 +3,42 @@ import type Rapier from "@dimforge/rapier2d";
 
 import SimuloObjectData from "../SimuloObjectData";
 
-interface Shape {
-    e: "e";
+interface ShapeContentData {
+    id: string;
+    type: "rectangle" | "circle" | "polygon" | "line";
+    color: number;
+    border: number | null;
 }
-export default class SimuloPhysicsServerRapier {
+
+interface Polygon extends ShapeContentData {
+    type: "polygon";
+    points: [x: number, y: number][];
+}
+
+interface Rectangle extends ShapeContentData {
+    type: "rectangle";
+    width: number;
+    height: number;
+}
+
+interface Circle extends ShapeContentData {
+    type: "circle";
+    radius: number;
+}
+
+interface ShapeTransformData {
+    x: number;
+    y: number;
+    angle: number;
+}
+
+class SimuloPhysicsServerRapier {
     world: Rapier.World;
     //graphics: Graphics;
     //mouse: { x: number; y: number };
     listeners: { [key: string]: Function[] } = {};
     colliders: Rapier.Collider[] = [];
-    previousData: Shape[] = [];
-    getDelta(newData: Shape[]): Shape[] {
-        let delta: Shape[] = [];
-        let i = 0;
-        while (i < newData.length) {
-            let newShape = newData[i];
-            /*if (this.previousData[i] != newShape) {
-                delta.push(newShape);
-            }*/
-            // deep compare object.keys and whatever
-            let newObj = newShape as any;
-            let prevObj = this.previousData[i] as any;
-            for (let key in newObj) {
-                if (newObj[key] != prevObj[key]) {
-                    delta.push(newShape);
-                    break;
-                }
-            }
-            i++;
-        }
-        this.previousData = newData;
-        return delta;
-    }
+
     private emit(event: string, data: any) {
         if (this.listeners[event]) {
             this.listeners[event].forEach((listener) => {
@@ -53,6 +57,82 @@ export default class SimuloPhysicsServerRapier {
             this.listeners[event] = this.listeners[event].filter((l) => l != listener);
         }
     }
+
+    getShapeContent(collider: Rapier.Collider): ShapeContentData | null {
+        let shape = collider.shape;
+        let parent = collider.parent();
+        if (!parent) return null;
+        let bodyData = parent.userData as SimuloObjectData;
+        let color = bodyData.color;
+        let border = bodyData.border;
+
+        let baseShape: ShapeContentData = {
+            type: "rectangle",
+            color: color,
+            border: border,
+            id: bodyData.id,
+        };
+
+        switch (shape.type) {
+            case RAPIER.ShapeType.Cuboid:
+                let cuboid = shape as Rapier.Cuboid;
+                let halfExtents = cuboid.halfExtents;
+                let width = halfExtents.x * 2;
+                let height = halfExtents.y * 2;
+                return {
+                    ...baseShape,
+                    type: "rectangle",
+                    width: width,
+                    height: height,
+                } as Rectangle;
+                break;
+            case RAPIER.ShapeType.Ball:
+                let ball = shape as Rapier.Ball;
+                let radius = ball.radius;
+                return {
+                    ...baseShape,
+                    type: "circle",
+                    radius: radius,
+                } as Circle;
+                break;
+            case RAPIER.ShapeType.ConvexPolygon:
+                let polygon = shape as Rapier.ConvexPolygon;
+                let points: Float32Array = polygon.vertices;
+                let pointsArray: [x: number, y: number][] = [];
+                for (let i = 0; i < points.length; i += 2) {
+                    pointsArray.push([points[i], points[i + 1]]);
+                }
+                return {
+                    ...baseShape,
+                    type: "polygon",
+                    points: pointsArray,
+                } as Polygon;
+                break;
+            default:
+                console.log("Unknown shape type", shape.type);
+                break;
+        }
+        return null;
+    }
+
+    getShapeTransforms(): { [id: string]: ShapeTransformData } {
+        let transforms: { [id: string]: ShapeTransformData } = {};
+        this.colliders.forEach((collider) => {
+            let parent = collider.parent();
+            if (!parent) return;
+            let x = parent.translation().x;
+            let y = parent.translation().y;
+            let angle = parent.rotation();
+            let data = parent.userData as SimuloObjectData;
+            transforms[data.id] = {
+                x: x,
+                y: y,
+                angle: angle,
+            };
+        });
+        return transforms;
+    }
+
 
     constructor() {
         let gravity = new RAPIER.Vector2(0.0, -9.81);
@@ -78,7 +158,7 @@ export default class SimuloPhysicsServerRapier {
                 borderScaleWithZoom: true,
                 borderWidth: 1,
                 zDepth: i,
-                id: i,
+                id: i.toString(),
                 name: "Unnamed Object",
                 sound: null,
                 image: null,
@@ -162,7 +242,7 @@ export default class SimuloPhysicsServerRapier {
                     borderScaleWithZoom: true,
                     borderWidth: 1,
                     zDepth: i,
-                    id: i,
+                    id: i.toString(),
                     name: "Unnamed Object",
                     sound: null,
                     image: null,
@@ -224,16 +304,15 @@ export default class SimuloPhysicsServerRapier {
         this.world.step();
 
         //this.graphics.render(this.world, false);
-        this.emit("world", this.colliders.map((collider) => {
-            let body = collider.parent()!;
-            let bodyPosition = body.translation();
-            let bodyRotation = body.rotation();
-            let colliderPosition = collider.translation();
-            let colliderRotation = collider.rotation();
-
-
-        }));
+        this.emit("world", {
+            // VERY TEMPORARY SYSTEM, soon we will only send deltas
+            shapeContent: this.colliders.map((collider) => { return this.getShapeContent(collider) }).filter((x) => x != null),
+            shapeTransforms: this.getShapeTransforms(),
+        });
 
         requestAnimationFrame(() => this.loop());
     }
 }
+
+export default SimuloPhysicsServerRapier;
+export type { ShapeContentData, Polygon, Rectangle, Circle, ShapeTransformData };
