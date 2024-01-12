@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project has been archived as we are working on a rewrite of it in Rust! See [`simulo_bevy`](https://github.com/Carroted/simulo_bevy).
+
 # ![Simulo](https://cdn.discordapp.com/attachments/930244062156558348/1120536366028165180/banner.png)
 
 Simulo is a web-based TypeScript 2D physics sandbox and game engine with scripting support and soon multiplayer. It uses Box2D for physics and currently Canvas for rendering, though WebGL support is planned.
@@ -142,4 +145,4 @@ To get started, check out the issues at https://github.com/Carroted/Simulo/issue
 
 ## License
 
-That's a good question.
+GNU GPLv3
