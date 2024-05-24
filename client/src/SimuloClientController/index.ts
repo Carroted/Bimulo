@@ -1,11 +1,13 @@
-import SimuloTheme from '../../../shared/src/SimuloTheme.js';
+import SimuloTheme from '../SimuloTheme.js';
 import Box2DFactory from '../../../node_modules/box2d-wasm/dist/es/entry.js';
-import SimuloClient from '../../../shared/src/SimuloClient.js';
-import SimuloServerController from '../../../shared/src/SimuloServerController.js';
-import themesJSON from "../../../shared/themes.js";
-import SimuloViewer from '../SimuloViewer/index.js';
-import themes from '../../../shared/themes.js';
-import { hsvToRgb } from '../../../shared/src/utils.js';
+import SimuloClient from '../SimuloClient.js';
+import SimuloServerController from '../SimuloServerController.js';
+import themesJSON from "../themes.js";
+import SimuloViewer from '../SimuloViewer.js';
+import SimuloViewerCanvas from '../SimuloViewerCanvas/index.js';
+import themes from '../themes.js';
+import { hsvToRgb } from '../utils.js';
+import SimuloRendererCanvas from '../SimuloViewerCanvas/renderer.js';
 
 function queryParent(element: HTMLElement, className: string): HTMLElement | null {
     var parent: HTMLElement = element.parentNode as HTMLElement;
@@ -18,9 +20,24 @@ function queryParent(element: HTMLElement, className: string): HTMLElement | nul
     return null;
 }
 
-import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../../../shared/src/SimuloShape.js';
-import SimuloText from '../../../shared/src/SimuloText';
-import SimuloCreatingObject, { SimuloCreatingPolygon } from '../../../shared/src/SimuloCreatingObject.js';
+// fetch client/assets/textures/cursor.svg
+let cursorRes = await fetch('assets/textures/cursor.svg');
+let cursorSVG = await cursorRes.text();
+
+function getCursorSVG(fillColor: string) {
+    let strokeColor = '#000000';
+    // if fill is #000000 or black or #000, make stroke #ffffff
+    if (fillColor === '#000000' || fillColor === 'black' || fillColor === '#000') {
+        strokeColor = '#ffffff';
+    }
+    // split join #00FF00 for fill, split join #0000FF for stroke
+    return cursorSVG.split('#00FF00').join(fillColor).split('#0000FF').join(strokeColor);
+}
+
+import { SimuloPolygon, SimuloCircle, SimuloEdge, SimuloShape, SimuloRectangle } from '../SimuloShape.js';
+import SimuloText from '../SimuloText.js';
+import SimuloCreatingObject, { SimuloCreatingPolygon } from '../SimuloCreatingObject.js';
+import SimuloNetworkClient from '../SimuloNetworkClient/index.js';
 
 const personPoints = [{
     x: 0,
@@ -76,7 +93,9 @@ enum ToastType {
     SUCCESS,
     ERROR,
     INFO,
-    WARNING
+    WARNING,
+    JOIN,
+    LEAVE
 }
 
 interface SimuloSavedObject {
@@ -131,7 +150,7 @@ class SimuloClientController {
     client: SimuloClient;
     timeScale: number | null = null;
     paused: boolean | null = null;
-    serverController: SimuloServerController;
+    serverController: SimuloServerController | null = null;
     theme: SimuloTheme;
     maxZoom = 5;
     minZoom = 0.1;
@@ -180,6 +199,7 @@ class SimuloClientController {
         name: 'Anonymous',
         down: false,
         zoom: 1,
+        shift: false,
     };
 
     viewer: SimuloViewer;
@@ -187,7 +207,9 @@ class SimuloClientController {
     // TODO: Make these created by this script (loaded from an HTML file) so each ClientController can define its own UI
     timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
     timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
-    pauseButton = document.getElementById('pause-button') as HTMLElement;
+    pausePlay = document.getElementById('pause-play') as HTMLElement;
+    timeControl = document.getElementById('time-control') as HTMLElement;
+    timeControlTimeout: any | null = null;
 
     /** Entities to render. This is updated every time a world_update from the server is received.
      * 
@@ -207,7 +229,7 @@ class SimuloClientController {
             width: number;
         };
     } = {};
-    private players: { [key: string]: { x: number, y: number } } = {};
+    private players: { [key: string]: { x: number, y: number, color: string, tool: string } } = {};
     private springs: {
         p1: number[];
         p2: number[];
@@ -217,6 +239,7 @@ class SimuloClientController {
             scale_with_zoom: boolean;
         } | null;
         width: number;
+        targetLength: number;
     }[] = [];
 
     private toolIcon: string | null = null;
@@ -253,6 +276,7 @@ class SimuloClientController {
         });
     }
     async update() {
+        let workerUpdate = true;
         if ('serviceWorker' in navigator) {
             if (navigator.serviceWorker.controller) {
                 console.log('Telling worker to update')
@@ -264,13 +288,50 @@ class SimuloClientController {
                 window.location.reload(); // TODO: once saving is added, we need to temporarily save the world, then after the page reloads, load the world again so nothing is lost
             }
             else {
-                // error out
-                throw new Error('Service worker not supported or not yet registered');
+                workerUpdate = false;
             }
         }
         else {
-            // error out
-            throw new Error('Service worker not supported or not yet registered');
+            workerUpdate = false;
+        }
+
+        if (!workerUpdate) {
+            // try to get everything in filelist.txt with no-cache headers, then reload
+            let headers = new Headers();
+            headers.append('pragma', 'no-cache');
+            headers.append('cache-control', 'no-cache');
+            let response = await fetch('filelist.txt', {
+                headers
+            });
+            if (response.ok) {
+                let fileList = await response.text();
+                let files = fileList.trim().split('\n');
+                // filter out the ones that start with icons/
+                files = files.filter((file) => {
+                    return !file.startsWith('icons/');
+                });
+                for (let i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    await fetch(file, {
+                        headers
+                    }).catch(() => { });
+                    // progress bar
+                    let activeChar = '█';
+                    let inactiveChar = '░';
+                    let percent = Math.round((i / files.length) * 100);
+                    let bar = '';
+                    for (let j = 0; j < 70; j++) {
+                        if (j < percent / 100 * 70) {
+                            bar += activeChar;
+                        }
+                        else {
+                            bar += inactiveChar;
+                        }
+                    }
+                    console.log(`[${bar}] ${percent}%`);
+                }
+            }
+            window.location.reload();
         }
     }
 
@@ -280,6 +341,9 @@ class SimuloClientController {
         let key = this.key++; // unique key for this request
         return new Promise((resolve, reject) => {
             let handler = (body: any) => {
+                if (body.formatted) {
+                    body.data = body.formatted.data;
+                }
                 //console.log('requst from our handlerr!!! body is', body);
                 if (body.data.key === key) {
                     //console.log('Got response', body.data);
@@ -326,7 +390,10 @@ class SimuloClientController {
         const files = await this.openFileDialog();
 
         if (!files) {
+            document.body.style.cursor = 'default';
+            await this.sleep(100);
             alert('No files selected.');
+            document.body.style.cursor = 'none';
             return;
         }
 
@@ -336,7 +403,10 @@ class SimuloClientController {
             const fileContents = await this.readFile(file);
             return fileContents;
         } else {
+            document.body.style.cursor = 'default';
+            await this.sleep(100);
             alert('Invalid file: ' + file.name);
+            document.body.style.cursor = 'none';
             return null;
         }
     }
@@ -371,28 +441,163 @@ class SimuloClientController {
     version: string = 'unknown';
     versionTimestamp: number = 0;
 
+    async useAnswerSdp() {
+        document.body.style.cursor = 'default';
+        await this.sleep(100);
+        let sdp = decodeURIComponent(prompt('Enter the answer SDP')!);
+        document.body.style.cursor = 'none';
+        this.serverController!.networkServer!.useAnswerSdp(sdp);
+        console.log('we relayed it, dunno if it worked');
+    }
+    ambientMusic: HTMLAudioElement | null = null;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this.theme = themes.night;
-        this.serverController = new SimuloServerController(this.theme, null, true);
-        this.client = this.serverController.localClients[0];
+    playAmbientMusic(track: { name: string, artist: string, url: string }) {
+        if (this.ambientMusic) {
+            this.ambientMusic.pause();
+            this.ambientMusic.currentTime = 0;
+            this.ambientMusic.remove();
+            this.ambientMusic = null;
+        }
+        this.ambientMusic = new Audio(track.url);
+        try {
+            // no loop, that would be insane
+            this.ambientMusic.volume = 0.001; // we fade from 0 to 0.4
+            this.ambientMusic.play();
+            this.showToast('Now playing <b>' + track.name + '</b> by <b>' + track.artist + '</b>', ToastType.INFO);
+        }
+        catch (e) {
+            console.error(e);
+        }
+
+        // fade in once its ready
+        let fadeInterval = setInterval(() => {
+            if (this.ambientMusic) {
+                if (this.ambientMusic!.volume < 0.4) {
+                    this.ambientMusic!.volume += 0.005;
+                }
+                else {
+                    clearInterval(fadeInterval);
+                }
+            }
+        }, 100);
+        setTimeout(() => {
+            if (this.ambientMusic) {
+                this.ambientMusic!.volume = 0.4;
+            }
+        }, 8000);
+    }
+
+    openPopup() {
+        let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
+        startingPopup.style.opacity = '1';
+        startingPopup.style.pointerEvents = 'auto';
+
+        let popupLine = document.getElementById("popup-line")!;
+        let messages = [
+            'Off you dream',
+            'Until next time',
+            'Farewell',
+            'Mind at peace',
+            'All that time without a word',
+            'Just one thing before I go',
+            'Take good care',
+            'As the years go by',
+            'For the last time',
+            'Keep in touch',
+            'End of line',
+        ];
+        let message = messages[Math.floor(Math.random() * messages.length)];
+        popupLine.innerHTML = message;
+
+        let dismissPopup = (e: MouseEvent | undefined) => {
+            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.non-game-overlay'))) return;
+            startingPopup.style.opacity = '0';
+            startingPopup.style.pointerEvents = 'none';
+            document.removeEventListener('pointerdown', dismissPopup);
+        };
+        document.addEventListener('pointerdown', dismissPopup);
+    }
+
+    constructor(canvas: HTMLCanvasElement, host: boolean, ambientMusic: boolean) {
+        if (new URL(document.location.href).searchParams.get("theme")) {
+            let popup = document.querySelector(".starting-popup") as HTMLDivElement;
+            popup.style.display = "none";
+            let theme = new URL(document.location.href).searchParams.get("theme") as string;
+
+            if (theme in themes) {
+                this.theme = themes[theme];
+            } else {
+                this.theme = themes.night;
+            }
+        } else {
+            this.theme = themes.night;
+        }
+        if (host) {
+            this.serverController = new SimuloServerController(this.theme, true, true);
+            this.client = this.serverController.localClients[0];
+        }
+        else {
+            let networkClient = new SimuloNetworkClient();
+            this.client = networkClient;
+        }
         // Since it loops back, we can use the exact same code for both host and client, excluding the networking code.
 
-        // try to fetch /version and set #version-info text to "Simulo Alpha v{version} ({date}) - Hold Shift and Refresh to update"
-        fetch('version').then(async (response) => {
+        // try to fetch /version and set #version-info text
+        fetch('../version.json').then(async (response) => {
             if (response.ok) {
+                let version = await response.json();
                 let versionInfo = document.getElementById('version-info');
                 if (versionInfo) {
-                    // the result is json, so parse it
-                    let version = await response.json();
                     // we want month name, then day, then year. no time
                     let versionDate = new Date(version.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
                     this.version = version.version;
                     this.versionTimestamp = version.date; // we can use it for comparison later of which build is newer
-                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate}) - Hold Shift and refresh to update`;
+                    versionInfo.innerHTML = `Simulo Alpha v${version.version} (${versionDate})`;
+                }
+                // now fetch it again but no-cache
+                let headers = new Headers();
+                headers.append('pragma', 'no-cache');
+                headers.append('cache-control', 'no-cache');
+                let response2 = await fetch('../version.json', {
+                    headers
+                });
+                // make sure also ok, otherwise just keep old one
+                if (response2.ok) {
+                    let version2 = await response2.json();
+                    // compare `new Date(version*.date).getTime()`s, if the new one is newer, that means cache is interfering
+                    if (new Date(version2.date).getTime() > new Date(version.date).getTime()) {
+                        // cache is interfering, lets show .update-menu
+                        let updateMenu = document.querySelector('.update-menu') as HTMLElement;
+                        updateMenu.style.display = 'block';
+                        // set #old-version and #new-version text
+                        let oldVersion = document.getElementById('old-version') as HTMLElement;
+                        let newVersion = document.getElementById('new-version') as HTMLElement;
+                        oldVersion.innerText = version.version;
+                        newVersion.innerText = version2.version;
+                        // get #update-button, #update-dismiss-button and #update-remindme-button
+                        let updateButton = document.getElementById('update-button') as HTMLElement;
+                        let updateDismissButton = document.getElementById('update-dismiss-button') as HTMLElement;
+                        let updateRemindMeButton = document.getElementById('update-remindme-button') as HTMLElement;
+                        // add event listeners
+                        updateButton.addEventListener('click', () => {
+                            // update
+                            // add loading cursor
+                            document.body.style.cursor = 'wait';
+                            updateButton.style.cursor = 'wait';
+                            this.update();
+                        });
+                        updateDismissButton.addEventListener('click', () => {
+                            // dismiss
+                            updateMenu.style.display = 'none';
+                        });
+                        updateRemindMeButton.addEventListener('click', () => {
+                            // remind me
+                            updateMenu.style.display = 'none';
+                        });
+                    }
                 }
             }
-        }).catch(() => { });
+        }).catch((e) => { console.log('Failed to fetch version.json', e) });
 
 
         this.client.on('connect', () => { // Connect fires when the WebSocket connects
@@ -407,7 +612,15 @@ class SimuloClientController {
             this.handleData(data); // Parses and displays the data in the world
         });
 
-        this.client.connect(); // Connects to the server
+        if (!host) {
+            /*let sdp = decodeURIComponent(prompt('whats the offer sdp?')!);
+            console.log('offer SDP is', sdp);
+            this.client.connect(sdp);
+            console.log('told it to connect with that')*/
+        }
+        else {
+            this.client.connect(); // Connects to the server
+        }
 
         /*
         let objects = document.querySelectorAll('.object-grid .object');
@@ -424,12 +637,29 @@ class SimuloClientController {
 
         let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
         let dismissPopup = (e: MouseEvent | undefined) => {
-            if (e && (e.target as HTMLElement).closest('.starting-popup')) return;
+            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.non-game-overlay'))) return;
             startingPopup.style.opacity = '0';
             startingPopup.style.pointerEvents = 'none';
-            document.removeEventListener('click', dismissPopup);
+            document.removeEventListener('pointerdown', dismissPopup);
         };
-        document.addEventListener('click', dismissPopup);
+        document.addEventListener('pointerdown', dismissPopup);
+
+        let popupLine = document.getElementById("popup-line")!;
+        let messages = [
+            'Off you dream',
+            'Until next time',
+            'Farewell',
+            'Mind at peace',
+            'All that time without a word',
+            'Just one thing before I go',
+            'Take good care',
+            'As the years go by',
+            'For the last time',
+            'Keep in touch',
+            'End of line',
+        ];
+        let message = messages[Math.floor(Math.random() * messages.length)];
+        popupLine.innerHTML = message;
 
         var popupThemes = startingPopup.querySelector('.themes') as HTMLElement;
         // add themes
@@ -599,12 +829,42 @@ class SimuloClientController {
                         document.querySelectorAll('.toolbar.secondary').forEach(toolbarElement => {
                             let toolbar = toolbarElement as HTMLElement;
                             if (toolbar.id == tool.dataset.menu) {
-                                toolbar.style.display = toolbar.classList.contains('tool-grid') ? 'grid' : 'flex';
+                                // check if its already open, if so close it
+                                if (toolbar.style.display !== 'none') {
+                                    toolbar.style.display = 'none';
+                                    // remove active from this tool
+                                    tool.classList.remove('active');
+                                } else {
+                                    toolbar.style.display = toolbar.classList.contains('tool-grid') ? 'grid' : 'flex';
+                                    // if its save-list we call this.showSavedScenes
+                                    if (toolbar.id == 'save-list') {
+                                        this.showSavedScenes();
+                                    }
+                                }
                             }
                             else {
                                 toolbar.style.display = 'none';
                             }
                         });
+                        // if its save-scene, call this.saveScene, its just a prompt
+                        if (tool.dataset.menu == 'save-scene') {
+                            tool.classList.remove('active');
+                            setTimeout(() => {
+                                this.saveScene();
+                            }, 10);
+                        }
+                        // if its new-scene, we confirmation dialog and then if so we this.defaultWorld();
+                        if (tool.dataset.menu == 'new-scene') {
+                            tool.classList.remove('active');
+                            document.body.style.cursor = 'default';
+                            setTimeout(async () => {
+                                let confirmation = confirm('Are you sure you want to start a new scene?');
+                                document.body.style.cursor = 'none';
+                                if (confirmation) {
+                                    this.defaultWorld();
+                                }
+                            }, 100);
+                        }
                     }
                 }
             });
@@ -663,19 +923,42 @@ class SimuloClientController {
                 button.addEventListener('click', async () => {
                     if (action == 'new-scene') {
                         this.defaultWorld();
-                        this.showToast('Loaded default scene', ToastType.INFO);
+                    }
+                    else if (action == 'main-menu') {
+                        let mainMenu = document.getElementById('main-menu') as HTMLDivElement;
+                        let nonGameOverlay = document.getElementById('non-game-overlay') as HTMLDivElement;
+                        mainMenu.style.display = 'flex';
+                        nonGameOverlay.style.display = 'flex';
+
+                        // we did it, now its time to self destruct
+                        this.viewer.stop();
+                        this.viewer.destroy();
+                        // clear canvas
+                        // @ts-ignore
+                        if (this.viewer.ctx) {
+                            // @ts-ignore
+                            this.viewer.ctx.clearRect(0, 0, this.viewer.canvas.width, this.viewer.canvas.height);
+                        }
+                        else {
+                            this.viewer.canvas.getContext('2d')!.clearRect(0, 0, this.viewer.canvas.width, this.viewer.canvas.height);
+                        }
+                        // @ts-ignore
+                        this.viewer = null;
+                        this.client.disconnect();
+                        if (this.serverController) {
+                            this.serverController.physicsServer.destroyPhysicsServer();
+                            this.serverController.networkServer = null;
+                            this.serverController.stop();
+                            this.serverController = null;
+                        }
+                        // @ts-ignore
+                        this.client = null;
+
+                        //@ts-ignore
+                        window.playMenuMusic();
                     }
                     else if (action == 'save-scene') {
-                        var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene. (Note: this box will be replaced with a UI in a future update)") || new Date().getTime().toString();
-                        //localStorage.setItem('tempScene', await this.saveWorldToString());
-                        // set localStorage scenes key
-                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                        scenes[name] = JSON.stringify({
-                            ...JSON.parse(await this.saveWorldToString()),
-                            name: name
-                        });
-                        localStorage.setItem('scenes', JSON.stringify(scenes));
-                        this.showToast('Saved scene "' + name + '"', ToastType.INFO);
+                        this.saveScene();
                     }
                     else if (action == 'load-scene') {
                         /*let tempScene = localStorage.getItem('tempScene');
@@ -687,47 +970,9 @@ class SimuloClientController {
                             this.showToast('No saved scene found', ToastType.ERROR);
                         }*/
                         // show scenes menu
-                        let saveList = document.getElementById('save-list') as HTMLElement;
-                        let saveGrid = saveList.querySelector('.save-grid') as HTMLElement;
-                        saveList.style.display = 'flex';
-                        saveGrid.innerHTML = '<span class="top-text">This is where your saved scenes go! It will look completely different soon and have a grid with pictures.</span>';
-                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                        Object.keys(scenes).sort((a, b) => {
-                            // get them and their dates, then sort
-                            let sceneA = JSON.parse(scenes[a]);
-                            let sceneB = JSON.parse(scenes[b]);
-                            let dateA = new Date(Date.parse(sceneA.date));
-                            let dateB = new Date(Date.parse(sceneB.date));
-                            return dateA.getTime() - dateB.getTime();
-
-                            // this sort will make the first one the oldest, and the last one the newest
-                        }).reverse().forEach((name) => {
-                            let scene = scenes[name];
-                            let div = document.createElement('div');
-                            div.classList.add('scene');
-                            div.classList.add('button');
-                            div.addEventListener('click', async (e) => {
-                                saveList.style.display = 'none';
-                                this.showToast('Loading scene "' + name + '"...', ToastType.INFO);
-                                await this.loadWorldFromString(scene);
-                                this.showToast('Loaded scene "' + name + '"', ToastType.INFO);
-                                this.pauseButton.classList.add('checked');
-                                this.setPaused(true);
-                            });
-                            div.innerHTML = `<span>${name}</span> - <span>${new Date(Date.parse(JSON.parse(scene).date)).toLocaleString()}</span> - <button class="delete-scene" data-scene="${name}">Delete</button>`;
-                            let deleteButton = div.querySelector('.delete-scene') as HTMLElement;
-                            deleteButton.addEventListener('click', (e) => {
-                                let sceneName = deleteButton.dataset.scene;
-                                let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                                delete scenes[sceneName as string];
-                                localStorage.setItem('scenes', JSON.stringify(scenes));
-                                this.showToast('Deleted scene "' + sceneName + '"', ToastType.INFO);
-                                div.remove();
-                                e.stopPropagation();
-                                e.preventDefault();
-                            });
-                            saveGrid.appendChild(div);
-                        });
+                        this.showSavedScenes();
+                        let saveListButton = document.getElementById('save-list-button') as HTMLElement;
+                        saveListButton.classList.add('active');
                     }
                     else if (action == 'import') {
                         let file = await this.simuloFileInput(); // reeturns string or null
@@ -770,15 +1015,59 @@ class SimuloClientController {
             }
         });
 
-        let mouseDownOnCanvas = false;
-
-        this.pauseButton.addEventListener('click', () => {
-            // set checked class
-            this.pauseButton.classList.toggle('checked');
-            this.setPaused(this.pauseButton.classList.contains('checked'));
+        // on space on timescaleslider or input, prevent default
+        this.timeScaleSlider.addEventListener('keydown', (e) => {
+            if (e.key == ' ') {
+                e.preventDefault();
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
+            }
         });
 
-        this.viewer = new SimuloViewer(canvas);
+        this.timeScaleInput.addEventListener('keydown', (e) => {
+            if (e.key == ' ') {
+                e.preventDefault();
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
+            }
+        });
+
+        let mouseDownOnCanvas = false;
+
+        this.pausePlay.addEventListener('click', () => {
+            // set checked class
+            this.pausePlay.classList.toggle('paused');
+            this.setPaused(this.pausePlay.classList.contains('paused'));
+        });
+
+        this.pausePlay.addEventListener('pointerenter', () => {
+            this.timeControl.classList.add('active');
+            if (this.timeControlTimeout) {
+                clearTimeout(this.timeControlTimeout);
+            }
+            this.timeControlTimeout = null;
+        });
+        this.pausePlay.addEventListener('pointerleave', () => {
+            this.timeControlTimeout = setTimeout(() => {
+                this.timeControl.classList.remove('active');
+            }, 1000);
+        });
+
+        this.timeControl.addEventListener('pointerenter', () => {
+            if (this.timeControlTimeout) {
+                clearTimeout(this.timeControlTimeout);
+            }
+            this.timeControlTimeout = null;
+        });
+
+        this.timeControl.addEventListener('pointerleave', () => {
+            this.timeControlTimeout = setTimeout(() => {
+                this.timeControl.classList.remove('active');
+            }, 1000);
+        });
+
+
+        this.viewer = new SimuloViewerCanvas(canvas);
         this.player.zoom = this.viewer.cameraZoom;
         this.viewer.setFullscreen(true);
         this.viewer.on('mouseMove', (pos: { x: number, y: number }) => {
@@ -787,7 +1076,8 @@ class SimuloClientController {
                 y: pos.y,
                 down: this.viewer.pointerDown,
                 name: this.player.name,
-                zoom: this.viewer.cameraZoom
+                zoom: this.viewer.cameraZoom,
+                shift: this.player.shift
             };
             this.mousePos = pos;
             this.client.emitData("player mouse", this.player);
@@ -799,7 +1089,8 @@ class SimuloClientController {
                     y: data.y,
                     down: this.viewer.pointerDown,
                     name: this.player.name,
-                    zoom: this.viewer.cameraZoom
+                    zoom: this.viewer.cameraZoom,
+                    shift: this.player.shift
                 };
                 this.mousePos = { x: data.x, y: data.y };
                 this.client.emitData("player mouse down", this.player);
@@ -830,6 +1121,11 @@ class SimuloClientController {
                             item.addEventListener('click', async (e) => {
                                 let action = (item as HTMLElement).dataset.action;
                                 if (action == 'delete') {
+                                    let isPaused = this.pausePlay.classList.contains('paused');
+                                    if (isPaused) {
+                                        this.showToast('Deleting object (may need to unpause to see)', ToastType.INFO);
+                                    }
+                                    menu.remove();
                                     var deleted = await this.emitDataAsync('delete_object', { id: object.id });
                                     this.showToast(deleted ? 'Deleted object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
                                 }
@@ -899,7 +1195,8 @@ class SimuloClientController {
                 y: pos.y,
                 down: this.viewer.pointerDown,
                 name: this.player.name,
-                zoom: this.viewer.cameraZoom
+                zoom: this.viewer.cameraZoom,
+                shift: this.player.shift
             };
             this.mousePos = pos;
             this.client.emitData("player mouse up", this.player);
@@ -974,8 +1271,8 @@ class SimuloClientController {
 
             // if its space, toggle pause
             if (e.key == ' ') {
-                this.pauseButton.classList.toggle('checked');
-                this.setPaused(this.pauseButton.classList.contains('checked'));
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
             }
 
             // if its CTRL+C, copy
@@ -993,9 +1290,22 @@ class SimuloClientController {
                 this.deleteSelection();
                 this.showToast('Deleted selection', ToastType.INFO);
             }
-        });
 
-        this.viewer.systemCursor = this.theme.systemCursor;
+            // if its shift
+            if (e.key == 'Shift') {
+                this.player.shift = true;
+                // yes its a bit weird to use mouse update, but thats where the logic for updating shapes is, so this is best
+                // if this bothers you too much, consider making a PR renaming `player mouse` to a better name
+                // but `player update` wouldnt work that well since this is just for mouse or shift
+                this.client.emitData("player mouse", this.player);
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key == 'Shift') {
+                this.player.shift = false;
+                this.client.emitData("player mouse", this.player);
+            }
+        });
 
         document.addEventListener('contextmenu', function (e) {
             e.preventDefault();
@@ -1095,7 +1405,7 @@ class SimuloClientController {
         this.viewer.cameraOffset.y = parsed.camera.y;
         this.viewer.cameraZoom = parsed.camera.zoom;
 
-        this.pauseButton.classList.remove('checked');
+        this.pausePlay.classList.remove('paused');
         this.setPaused(false);
 
         if (parsed.versionTimestamp > this.versionTimestamp) {
@@ -1128,36 +1438,102 @@ class SimuloClientController {
     }
 
     async defaultWorld() {
+        // first play the world
+        this.setPaused(false);
+        this.pausePlay.classList.remove('paused');
+
         this.client.emitData('load_world', {
-            data: '{"theme": ' + JSON.stringify(themes['night']) + ', "objects":[{"id":3,"type":"CIRCLE","position":{"x":-0.05464658513665199,"y":27.79596519470215},"rotation":3.192410469055176,'
-                + '"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderS'
-                + 'caleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"i'
-                + 'd":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring"'
-                + ',"dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"a'
-                + 'nchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit'
-                + '":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x'
-                + '":-0.08659487962722778,"y":28.54715919494629},"rotation":3.143559455871582,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1'
-                + ',"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/te'
-                + 'xtures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"b'
-                + 'odyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"fr'
-                + 'equencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anch'
-                + 'orB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,'
-                + '"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-'
-                + '0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668'
-                + ',-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]},{"id":1,"type"'
-                + ':"POLYGON","position":{"x":0,"y":25030},"rotation":0,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":0,"friction":0.2000000029'
-                + '8023224,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color'
-                + '":"#a1acfa","isStatic":true,"mass":0,"joints":[],"points":[[-50000,-25000],[50000,-25000],[50000,25000],[-50000,25000]]}],"particles":[]}'
+            data: '{"objects":[{"id":2,"type":"POLYGON","position":{"x":0,"y":25030},"rotation":0,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":0,"friction":0.20000000298023224,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"ground.wav","color":"#a1acfa","isStatic":true,"mass":0,"joints":[],"points":[[-50000,-25000],[50000,-25000],[50000,25000],[-50000,25000]],"name":"Floor (Simulo Planet) (not canonically flat)","parentID":3,"flipImage":true},{"id":5,"type":"POLYGON","position":{"x":-0.00901452824473381,"y":28.546035766601562},"rotation":3.147258996963501,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":9,"bodyA":5,"bodyB":7,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"image":null,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"width":0,"line":null},{"id":8,"bodyA":5,"bodyB":7,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"image":null,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]],"name":null,"parentID":4,"flipImage":false},{"id":7,"type":"CIRCLE","position":{"x":-0.009960604831576347,"y":27.794038772583008},"rotation":3.1389143466949463,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":9,"bodyA":5,"bodyB":7,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"image":null,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"width":0,"line":null},{"id":8,"bodyA":5,"bodyB":7,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"image":null,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891,"name":null,"parentID":6,"flipImage":true}],"particles":[],"theme":{"displayName":"Night","author":"amytimed","description":"The default theme, also known as Dimulo","background":"linear-gradient(180deg, #0f1130 0%, #553f90 100%)","person":{"color":"#99e077","border":null,"borderWidth":null,"borderScaleWithZoom":false},"ground":{"color":"#a1acfa","border":null,"borderWidth":null,"borderScaleWithZoom":false},"newObjects":{"color":{"hueMin":0,"hueMax":360,"satMin":0,"satMax":100,"valMin":80,"valMax":100,"alpMin":1,"alpMax":1},"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"springImage":"assets/textures/spring.png","axleImage":"assets/textures/add_axle.png","boltImage":"assets/textures/add_fixed_joint.png"},"toolIcons":{"drag":null,"addRectangle":"assets/textures/add_rectangle.png","addCircle":"assets/textures/add_circle.png","addPerson":"media/icon_square.png","addPolygon":"assets/textures/add_polygon.png","addSpring":"assets/textures/add_spring.png","addAxle":"assets/textures/add_axle.png","addBolt":"assets/textures/add_fixed_joint.png","select":"assets/textures/select.png","addParticle":"assets/textures/add_particle.png"},"systemCursor":false,"toolIconSize":1.4,"toolIconOffset":[-1.2,-0.5]},"version":"0.9.0","versionTimestamp":1716565556171,"name":"Unnamed Scene","description":null,"type":"scene","author":null,"date":"2024-05-24T15:49:25.720Z","camera":{"x":778.5,"y":-218.5,"zoom":30}}'
         });
         this.viewer.resetCamera();
+        this.openPopup();
+        console.log('Starting popup opened');
     }
 
     loadSavedObjects(saveData: string, x: number, y: number) {
-        this.client.emitData('load_save_data', {
-            data: saveData,
-            x,
-            y
+        try {
+            this.client.emitData('load_save_data', {
+                data: saveData,
+                x,
+                y
+            });
+        }
+        catch (e) {
+            console.error('Error loading saved objects:', e);
+            this.showToast('Error loading saved objects', ToastType.ERROR);
+        }
+    }
+
+    showSavedScenes() {
+        let saveList = document.getElementById('save-list') as HTMLElement;
+        let saveGrid = saveList.querySelector('.save-grid') as HTMLElement;
+        saveList.style.display = 'flex';
+        saveGrid.innerHTML = '<span class="top-text">This is where your saved scenes go! It will look completely different soon and have a grid with pictures.</span>';
+        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+        Object.keys(scenes).sort((a, b) => {
+            // get them and their dates, then sort
+            let sceneA = JSON.parse(scenes[a]);
+            let sceneB = JSON.parse(scenes[b]);
+            let dateA = new Date(Date.parse(sceneA.date));
+            let dateB = new Date(Date.parse(sceneB.date));
+            return dateA.getTime() - dateB.getTime();
+
+            // this sort will make the first one the oldest, and the last one the newest
+        }).reverse().forEach((name) => {
+            let scene = scenes[name];
+            let div = document.createElement('div');
+            div.classList.add('scene');
+            div.classList.add('button');
+            div.addEventListener('click', async (e) => {
+                saveList.style.display = 'none';
+                this.showToast('Loading scene "' + name + '"...', ToastType.INFO);
+                await this.loadWorldFromString(scene);
+                this.showToast('Loaded scene "' + name + '"', ToastType.INFO);
+                this.pausePlay.classList.add('paused');
+                this.setPaused(true);
+                let saveListButton = document.getElementById('save-list-button') as HTMLElement;
+                saveListButton.classList.remove('active');
+            });
+            div.innerHTML = `<span>${name}</span> - <span>${new Date(Date.parse(JSON.parse(scene).date)).toLocaleString()}</span> - <button class="delete-scene" data-scene="${name}">Delete</button>`;
+            let deleteButton = div.querySelector('.delete-scene') as HTMLElement;
+            deleteButton.addEventListener('click', (e) => {
+                let sceneName = deleteButton.dataset.scene;
+                let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+                delete scenes[sceneName as string];
+                localStorage.setItem('scenes', JSON.stringify(scenes));
+                this.showToast('Deleted scene "' + sceneName + '"', ToastType.INFO);
+                div.remove();
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            saveGrid.appendChild(div);
         });
+    }
+
+    async sleep(ms: number) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
+
+    async saveScene() {
+        document.body.style.cursor = 'default';
+        await this.sleep(100);
+        var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene.");
+        document.body.style.cursor = 'none';
+        if (!name) {
+            this.showToast('Cancelled saving scene', ToastType.INFO);
+            return;
+        }
+        //localStorage.setItem('tempScene', await this.saveWorldToString());
+        // set localStorage scenes key
+        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+        scenes[name] = JSON.stringify({
+            ...JSON.parse(await this.saveWorldToString()),
+            name: name
+        });
+        localStorage.setItem('scenes', JSON.stringify(scenes));
+        this.showToast('Saved scene "' + name + '"', ToastType.INFO);
     }
 
     loadSelection() {
@@ -1168,7 +1544,7 @@ class SimuloClientController {
     }
 
     deleteSelection() {
-        this.client.emitData('delete_selection', null);
+        this.client.emitData('delete_selection', {});
     }
 
     async saveSelectionToObjects() {
@@ -1195,6 +1571,110 @@ class SimuloClientController {
         // update objects list
         this.updateObjectsList();
         this.showToast('Saved ' + JSON.parse(selectedObjects).length + ' objects', ToastType.INFO);
+    }
+
+    shapesFromSaved(saved: string) {
+        let shapes: SimuloShape[] = [];
+        let savedObjects: {
+            id: number;
+            type: "POLYGON" | "CIRCLE" | "EDGE";
+            position: { x: number; y: number; };
+            rotation: number;
+            velocity: { x: number; y: number; };
+            angularVelocity: number;
+            density: number;
+            friction: number;
+            restitution: number;
+            border: string | null;
+            borderWidth: number | null;
+            borderScaleWithZoom: boolean | null | undefined;
+            circleCake: boolean | null | undefined;
+            sound: string | null;
+            color: string;
+            isStatic: boolean;
+            mass: number;
+            joints: any[]; // not important to this ghost rendering
+            radius: number | undefined;
+            image: string | null | undefined;
+            points: [x: number, y: number][];
+            flipImage: boolean | undefined;
+        }[] = JSON.parse(saved);
+        savedObjects.forEach((savedObject) => {
+            if (savedObject.type == 'POLYGON') {
+                shapes.push({
+                    x: savedObject.position.x,
+                    y: savedObject.position.y,
+                    angle: savedObject.rotation,
+                    type: 'polygon',
+                    color: savedObject.color,
+                    border: savedObject.border,
+                    borderWidth: savedObject.borderWidth,
+                    borderScaleWithZoom: savedObject.borderScaleWithZoom,
+                    points: savedObject.points.map((point) => { return { x: point[0], y: point[1] } }),
+                    id: savedObject.id,
+                    image: savedObject.image,
+                    imageTransformations: {
+                        rotate: savedObject.flipImage ? Math.PI : 0,
+                        scale: 1,
+                        translate: [0, 0]
+                    }
+                } as SimuloPolygon);
+            }
+            else if (savedObject.type == 'CIRCLE') {
+                shapes.push({
+                    x: savedObject.position.x,
+                    y: savedObject.position.y,
+                    angle: savedObject.rotation,
+                    type: 'circle',
+                    color: savedObject.color,
+                    border: savedObject.border,
+                    borderWidth: savedObject.borderWidth,
+                    borderScaleWithZoom: savedObject.borderScaleWithZoom,
+                    circleCake: savedObject.circleCake,
+                    radius: savedObject.radius,
+                    id: savedObject.id,
+                    image: savedObject.image,
+                    imageTransformations: {
+                        rotate: savedObject.flipImage ? Math.PI : 0,
+                        scale: 1,
+                        translate: [0, 0]
+                    }
+                } as SimuloCircle);
+            }
+
+        });
+        // now get center
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+        shapes.forEach((shape) => {
+            if (shape.type == 'polygon') {
+                let polygon = shape as SimuloPolygon;
+                polygon.points.forEach((point) => {
+                    if (point.x < minX) minX = point.x;
+                    if (point.x > maxX) maxX = point.x;
+                    if (point.y < minY) minY = point.y;
+                    if (point.y > maxY) maxY = point.y;
+                });
+            }
+            else if (shape.type == 'circle') {
+                let circle = shape as SimuloCircle;
+                if (circle.x - circle.radius! < minX) minX = circle.x - circle.radius!;
+                if (circle.x + circle.radius! > maxX) maxX = circle.x + circle.radius!;
+                if (circle.y - circle.radius! < minY) minY = circle.y - circle.radius!;
+                if (circle.y + circle.radius! > maxY) maxY = circle.y + circle.radius!;
+            }
+        });
+        let centerX = (minX + maxX) / 2;
+        let centerY = (minY + maxY) / 2;
+        // now move all shapes to center
+        shapes.forEach((shape) => {
+            shape.x -= centerX;
+            shape.y -= centerY;
+        });
+
+        return shapes;
     }
 
     async updateObjectsList() {
@@ -1224,9 +1704,29 @@ class SimuloClientController {
                 this.spawningSavedObject = i;
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
-            let img = document.createElement('img');
-            img.src = object.image;
-            div.appendChild(img);
+            if (object.image && object.image != 'assets/textures/unknown.png') {
+                let img = document.createElement('img');
+                img.src = object.image;
+                div.appendChild(img);
+            } else {
+                let objCanvas = document.createElement('canvas');
+                // 128x128
+                objCanvas.width = 128;
+                objCanvas.height = 128;
+                let objCanvasRenderer = new SimuloRendererCanvas(objCanvas);
+                let shapes = this.shapesFromSaved(object.data);
+                objCanvasRenderer.updateTransform(20);
+                let center = objCanvasRenderer.transformPoint(64, 64);
+                shapes.forEach((shape) => {
+                    shape.x += center.x;
+                    shape.y += center.y;
+                });
+                // 
+                objCanvasRenderer.render(shapes, [], 20, true);
+
+                //img.src = object.image;
+                div.appendChild(objCanvas);
+            }
             // add icons/dots-vertical.svg
             let res = await fetch('icons/dots-vertical.svg');
             let svg = await res.text();
@@ -1350,6 +1850,12 @@ class SimuloClientController {
         else if (type == ToastType.INFO) {
             toast.classList.add('info');
         }
+        else if (type == ToastType.JOIN) {
+            toast.classList.add('join');
+        }
+        else if (type == ToastType.LEAVE) {
+            toast.classList.add('leave');
+        }
         var icon = document.createElement('div');
         icon.classList.add('icon');
         // load svg with fetch
@@ -1363,6 +1869,12 @@ class SimuloClientController {
         else if (type == ToastType.SUCCESS) {
             path = 'icons/check-circle.svg';
         }
+        else if (type == ToastType.JOIN) {
+            path = 'icons/arrow-right.svg';
+        }
+        else if (type == ToastType.LEAVE) {
+            path = 'icons/arrow-left.svg';
+        }
         else { // default to info
             path = 'icons/information.svg';
         }
@@ -1371,7 +1883,7 @@ class SimuloClientController {
         icon.innerHTML = svg;
         toast.appendChild(icon);
         var span = document.createElement('span');
-        span.innerText = message;
+        span.innerHTML = message;
         toast.appendChild(span);
         var close = document.createElement('div');
         close.classList.add('close');
@@ -1422,10 +1934,10 @@ class SimuloClientController {
                 if (this.paused == null) {
                     this.paused = body.data.paused;
                     if (this.paused) {
-                        this.pauseButton.classList.add('checked');
+                        this.pausePlay.classList.add('paused');
                     }
                     else {
-                        this.pauseButton.classList.remove('checked');
+                        this.pausePlay.classList.remove('paused');
                     }
                 }
 
@@ -1691,6 +2203,57 @@ class SimuloClientController {
                     }
                 });
 
+                let tileBetweenPoints = (pointA: [x: number, y: number], pointB: [x: number, y: number], image: string, size: number, targetLength: number | null = null) => {
+                    // ok so basically, see this?
+                    /*let height = creatingSpring.width;
+                    // stretch between the two points
+                    var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
+
+                    shapes.push({
+                        x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                        border: null,
+                        borderWidth: null,
+                        borderScaleWithZoom: false,
+                    } as SimuloRectangle);*/
+                    // well basically, we do that but we tile it
+                    // first lets get all the point pairs
+                    let pointPairs: { p1: [x: number, y: number], p2: [x: number, y: number] }[] = [];
+                    //let segments = 3;
+                    // get segments from length (distance between points)
+                    if (targetLength == null) {
+                        targetLength = Math.sqrt(Math.pow(pointB[0] - pointA[0], 2) + Math.pow(pointB[1] - pointA[1], 2));
+                    }
+                    // round number of segments, distance / 5
+
+                    let segments = Math.ceil(targetLength / 5);
+                    if (segments < 1) segments = 1;
+                    for (let i = 0; i < segments; i++) {
+                        let p1 = pointA;
+                        let p2 = pointB;
+                        let dx = p2[0] - p1[0];
+                        let dy = p2[1] - p1[1];
+                        let x = p1[0] + dx * (i / segments);
+                        let y = p1[1] + dy * (i / segments);
+                        let p3 = [x, y];
+                        let p4 = [x + dx / segments, y + dy / segments];
+                        pointPairs.push({ p1: p3 as [number, number], p2: p4 as [number, number] });
+                    }
+                    // now we have all the point pairs, lets do it each time
+
+                    pointPairs.forEach((pointPair) => {
+                        let height = size;
+                        // stretch between the two points
+                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(pointPair.p1[0], pointPair.p1[1], pointPair.p2[0], pointPair.p2[1], true);
+
+                        shapes.push({
+                            x, y, width: length / 4, height: size / 4, angle, type: 'rectangle', color: '#00000000', image: image,
+                            border: null,
+                            borderWidth: null,
+                            borderScaleWithZoom: false,
+                        } as SimuloRectangle);
+                    });
+                }
+
                 Object.keys(this.creatingSprings).forEach((key) => {
                     let creatingSpring = this.creatingSprings[key];
                     /* if (creatingSprings[client.id]) {
@@ -1708,17 +2271,17 @@ class SimuloClientController {
                 }
             }*/
                     if (creatingSpring.image) {
-                        let height = creatingSpring.width;
+                        let size = creatingSpring.width;
                         // stretch between the two points
-                        var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
+                        /*var { x, y, angle, length } = this.viewer.lineBetweenPoints(creatingSpring.start[0], creatingSpring.start[1], creatingSpring.end[0], creatingSpring.end[1], true);
 
                         shapes.push({
-                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
+                            x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: creatingSpring.image,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false,
-                            stretchImage: true
-                        } as SimuloRectangle);
+                        } as SimuloRectangle);*/
+                        tileBetweenPoints(creatingSpring.start, creatingSpring.end, creatingSpring.image, size);
 
                         if (creatingSpring.image !== null && creatingSpring.image !== undefined) {
                             // put a circle at each end, transparent but with solid white border
@@ -1753,15 +2316,15 @@ class SimuloClientController {
                 // same for real springs, yo
                 this.springs.forEach((spring) => {
                     if (spring.image) {
-                        let height = spring.width;
+                        /*let height = spring.width;
                         var { x, y, angle, length } = this.viewer.lineBetweenPoints(spring.p1[0], spring.p1[1], spring.p2[0], spring.p2[1], true);
                         shapes.push({
-                            x, y, width: length, height, angle, type: 'rectangle', color: '#00000000', image: spring.image,
+                            x, y, width: length / 4, height: height / 4, angle, type: 'rectangle', color: '#00000000', image: spring.image,
                             border: null,
                             borderWidth: null,
                             borderScaleWithZoom: false,
-                            stretchImage: true
-                        } as SimuloRectangle);
+                        } as SimuloRectangle);*/
+                        tileBetweenPoints(spring.p1 as [x: number, y: number], spring.p2 as [x: number, y: number], spring.image, spring.width, spring.targetLength);
 
                         if (spring.image !== null && spring.image !== undefined) {
                             // put a circle at each end, transparent but with solid white border
@@ -1796,22 +2359,23 @@ class SimuloClientController {
                         } as SimuloRectangle);
                     }
                 });
-
+                /*
                 var cursorSize = 2;
                 var scaleWithZoom = true;
                 if (scaleWithZoom) {
                     cursorSize = cursorSize * 40 / this.viewer.cameraZoom;
                 }
-                var cursorWidth = 0.7 * cursorSize;
+                var cursorWidth = 1 * cursorSize;
                 let cursorImg = this.viewer.getImage('assets/textures/cursor.png');
-                var cursorHeight = cursorImg.height * ((0.7 * cursorSize) / cursorImg.width);
+                var cursorHeight = cursorImg.height * ((1 * cursorSize) / cursorImg.width);
+                let cursorOffset = [-8.5 / this.viewer.cameraZoom, -4.5 / this.viewer.cameraZoom];
                 Object.keys(this.players).forEach((key) => {
                     if (key == this.client.id) return;
                     // this.ctx.drawImage(cursor, player.x, player.y, 0.7, cursor.height * (0.7 / cursor.width));
                     let player = this.players[key];
 
                     shapes.push({
-                        x: player.x + (cursorWidth / 4), y: player.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
+                        x: player.x + (cursorWidth / 4) + cursorOffset[0], y: player.y + (cursorHeight / 4) + cursorOffset[1], width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
@@ -1821,13 +2385,78 @@ class SimuloClientController {
                 let cursor = this.viewer.getImage('assets/textures/cursor.png');
                 if (!this.viewer.systemCursor) {
                     shapes.push({
-                        x: this.mousePos.x + (cursorWidth / 4), y: this.mousePos.y + (cursorHeight / 4), width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
+                        x: this.mousePos.x + (cursorWidth / 4) + cursorOffset[0], y: this.mousePos.y + (cursorHeight / 4) + cursorOffset[1], width: cursorWidth, height: cursorHeight, angle: Math.PI, type: 'rectangle', color: '#00000000', image: 'assets/textures/cursor.png',
                         border: null,
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
+                }*/
+                let cursorOffset = [-8.5, -4.5];
+                // now we actually just position #player-cursor element
+
+                let canvasOverlays = document.getElementById('canvas-overlays')!;
+
+                let playerCursorFillColor = '#000000';
+
+                if (this.client.id in this.players) {
+                    // get our color from that
+                    let player = this.players[this.client.id];
+                    playerCursorFillColor = player.color;
                 }
+
+                let cursorNullable = document.getElementById('player-cursor');
+                if (!cursorNullable) {
+                    let cursor = document.createElement('div');
+                    cursor.id = 'player-cursor';
+                    cursor.className = 'player-cursor';
+                    cursor.innerHTML = getCursorSVG(playerCursorFillColor);
+                    // add img .cursor-tool display: none
+                    let cursorTool = document.createElement('img');
+                    cursorTool.className = 'cursor-tool';
+                    cursorTool.style.display = 'none';
+                    cursor.appendChild(cursorTool);
+                    canvasOverlays.appendChild(cursor);
+                    cursorNullable = cursor;
+                }
+
+                let cursor = cursorNullable!;
+                let mousePosScreen = this.viewer.inverseTransformPoint(this.mousePos.x, this.mousePos.y);
+                cursor.style.left = (mousePosScreen.x + 0.5 + cursorOffset[0]) + 'px';
+                cursor.style.top = (mousePosScreen.y + 0.5 + cursorOffset[1]) + 'px';
+                let cursorTool = cursor.querySelector('.cursor-tool') as HTMLImageElement;
                 if (this.toolIcon) {
+                    cursorTool.src = this.toolIcon;
+                    cursorTool.style.display = 'block';
+                }
+                else {
+                    cursorTool.style.display = 'none';
+                }
+                cursorTool.style.right = this.theme.toolIconOffset[1] + 'rem';
+                cursorTool.style.bottom = this.theme.toolIconOffset[0] + 'rem';
+                cursorTool.style.width = this.theme.toolIconSize + 'rem';
+                cursorTool.style.height = this.theme.toolIconSize + 'rem';
+
+                // draw other cursors
+                Object.keys(this.players).forEach((key) => {
+                    if (key == this.client.id) return;
+                    let player = this.players[key];
+                    let cursor = document.getElementById('player-cursor-' + key);
+                    if (!cursor) {
+                        cursor = document.createElement('div');
+                        cursor.id = 'player-cursor-' + key;
+                        cursor.classList.add('player-cursor');
+                        canvasOverlays.appendChild(cursor);
+                        cursor.innerHTML = getCursorSVG(player.color);
+                        let tool = document.createElement('img');
+                        tool.classList.add('cursor-tool');
+                        tool.style.display = 'none';
+                        cursor.appendChild(tool);
+                    }
+                    let mousePosScreen = this.viewer.inverseTransformPoint(player.x, player.y);
+                    cursor.style.left = (mousePosScreen.x + 0.5 + cursorOffset[0]) + 'px';
+                    cursor.style.top = (mousePosScreen.y + 0.5 + cursorOffset[1]) + 'px';
+                });
+                /*if (this.toolIcon) {
                     //this.ctx.drawImage(this.getImage(this.toolIcon), mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), (toolIconSize as number * cursorSize), (toolIconSize as number * cursorSize));
                     shapes.push({
                         x: this.mousePos.x + (((this.toolIconOffset as [x: number, y: number])[0] * cursorSize)), y: this.mousePos.y + (((this.toolIconOffset as [x: number, y: number])[1] * cursorSize)), width: (this.toolIconSize as number * cursorSize), height: (this.toolIconSize as number * cursorSize), angle: Math.PI, type: 'rectangle', color: '#00000000', image: this.toolIcon,
@@ -1835,7 +2464,7 @@ class SimuloClientController {
                         borderWidth: null,
                         borderScaleWithZoom: false
                     } as SimuloRectangle);
-                }
+                }*/
 
                 this.viewer.shapes = shapes;
                 this.viewer.texts = texts;
@@ -1847,13 +2476,21 @@ class SimuloClientController {
             if (body.type == 'player mouse') {
                 this.players[body.data.id] = {
                     x: body.data.x,
-                    y: body.data.y
+                    y: body.data.y,
+                    tool: body.data.tool,
+                    color: body.data.color
                 };
                 this.springs = body.data.springs;
             }
+            if (body.type == 'connect') {
+                this.showToast('<b>User</b> joined the room.', ToastType.JOIN);
+            }
+            if (body.type == 'disconnect') {
+                this.showToast('<b>User</b> left the room.', ToastType.LEAVE);
+            }
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
-                var audio = new Audio('assets/sounds/' + body.data.sound);
+                /*var audio = new Audio('assets/sounds/' + body.data.sound);
                 if (body.data.volume < Infinity) {
                     try {
                         audio.volume = body.data.volume;
@@ -1869,7 +2506,50 @@ class SimuloClientController {
                     audio.volume = 1;
                     audio.playbackRate = 1;
                 }
-                audio.play();
+                audio.play();*/
+            }
+            if (body.type == 'joinCode') {
+                this.showToast('Ready to host multiplayer if you want', ToastType.INFO);
+                let multiplayerButton = document.getElementById('multiplayer-button') as HTMLElement;
+                multiplayerButton.classList.remove('fake');
+                multiplayerButton.addEventListener('click', () => {
+                    let multiplayerHostMenu = document.getElementById('multiplayer-host-menu') as HTMLElement;
+                    if (multiplayerHostMenu.style.pointerEvents == 'all') {
+                        multiplayerHostMenu.style.opacity = '0';
+                        multiplayerHostMenu.style.pointerEvents = 'none';
+                    } else {
+                        multiplayerHostMenu.style.opacity = '1';
+                        multiplayerHostMenu.style.pointerEvents = 'all';
+                    }
+                });
+
+                let joinCodeBox = document.getElementById('host-join-code') as HTMLTextAreaElement;
+                joinCodeBox.value = body.data;
+                let copyJoinCodeButton = document.getElementById('copy-join-code') as HTMLElement;
+                let copiedJoinCode = document.getElementById('copied-join-code') as HTMLElement;
+                copyJoinCodeButton.addEventListener('click', () => {
+                    joinCodeBox.select();
+                    document.execCommand('copy');
+                    copiedJoinCode.style.opacity = '1';
+                    setTimeout(() => {
+                        copiedJoinCode.style.opacity = '0';
+                    }, 2000);
+                });
+
+                // now we have answer code box
+                let answerCodeBox = document.getElementById('host-answer-code') as HTMLInputElement;
+                let answerCodeButton = document.getElementById('submit-answer-code') as HTMLElement;
+
+                answerCodeButton.addEventListener('click', () => {
+                    this.serverController!.networkServer!.useAnswerSdp(decodeURIComponent(answerCodeBox.value));
+                    answerCodeBox.value = '';
+                    console.log('we relayed it, dunno if it worked');
+                    this.showToast('Answer code consumed, waiting for connection...', ToastType.INFO);
+                    let multiplayerHostMenu = document.getElementById('multiplayer-host-menu') as HTMLElement;
+                    multiplayerHostMenu.style.opacity = '0';
+                    multiplayerHostMenu.style.pointerEvents = 'none';
+                });
+
             }
             if (body.type == 'set_time_scale') {
                 this.timeScale = body.data;
@@ -1880,15 +2560,14 @@ class SimuloClientController {
                 this.paused = body.data;
                 // set #pause-button
                 if (this.paused) {
-                    this.pauseButton.classList.add('checked');
+                    this.pausePlay.classList.add('paused');
                 }
                 else {
-                    this.pauseButton.classList.remove('checked');
+                    this.pausePlay.classList.remove('paused');
                 }
             }
             if (body.type == 'set_theme') {
                 this.theme = body.data;
-                this.viewer.systemCursor = this.theme.systemCursor;
                 if (this.theme.toolIcons[this.tool]) {
                     this.toolIcon = this.theme.toolIcons[this.tool];
                     this.toolIconSize = this.theme.toolIconSize;
@@ -1901,6 +2580,9 @@ class SimuloClientController {
                 }
                 //this.themeSelect.value = this.theme;
                 console.log('Theme changed to ' + body.data);
+            }
+            if (body.type == 'play_ambient_music') {
+                this.playAmbientMusic(body.data);
             }
         }
     }

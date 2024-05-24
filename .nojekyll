@@ -1,1 +1,3 @@
-Please don't jekyll me.
+This file is added so GitHub Pages doesn't try to build the website, but instead serves the files as-is.
+
+Without this, node_modules will be deleted and the website won't work.
