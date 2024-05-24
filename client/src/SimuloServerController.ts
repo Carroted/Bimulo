@@ -1205,6 +1205,11 @@ class SimuloServerController {
                 this.handleData(data.formatted, data.uuid);
             });
 
+            // this one means we got our offer SDP, we will then tell clientcontroller
+            this.networkServer.on("joinCode", (joinCode: string) => {
+                this.sendAll("joinCode", joinCode);
+            });
+
             this.networkServer.connect();
         }
 

@@ -207,7 +207,9 @@ class SimuloClientController {
     // TODO: Make these created by this script (loaded from an HTML file) so each ClientController can define its own UI
     timeScaleSlider = document.getElementById('time-scale-slider') as HTMLInputElement;
     timeScaleInput = document.getElementById('time-scale-input') as HTMLInputElement;
-    pauseButton = document.getElementById('pause-button') as HTMLElement;
+    pausePlay = document.getElementById('pause-play') as HTMLElement;
+    timeControl = document.getElementById('time-control') as HTMLElement;
+    timeControlTimeout: any | null = null;
 
     /** Entities to render. This is updated every time a world_update from the server is received.
      * 
@@ -388,7 +390,10 @@ class SimuloClientController {
         const files = await this.openFileDialog();
 
         if (!files) {
+            document.body.style.cursor = 'default';
+            await this.sleep(100);
             alert('No files selected.');
+            document.body.style.cursor = 'none';
             return;
         }
 
@@ -398,7 +403,10 @@ class SimuloClientController {
             const fileContents = await this.readFile(file);
             return fileContents;
         } else {
+            document.body.style.cursor = 'default';
+            await this.sleep(100);
             alert('Invalid file: ' + file.name);
+            document.body.style.cursor = 'none';
             return null;
         }
     }
@@ -433,8 +441,11 @@ class SimuloClientController {
     version: string = 'unknown';
     versionTimestamp: number = 0;
 
-    useAnswerSdp() {
+    async useAnswerSdp() {
+        document.body.style.cursor = 'default';
+        await this.sleep(100);
         let sdp = decodeURIComponent(prompt('Enter the answer SDP')!);
+        document.body.style.cursor = 'none';
         this.serverController!.networkServer!.useAnswerSdp(sdp);
         console.log('we relayed it, dunno if it worked');
     }
@@ -474,6 +485,37 @@ class SimuloClientController {
                 this.ambientMusic!.volume = 0.4;
             }
         }, 8000);
+    }
+
+    openPopup() {
+        let startingPopup = document.querySelector('.starting-popup') as HTMLElement;
+        startingPopup.style.opacity = '1';
+        startingPopup.style.pointerEvents = 'auto';
+
+        let popupLine = document.getElementById("popup-line")!;
+        let messages = [
+            'Off you dream',
+            'Until next time',
+            'Farewell',
+            'Mind at peace',
+            'All that time without a word',
+            'Just one thing before I go',
+            'Take good care',
+            'As the years go by',
+            'For the last time',
+            'Keep in touch',
+            'End of line',
+        ];
+        let message = messages[Math.floor(Math.random() * messages.length)];
+        popupLine.innerHTML = message;
+
+        let dismissPopup = (e: MouseEvent | undefined) => {
+            if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.non-game-overlay'))) return;
+            startingPopup.style.opacity = '0';
+            startingPopup.style.pointerEvents = 'none';
+            document.removeEventListener('pointerdown', dismissPopup);
+        };
+        document.addEventListener('pointerdown', dismissPopup);
     }
 
     constructor(canvas: HTMLCanvasElement, host: boolean, ambientMusic: boolean) {
@@ -598,9 +640,26 @@ class SimuloClientController {
             if (e && ((e.target as HTMLElement).closest('.starting-popup') || (e.target as HTMLElement).closest('.non-game-overlay'))) return;
             startingPopup.style.opacity = '0';
             startingPopup.style.pointerEvents = 'none';
-            document.removeEventListener('click', dismissPopup);
+            document.removeEventListener('pointerdown', dismissPopup);
         };
-        document.addEventListener('click', dismissPopup);
+        document.addEventListener('pointerdown', dismissPopup);
+
+        let popupLine = document.getElementById("popup-line")!;
+        let messages = [
+            'Off you dream',
+            'Until next time',
+            'Farewell',
+            'Mind at peace',
+            'All that time without a word',
+            'Just one thing before I go',
+            'Take good care',
+            'As the years go by',
+            'For the last time',
+            'Keep in touch',
+            'End of line',
+        ];
+        let message = messages[Math.floor(Math.random() * messages.length)];
+        popupLine.innerHTML = message;
 
         var popupThemes = startingPopup.querySelector('.themes') as HTMLElement;
         // add themes
@@ -770,12 +829,42 @@ class SimuloClientController {
                         document.querySelectorAll('.toolbar.secondary').forEach(toolbarElement => {
                             let toolbar = toolbarElement as HTMLElement;
                             if (toolbar.id == tool.dataset.menu) {
-                                toolbar.style.display = toolbar.classList.contains('tool-grid') ? 'grid' : 'flex';
+                                // check if its already open, if so close it
+                                if (toolbar.style.display !== 'none') {
+                                    toolbar.style.display = 'none';
+                                    // remove active from this tool
+                                    tool.classList.remove('active');
+                                } else {
+                                    toolbar.style.display = toolbar.classList.contains('tool-grid') ? 'grid' : 'flex';
+                                    // if its save-list we call this.showSavedScenes
+                                    if (toolbar.id == 'save-list') {
+                                        this.showSavedScenes();
+                                    }
+                                }
                             }
                             else {
                                 toolbar.style.display = 'none';
                             }
                         });
+                        // if its save-scene, call this.saveScene, its just a prompt
+                        if (tool.dataset.menu == 'save-scene') {
+                            tool.classList.remove('active');
+                            setTimeout(() => {
+                                this.saveScene();
+                            }, 10);
+                        }
+                        // if its new-scene, we confirmation dialog and then if so we this.defaultWorld();
+                        if (tool.dataset.menu == 'new-scene') {
+                            tool.classList.remove('active');
+                            document.body.style.cursor = 'default';
+                            setTimeout(async () => {
+                                let confirmation = confirm('Are you sure you want to start a new scene?');
+                                document.body.style.cursor = 'none';
+                                if (confirmation) {
+                                    this.defaultWorld();
+                                }
+                            }, 100);
+                        }
                     }
                 }
             });
@@ -834,7 +923,6 @@ class SimuloClientController {
                 button.addEventListener('click', async () => {
                     if (action == 'new-scene') {
                         this.defaultWorld();
-                        this.showToast('Loaded default scene', ToastType.INFO);
                     }
                     else if (action == 'main-menu') {
                         let mainMenu = document.getElementById('main-menu') as HTMLDivElement;
@@ -870,16 +958,7 @@ class SimuloClientController {
                         window.playMenuMusic();
                     }
                     else if (action == 'save-scene') {
-                        var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene. (Note: this box will be replaced with a UI in a future update)") || new Date().getTime().toString();
-                        //localStorage.setItem('tempScene', await this.saveWorldToString());
-                        // set localStorage scenes key
-                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                        scenes[name] = JSON.stringify({
-                            ...JSON.parse(await this.saveWorldToString()),
-                            name: name
-                        });
-                        localStorage.setItem('scenes', JSON.stringify(scenes));
-                        this.showToast('Saved scene "' + name + '"', ToastType.INFO);
+                        this.saveScene();
                     }
                     else if (action == 'load-scene') {
                         /*let tempScene = localStorage.getItem('tempScene');
@@ -891,47 +970,9 @@ class SimuloClientController {
                             this.showToast('No saved scene found', ToastType.ERROR);
                         }*/
                         // show scenes menu
-                        let saveList = document.getElementById('save-list') as HTMLElement;
-                        let saveGrid = saveList.querySelector('.save-grid') as HTMLElement;
-                        saveList.style.display = 'flex';
-                        saveGrid.innerHTML = '<span class="top-text">This is where your saved scenes go! It will look completely different soon and have a grid with pictures.</span>';
-                        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                        Object.keys(scenes).sort((a, b) => {
-                            // get them and their dates, then sort
-                            let sceneA = JSON.parse(scenes[a]);
-                            let sceneB = JSON.parse(scenes[b]);
-                            let dateA = new Date(Date.parse(sceneA.date));
-                            let dateB = new Date(Date.parse(sceneB.date));
-                            return dateA.getTime() - dateB.getTime();
-
-                            // this sort will make the first one the oldest, and the last one the newest
-                        }).reverse().forEach((name) => {
-                            let scene = scenes[name];
-                            let div = document.createElement('div');
-                            div.classList.add('scene');
-                            div.classList.add('button');
-                            div.addEventListener('click', async (e) => {
-                                saveList.style.display = 'none';
-                                this.showToast('Loading scene "' + name + '"...', ToastType.INFO);
-                                await this.loadWorldFromString(scene);
-                                this.showToast('Loaded scene "' + name + '"', ToastType.INFO);
-                                this.pauseButton.classList.add('checked');
-                                this.setPaused(true);
-                            });
-                            div.innerHTML = `<span>${name}</span> - <span>${new Date(Date.parse(JSON.parse(scene).date)).toLocaleString()}</span> - <button class="delete-scene" data-scene="${name}">Delete</button>`;
-                            let deleteButton = div.querySelector('.delete-scene') as HTMLElement;
-                            deleteButton.addEventListener('click', (e) => {
-                                let sceneName = deleteButton.dataset.scene;
-                                let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
-                                delete scenes[sceneName as string];
-                                localStorage.setItem('scenes', JSON.stringify(scenes));
-                                this.showToast('Deleted scene "' + sceneName + '"', ToastType.INFO);
-                                div.remove();
-                                e.stopPropagation();
-                                e.preventDefault();
-                            });
-                            saveGrid.appendChild(div);
-                        });
+                        this.showSavedScenes();
+                        let saveListButton = document.getElementById('save-list-button') as HTMLElement;
+                        saveListButton.classList.add('active');
                     }
                     else if (action == 'import') {
                         let file = await this.simuloFileInput(); // reeturns string or null
@@ -974,13 +1015,57 @@ class SimuloClientController {
             }
         });
 
+        // on space on timescaleslider or input, prevent default
+        this.timeScaleSlider.addEventListener('keydown', (e) => {
+            if (e.key == ' ') {
+                e.preventDefault();
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
+            }
+        });
+
+        this.timeScaleInput.addEventListener('keydown', (e) => {
+            if (e.key == ' ') {
+                e.preventDefault();
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
+            }
+        });
+
         let mouseDownOnCanvas = false;
 
-        this.pauseButton.addEventListener('click', () => {
+        this.pausePlay.addEventListener('click', () => {
             // set checked class
-            this.pauseButton.classList.toggle('checked');
-            this.setPaused(this.pauseButton.classList.contains('checked'));
+            this.pausePlay.classList.toggle('paused');
+            this.setPaused(this.pausePlay.classList.contains('paused'));
         });
+
+        this.pausePlay.addEventListener('pointerenter', () => {
+            this.timeControl.classList.add('active');
+            if (this.timeControlTimeout) {
+                clearTimeout(this.timeControlTimeout);
+            }
+            this.timeControlTimeout = null;
+        });
+        this.pausePlay.addEventListener('pointerleave', () => {
+            this.timeControlTimeout = setTimeout(() => {
+                this.timeControl.classList.remove('active');
+            }, 1000);
+        });
+
+        this.timeControl.addEventListener('pointerenter', () => {
+            if (this.timeControlTimeout) {
+                clearTimeout(this.timeControlTimeout);
+            }
+            this.timeControlTimeout = null;
+        });
+
+        this.timeControl.addEventListener('pointerleave', () => {
+            this.timeControlTimeout = setTimeout(() => {
+                this.timeControl.classList.remove('active');
+            }, 1000);
+        });
+
 
         this.viewer = new SimuloViewerCanvas(canvas);
         this.player.zoom = this.viewer.cameraZoom;
@@ -1036,6 +1121,11 @@ class SimuloClientController {
                             item.addEventListener('click', async (e) => {
                                 let action = (item as HTMLElement).dataset.action;
                                 if (action == 'delete') {
+                                    let isPaused = this.pausePlay.classList.contains('paused');
+                                    if (isPaused) {
+                                        this.showToast('Deleting object (may need to unpause to see)', ToastType.INFO);
+                                    }
+                                    menu.remove();
                                     var deleted = await this.emitDataAsync('delete_object', { id: object.id });
                                     this.showToast(deleted ? 'Deleted object' : 'Doesn\'t exist, idk', deleted ? ToastType.INFO : ToastType.ERROR);
                                 }
@@ -1181,8 +1271,8 @@ class SimuloClientController {
 
             // if its space, toggle pause
             if (e.key == ' ') {
-                this.pauseButton.classList.toggle('checked');
-                this.setPaused(this.pauseButton.classList.contains('checked'));
+                this.pausePlay.classList.toggle('paused');
+                this.setPaused(this.pausePlay.classList.contains('paused'));
             }
 
             // if its CTRL+C, copy
@@ -1315,7 +1405,7 @@ class SimuloClientController {
         this.viewer.cameraOffset.y = parsed.camera.y;
         this.viewer.cameraZoom = parsed.camera.zoom;
 
-        this.pauseButton.classList.remove('checked');
+        this.pausePlay.classList.remove('paused');
         this.setPaused(false);
 
         if (parsed.versionTimestamp > this.versionTimestamp) {
@@ -1348,36 +1438,102 @@ class SimuloClientController {
     }
 
     async defaultWorld() {
+        // first play the world
+        this.setPaused(false);
+        this.pausePlay.classList.remove('paused');
+
         this.client.emitData('load_world', {
-            data: '{"theme": ' + JSON.stringify(themes['night']) + ', "objects":[{"id":3,"type":"CIRCLE","position":{"x":-0.05464658513665199,"y":27.79596519470215},"rotation":3.192410469055176,'
-                + '"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderS'
-                + 'caleWithZoom":false,"circleCake":false,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"i'
-                + 'd":5,"bodyA":2,"bodyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring"'
-                + ',"dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"a'
-                + 'nchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit'
-                + '":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891},{"id":2,"type":"POLYGON","position":{"x'
-                + '":-0.08659487962722778,"y":28.54715919494629},"rotation":3.143559455871582,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1'
-                + ',"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/te'
-                + 'xtures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":5,"bodyA":2,"b'
-                + 'odyB":3,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"type":"spring","dampingRatio":0,"fr'
-                + 'equencyHz":8,"length":0.004999999888241291,"image":null,"width":0,"line":null},{"id":4,"bodyA":2,"bodyB":3,"anchorA":[0,0.128],"anch'
-                + 'orB":[0,-0.624],"collideConnected":false,"zDepth":4,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,'
-                + '"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-'
-                + '0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668'
-                + ',-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]]},{"id":1,"type"'
-                + ':"POLYGON","position":{"x":0,"y":25030},"rotation":0,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":0,"friction":0.2000000029'
-                + '8023224,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"sound":"ground.wav","color'
-                + '":"#a1acfa","isStatic":true,"mass":0,"joints":[],"points":[[-50000,-25000],[50000,-25000],[50000,25000],[-50000,25000]]}],"particles":[]}'
+            data: '{"objects":[{"id":2,"type":"POLYGON","position":{"x":0,"y":25030},"rotation":0,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":0,"friction":0.20000000298023224,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"ground.wav","color":"#a1acfa","isStatic":true,"mass":0,"joints":[],"points":[[-50000,-25000],[50000,-25000],[50000,25000],[-50000,25000]],"name":"Floor (Simulo Planet) (not canonically flat)","parentID":3,"flipImage":true},{"id":5,"type":"POLYGON","position":{"x":-0.00901452824473381,"y":28.546035766601562},"rotation":3.147258996963501,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":"assets/textures/body.png","sound":"ground.wav","color":"#00000000","isStatic":false,"mass":2.059328556060791,"joints":[{"id":9,"bodyA":5,"bodyB":7,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"image":null,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"width":0,"line":null},{"id":8,"bodyA":5,"bodyB":7,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"image":null,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"points":[[0,0.256],[0.2848,0.1996],[0.476,0.0688],[0.6016,-0.10800000000000001],[0.668,-0.31160000000000004],[0.6712,-1.3088],[0.6572,-1.3876],[0.5804,-1.4388],[-0.5664,-1.4356],[-0.6328,-1.404],[-0.6616,-1.34],[-0.668,-0.31160000000000004],[-0.5988000000000001,-0.122],[-0.49240000000000006,0.0504],[-0.26,0.2068],[-0.1312,0.2456]],"name":null,"parentID":4,"flipImage":false},{"id":7,"type":"CIRCLE","position":{"x":-0.009960604831576347,"y":27.794038772583008},"rotation":3.1389143466949463,"velocity":{"x":0,"y":0},"angularVelocity":0,"density":1,"friction":0.5,"restitution":0,"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"image":null,"sound":"ground.wav","color":"#99e077","isStatic":false,"mass":1.4698131084442139,"joints":[{"id":9,"bodyA":5,"bodyB":7,"anchorA":[0,1.304],"anchorB":[0,0.5519999999999999],"collideConnected":true,"zDepth":5,"image":null,"type":"spring","dampingRatio":0,"frequencyHz":8,"length":0.004999999888241291,"width":0,"line":null},{"id":8,"bodyA":5,"bodyB":7,"anchorA":[0,0.128],"anchorB":[0,-0.624],"collideConnected":false,"zDepth":4,"image":null,"type":"axle","lowerLimit":0,"upperLimit":0,"enableLimit":false,"motorSpeed":0,"maxMotorTorque":0,"enableMotor":false}],"radius":0.6840000152587891,"name":null,"parentID":6,"flipImage":true}],"particles":[],"theme":{"displayName":"Night","author":"amytimed","description":"The default theme, also known as Dimulo","background":"linear-gradient(180deg, #0f1130 0%, #553f90 100%)","person":{"color":"#99e077","border":null,"borderWidth":null,"borderScaleWithZoom":false},"ground":{"color":"#a1acfa","border":null,"borderWidth":null,"borderScaleWithZoom":false},"newObjects":{"color":{"hueMin":0,"hueMax":360,"satMin":0,"satMax":100,"valMin":80,"valMax":100,"alpMin":1,"alpMax":1},"border":null,"borderWidth":null,"borderScaleWithZoom":false,"circleCake":false,"springImage":"assets/textures/spring.png","axleImage":"assets/textures/add_axle.png","boltImage":"assets/textures/add_fixed_joint.png"},"toolIcons":{"drag":null,"addRectangle":"assets/textures/add_rectangle.png","addCircle":"assets/textures/add_circle.png","addPerson":"media/icon_square.png","addPolygon":"assets/textures/add_polygon.png","addSpring":"assets/textures/add_spring.png","addAxle":"assets/textures/add_axle.png","addBolt":"assets/textures/add_fixed_joint.png","select":"assets/textures/select.png","addParticle":"assets/textures/add_particle.png"},"systemCursor":false,"toolIconSize":1.4,"toolIconOffset":[-1.2,-0.5]},"version":"0.9.0","versionTimestamp":1716565556171,"name":"Unnamed Scene","description":null,"type":"scene","author":null,"date":"2024-05-24T15:49:25.720Z","camera":{"x":778.5,"y":-218.5,"zoom":30}}'
         });
         this.viewer.resetCamera();
+        this.openPopup();
+        console.log('Starting popup opened');
     }
 
     loadSavedObjects(saveData: string, x: number, y: number) {
-        this.client.emitData('load_save_data', {
-            data: saveData,
-            x,
-            y
+        try {
+            this.client.emitData('load_save_data', {
+                data: saveData,
+                x,
+                y
+            });
+        }
+        catch (e) {
+            console.error('Error loading saved objects:', e);
+            this.showToast('Error loading saved objects', ToastType.ERROR);
+        }
+    }
+
+    showSavedScenes() {
+        let saveList = document.getElementById('save-list') as HTMLElement;
+        let saveGrid = saveList.querySelector('.save-grid') as HTMLElement;
+        saveList.style.display = 'flex';
+        saveGrid.innerHTML = '<span class="top-text">This is where your saved scenes go! It will look completely different soon and have a grid with pictures.</span>';
+        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+        Object.keys(scenes).sort((a, b) => {
+            // get them and their dates, then sort
+            let sceneA = JSON.parse(scenes[a]);
+            let sceneB = JSON.parse(scenes[b]);
+            let dateA = new Date(Date.parse(sceneA.date));
+            let dateB = new Date(Date.parse(sceneB.date));
+            return dateA.getTime() - dateB.getTime();
+
+            // this sort will make the first one the oldest, and the last one the newest
+        }).reverse().forEach((name) => {
+            let scene = scenes[name];
+            let div = document.createElement('div');
+            div.classList.add('scene');
+            div.classList.add('button');
+            div.addEventListener('click', async (e) => {
+                saveList.style.display = 'none';
+                this.showToast('Loading scene "' + name + '"...', ToastType.INFO);
+                await this.loadWorldFromString(scene);
+                this.showToast('Loaded scene "' + name + '"', ToastType.INFO);
+                this.pausePlay.classList.add('paused');
+                this.setPaused(true);
+                let saveListButton = document.getElementById('save-list-button') as HTMLElement;
+                saveListButton.classList.remove('active');
+            });
+            div.innerHTML = `<span>${name}</span> - <span>${new Date(Date.parse(JSON.parse(scene).date)).toLocaleString()}</span> - <button class="delete-scene" data-scene="${name}">Delete</button>`;
+            let deleteButton = div.querySelector('.delete-scene') as HTMLElement;
+            deleteButton.addEventListener('click', (e) => {
+                let sceneName = deleteButton.dataset.scene;
+                let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+                delete scenes[sceneName as string];
+                localStorage.setItem('scenes', JSON.stringify(scenes));
+                this.showToast('Deleted scene "' + sceneName + '"', ToastType.INFO);
+                div.remove();
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            saveGrid.appendChild(div);
         });
+    }
+
+    async sleep(ms: number) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
+
+    async saveScene() {
+        document.body.style.cursor = 'default';
+        await this.sleep(100);
+        var name = prompt("Please pick a name for this scene. If you use an existing name, it will overwrite that scene.");
+        document.body.style.cursor = 'none';
+        if (!name) {
+            this.showToast('Cancelled saving scene', ToastType.INFO);
+            return;
+        }
+        //localStorage.setItem('tempScene', await this.saveWorldToString());
+        // set localStorage scenes key
+        let scenes = JSON.parse(localStorage.getItem('scenes') || JSON.stringify({}));
+        scenes[name] = JSON.stringify({
+            ...JSON.parse(await this.saveWorldToString()),
+            name: name
+        });
+        localStorage.setItem('scenes', JSON.stringify(scenes));
+        this.showToast('Saved scene "' + name + '"', ToastType.INFO);
     }
 
     loadSelection() {
@@ -1548,23 +1704,29 @@ class SimuloClientController {
                 this.spawningSavedObject = i;
                 new Audio('assets/sounds/spawn_down.wav').play();
             });
-            let objCanvas = document.createElement('canvas');
-            // 128x128
-            objCanvas.width = 128;
-            objCanvas.height = 128;
-            let objCanvasRenderer = new SimuloRendererCanvas(objCanvas);
-            let shapes = this.shapesFromSaved(object.data);
-            objCanvasRenderer.updateTransform(20);
-            let center = objCanvasRenderer.transformPoint(64, 64);
-            shapes.forEach((shape) => {
-                shape.x += center.x;
-                shape.y += center.y;
-            });
-            // 
-            objCanvasRenderer.render(shapes, [], 20, true);
+            if (object.image && object.image != 'assets/textures/unknown.png') {
+                let img = document.createElement('img');
+                img.src = object.image;
+                div.appendChild(img);
+            } else {
+                let objCanvas = document.createElement('canvas');
+                // 128x128
+                objCanvas.width = 128;
+                objCanvas.height = 128;
+                let objCanvasRenderer = new SimuloRendererCanvas(objCanvas);
+                let shapes = this.shapesFromSaved(object.data);
+                objCanvasRenderer.updateTransform(20);
+                let center = objCanvasRenderer.transformPoint(64, 64);
+                shapes.forEach((shape) => {
+                    shape.x += center.x;
+                    shape.y += center.y;
+                });
+                // 
+                objCanvasRenderer.render(shapes, [], 20, true);
 
-            //img.src = object.image;
-            div.appendChild(objCanvas);
+                //img.src = object.image;
+                div.appendChild(objCanvas);
+            }
             // add icons/dots-vertical.svg
             let res = await fetch('icons/dots-vertical.svg');
             let svg = await res.text();
@@ -1772,10 +1934,10 @@ class SimuloClientController {
                 if (this.paused == null) {
                     this.paused = body.data.paused;
                     if (this.paused) {
-                        this.pauseButton.classList.add('checked');
+                        this.pausePlay.classList.add('paused');
                     }
                     else {
-                        this.pauseButton.classList.remove('checked');
+                        this.pausePlay.classList.remove('paused');
                     }
                 }
 
@@ -2328,7 +2490,7 @@ class SimuloClientController {
             }
             if (body.type == 'collision') {
                 // body.data.sound is relative to /assets/sounds/. lets set volume based on body.data.volume
-                var audio = new Audio('assets/sounds/' + body.data.sound);
+                /*var audio = new Audio('assets/sounds/' + body.data.sound);
                 if (body.data.volume < Infinity) {
                     try {
                         audio.volume = body.data.volume;
@@ -2344,7 +2506,50 @@ class SimuloClientController {
                     audio.volume = 1;
                     audio.playbackRate = 1;
                 }
-                audio.play();
+                audio.play();*/
+            }
+            if (body.type == 'joinCode') {
+                this.showToast('Ready to host multiplayer if you want', ToastType.INFO);
+                let multiplayerButton = document.getElementById('multiplayer-button') as HTMLElement;
+                multiplayerButton.classList.remove('fake');
+                multiplayerButton.addEventListener('click', () => {
+                    let multiplayerHostMenu = document.getElementById('multiplayer-host-menu') as HTMLElement;
+                    if (multiplayerHostMenu.style.pointerEvents == 'all') {
+                        multiplayerHostMenu.style.opacity = '0';
+                        multiplayerHostMenu.style.pointerEvents = 'none';
+                    } else {
+                        multiplayerHostMenu.style.opacity = '1';
+                        multiplayerHostMenu.style.pointerEvents = 'all';
+                    }
+                });
+
+                let joinCodeBox = document.getElementById('host-join-code') as HTMLTextAreaElement;
+                joinCodeBox.value = body.data;
+                let copyJoinCodeButton = document.getElementById('copy-join-code') as HTMLElement;
+                let copiedJoinCode = document.getElementById('copied-join-code') as HTMLElement;
+                copyJoinCodeButton.addEventListener('click', () => {
+                    joinCodeBox.select();
+                    document.execCommand('copy');
+                    copiedJoinCode.style.opacity = '1';
+                    setTimeout(() => {
+                        copiedJoinCode.style.opacity = '0';
+                    }, 2000);
+                });
+
+                // now we have answer code box
+                let answerCodeBox = document.getElementById('host-answer-code') as HTMLInputElement;
+                let answerCodeButton = document.getElementById('submit-answer-code') as HTMLElement;
+
+                answerCodeButton.addEventListener('click', () => {
+                    this.serverController!.networkServer!.useAnswerSdp(decodeURIComponent(answerCodeBox.value));
+                    answerCodeBox.value = '';
+                    console.log('we relayed it, dunno if it worked');
+                    this.showToast('Answer code consumed, waiting for connection...', ToastType.INFO);
+                    let multiplayerHostMenu = document.getElementById('multiplayer-host-menu') as HTMLElement;
+                    multiplayerHostMenu.style.opacity = '0';
+                    multiplayerHostMenu.style.pointerEvents = 'none';
+                });
+
             }
             if (body.type == 'set_time_scale') {
                 this.timeScale = body.data;
@@ -2355,10 +2560,10 @@ class SimuloClientController {
                 this.paused = body.data;
                 // set #pause-button
                 if (this.paused) {
-                    this.pauseButton.classList.add('checked');
+                    this.pausePlay.classList.add('paused');
                 }
                 else {
-                    this.pauseButton.classList.remove('checked');
+                    this.pausePlay.classList.remove('paused');
                 }
             }
             if (body.type == 'set_theme') {

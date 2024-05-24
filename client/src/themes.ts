@@ -5,7 +5,7 @@ import SimuloTheme from "./SimuloTheme.js";
 export default {
   "night": {
     "displayName": "Night",
-    "author": "asour",
+    "author": "amytimed",
     "description": "The default theme, also known as Dimulo",
     "background": "linear-gradient(180deg, #0f1130 0%, #553f90 100%)",
     "person": {
@@ -57,7 +57,7 @@ export default {
   },
   "sunrise": {
     "displayName": "Sunrise",
-    "author": "asour",
+    "author": "amytimed",
     "description": "The same palette used in the icon of the app",
     "background": "linear-gradient(180deg, #271e5f 0%, #903f63 100%)",
     "person": {
@@ -109,7 +109,7 @@ export default {
   },
   "day": {
     "displayName": "Day",
-    "author": "asour",
+    "author": "amytimed",
     "description": "After so long, the sun finally rises. You feel the sun shining on your face.",
     "background": "linear-gradient(180deg, #4b45a1 0%, #8b4aaa 100%)",
     "person": {
@@ -161,7 +161,7 @@ export default {
   },
   "nostalgia": {
     "displayName": "Nostalgia",
-    "author": "asour",
+    "author": "amytimed",
     "description": "A theme that reminds me of the old days",
     "background": "#738cff",
     "person": {
@@ -213,8 +213,8 @@ export default {
   },
   "autumn": {
     "displayName": "Autumn",
-    "author": "asour",
-    "description": "hmmmm",
+    "author": "amytimed",
+    "description": "nostalgia variant",
     "background": "#6491d9",
     "person": {
       "color": "#99e077",
@@ -265,7 +265,7 @@ export default {
   },
   "original": {
     "displayName": "Original",
-    "author": "asour",
+    "author": "amytimed",
     "description": "Original Simulo theme from 2021",
     "background": "#092f42",
     "person": {
@@ -317,7 +317,7 @@ export default {
   },
   "X-ray": {
     "displayName": "X-ray",
-    "author": "asour",
+    "author": "amytimed",
     "description": "if you use it too much it damages your cells",
     "background": "#000000",
     "person": {
@@ -366,5 +366,57 @@ export default {
     "systemCursor": false,
     "toolIconSize": 1.4,
     "toolIconOffset": [-1.2, -0.5]
-  }
+  },
+  "mars": {
+    "displayName": "Mars",
+    "author": "amytimed",
+    "description": "One of the planets of all time",
+    "background": "#ad9778",
+    "person": {
+      "color": "#e6c27a",
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false
+    },
+    "ground": {
+      "color": "#ab6533",
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false
+    },
+    "newObjects": {
+      "color": {
+        "hueMin": 0,
+        "hueMax": 360,
+        "satMin": 0,
+        "satMax": 0,
+        "valMin": 30,
+        "valMax": 83,
+        "alpMin": 1,
+        "alpMax": 1
+      },
+      "border": null,
+      "borderWidth": null,
+      "borderScaleWithZoom": false,
+      "circleCake": true,
+      "springImage": "assets/textures/spring.png",
+      "axleImage": "assets/textures/add_axle.png",
+      "boltImage": "assets/textures/add_fixed_joint.png"
+    },
+    "toolIcons": {
+      "drag": null,
+      "addRectangle": "assets/textures/add_rectangle.png",
+      "addCircle": "assets/textures/add_circle.png",
+      "addPerson": "media/icon_square.png",
+      "addPolygon": "assets/textures/add_polygon.png",
+      "addSpring": "assets/textures/add_spring.png",
+      "addAxle": "assets/textures/add_axle.png",
+      "addBolt": "assets/textures/add_fixed_joint.png",
+      "select": "assets/textures/select.png",
+      "addParticle": "assets/textures/add_particle.png"
+    },
+    "systemCursor": false,
+    "toolIconSize": 1.4,
+    "toolIconOffset": [-1.2, -0.5]
+  },
 } as { [key: string]: SimuloTheme };

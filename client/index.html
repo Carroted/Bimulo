@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-  <title>Simulo Alpha</title>
+  <title>Bimulo</title>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,20 +12,20 @@
   <link rel="icon" href="media/icon_no_bg.png" type="image/png"> <!-- if svg doesn't work -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#5b2e61">
-  <meta name="title" content="Simulo Alpha">
+  <meta name="title" content="original smiulo">
   <meta name="description"
     content="Online 2D physics sandbox where you can build and share anything in an infinite 2D world. It even has liquid!">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://carroted.github.io/Simulo/">
-  <meta property="og:title" content="Simulo Alpha">
+  <meta property="og:url" content="https://carroted.github.io/Bimulo/">
+  <meta property="og:title" content="the og smiulo game?/">
   <meta property="og:description"
     content="Online 2D physics sandbox where you can build and share anything in an infinite 2D world. It even has liquid!">
-  <meta property="og:image" content="https://carroted.github.io/Simulo/client/media/icon_square.png">
-  <meta property="twitter:url" content="https://carroted.github.io/Simulo/">
-  <meta property="twitter:title" content="Simulo Alpha">
+  <meta property="og:image" content="https://carroted.github.io/Bimulo/client/media/icon_square.png">
+  <meta property="twitter:url" content="https://carroted.github.io/Bimulo/">
+  <meta property="twitter:title" content="orrorigingnal smiulo??/">
   <meta property="twitter:description"
     content="Online 2D physics sandbox where you can build and share anything in an infinite 2D world. It even has liquid!">
-  <meta property="twitter:image" content="https://carroted.github.io/Simulo/client/media/icon_square.png">
+  <meta property="twitter:image" content="https://carroted.github.io/Bimulo/client/media/icon_square.png">
   <meta http-equiv="Cache-Control" content="no-store, max-age=0">
   <script>
     let dev = false;
@@ -87,27 +87,42 @@
       <img src="assets/textures/tools/box.png" class="cursor-tool" alt="Tool" style="display: none;">
     </div>-->
   </div>
-  <div class="version-info" id="version-info">Simulo Alpha</div>
+  <div class="version-info" id="version-info" style="display:none;">Simulo Alpha</div>
   <div id="pause-overlay">
     <svg data-src="icons/pause.svg"></svg>
   </div>
   <div class="popup-container">
     <div class="starting-popup" style="display: none;">
       <div class="popup-top">
-        <img src="media/logo.svg" alt="Simulo logo">
-        <h3>Welcome back</h3>
+        <h3 id="popup-line">e</h3>
       </div>
       <h4>Reminder:</h4>
       <ul>
-        <li>Use number keys (<kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>) to switch between
-          toolbars. If a toolbar is disabled, you won't be able to open it.</li>
-        <li>You can save objects by dragging them to the Objects tab of the toolbar. You can also copy-paste objects
+        <li>You can save objects by dragging them to the Objects icon at the top-left. You can also copy-paste objects
           with
           CTRL+C and CTRL+V after selecting them with the Move Tool.</li>
         <li>There's a right-click menu</li>
+        <li><b>This is the old version of Simulo. For information on the rewrite, see <a
+              href="https://simulo.org/">simulo.org</a> and/or join our Discord at <a
+              href="https://discord.gg/5Q7AAvRp8H">discord.gg/5Q7AAvRp8H</a>.</b></li>
       </ul>
       <h4>Pick a theme!</h4>
       <div class="themes"></div>
+    </div>
+
+    <div class="toolbar multiplayer-host-menu" id="multiplayer-host-menu">
+      <h1>Host Multiplayer</h1>
+      <p>The multiplayer is very broken, and may not work for you at all. Only 2 players seems to work.</p>
+      <p>Here's your join code. Give it to your friends to join.</p>
+      <textarea readonly spellcheck="false" autocomplete="off" id="host-join-code"></textarea>
+      <button class="button" id="copy-join-code">Copy Join Code<div class="copied" id="copied-join-code">Copied!</div>
+      </button>
+      <p>
+        When your friends join, it'll tell them to send you an answer code. You can enter those here:
+      </p>
+      <textarea placeholder="Answer code from friend" spellcheck="false" autocomplete="off"
+        id="host-answer-code"></textarea>
+      <button class="button" id="submit-answer-code">Submit Answer Code</button>
     </div>
   </div>
   <div id="toasts"><!--
@@ -157,7 +172,21 @@
       </div>
     </div>-->
   </div>
-  <div class="toolbar primary">
+  <div class="toolbar ten">
+    <div class="tool" data-menu="new-scene">
+      <svg data-src="icons/plus-box.svg"></svg>
+    </div>
+    <div class="tool" data-menu="save-scene">
+      <svg data-src="icons/content-save.svg"></svg>
+    </div>
+    <div class="tool" data-menu="save-list" id="save-list-button">
+      <svg data-src="icons/folder.svg"></svg>
+    </div>
+    <div class="tool" data-menu="objects" id="menu-2-button">
+      <svg data-src="icons/cube.svg"></svg>
+    </div>
+  </div>
+  <div class="toolbar primary"><!--
     <div class="tool active" data-menu="tools" id="menu-1-button">
       <svg data-src="icons/wrench.svg"></svg>
       <div class="bar"></div>
@@ -181,67 +210,81 @@
     <div class="tool fake" id="menu-6-button">
       <svg data-src="icons/account-multiple.svg"></svg>
       <div class="bar"></div>
+    </div>-->
+    <div class="people item fake" id="multiplayer-button"><svg data-src="icons/account-multiple.svg"></svg></div>
+    <div class="add-undo-entry item"><svg data-src="icons/timeline-plus.svg"></svg></div>
+    <div class="divider"></div>
+    <div class="undo item"><svg data-src="icons/arrow-u-left-top.svg"></svg></div>
+    <div class="pause-play item" id="pause-play">
+      <div class="pause"><svg data-src="icons/pause.svg"></svg></div>
+      <div class="play"><svg data-src="icons/play.svg"></svg></div>
     </div>
+    <div class="redo item"><svg data-src="icons/arrow-u-right-top.svg"></svg></div>
+    <div class="divider"></div>
+    <div class="world-settings item"><svg data-src="icons/earth.svg"></svg></div>
+    <div class="grid item"><svg data-src="icons/grid.svg"></svg></div>
   </div>
 
-  <div class="toolbar secondary grouped tool-grid" id="tools">
-    <div class="tool active" data-tool="drag">
-      <svg data-src="icons/cursor-default.svg"></svg>
-    </div>
+
+  <div class="toolbar grouped tool-grid" id="tools">
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
     <div class="tool" data-tool="select">
       <svg data-src="icons/cursor-move.svg"></svg>
     </div>
-    <div class="tool fake" data-tool="scale">
-      <svg data-src="icons/resize.svg"></svg>
+    <div class="tool active" data-tool="drag">
+      <svg data-src="icons/cursor-default.svg"></svg>
     </div>
-    <div class="tool fake" data-tool="rotate">
-      <svg data-src="icons/rotate-3d-variant.svg"></svg>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool" data-tool="addParticle">
+      <svg data-src="icons/water.svg"></svg>
     </div>
     <!--<div class="tool fake" data-tool="texture">
       <svg data-src="icons/texture.svg"></svg>
     </div>-->
-    <div class="tool" data-tool="addParticle">
-      <svg data-src="icons/water.svg"></svg>
+    <div class="divider horizontal" style="grid-column: span 2 / auto;"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool" data-tool="addPolygon">
+      <svg data-src="icons/polygon.svg"></svg>
     </div>
-    <div class="tool fake" data-tool="knife">
-      <svg data-src="icons/box-cutter.svg"></svg>
-    </div>
+    <div class="tool fake" data-tool="knife"></div>
     <div class="tool" data-tool="addRectangle">
       <svg data-src="icons/square.svg"></svg>
     </div>
     <div class="tool" data-tool="addCircle">
       <svg data-src="icons/circle.svg"></svg>
     </div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="divider horizontal" style="grid-column: span 2 / auto;"></div>
     <!--<div class="tool" data-tool="addPerson">
       <svg data-src="media/icon.svg"></svg>
     </div>-->
-    <div class="tool" data-tool="addPolygon">
-      <svg data-src="icons/polygon.svg"></svg>
-    </div>
+
     <div class="tool" data-tool="addSpring">
       <svg data-src="icons/spring.svg"></svg>
-    </div>
-    <div class="tool" data-tool="addAxle">
-      <svg data-src="icons/axle.svg"></svg>
     </div>
     <div class="tool" data-tool="addBolt">
       <svg data-src="icons/bolt.svg"></svg>
     </div>
-  </div>
-  <div class="toolbar secondary" id="time-control" style="display: none;">
-    <div id="pause-button" class="pause-button">
-      <div class="pause">
-        <svg data-src="icons/pause.svg"></svg>
-      </div>
-      <div class="play">
-        <svg data-src="icons/play.svg"></svg>
-      </div>
+    <div class="tool" data-tool="addAxle">
+      <svg data-src="icons/axle.svg"></svg>
     </div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+    <div class="tool fake" data-tool="knife"></div>
+  </div>
+  <div class="toolbar time-control" id="time-control">
     <!-- not whole numbers, float -->
     <input id="time-scale-slider" type="range" min="0" max="3" value="1" step="0.01">
-    <input id="time-scale-input" type="number" min="0" max="3" value="1">
+    <input id="time-scale-input" type="number" min="0" max="3" value="1" step="0.01">
   </div>
-  <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;"><span>Objects</span>
+  <div class="toolbar secondary object-grid-bar" id="objects" style="display: none;"><span
+      class="objects-title">Objects<span class="object-howto">Select and drag Objects to the box icon to save
+        them</span></span>
     <div class="object-grid">
       <div class="object" data-object="person">
         <img src="assets/textures/person.png">
@@ -249,12 +292,7 @@
     </div>
   </div>
 
-  <div class="toolbar save-list" id="save-list" style="display: none;">
-    <div class="top-bar"><span>Scenes</span>
-      <div class="close" onclick="closeSaveList()">
-        <svg data-src="icons/close.svg"></svg>
-      </div>
-    </div>
+  <div class="toolbar secondary save-list" id="save-list" style="display: none;"><span>Scenes</span>
     <div class="save-grid"></div>
     <script>
       let saveList = document.getElementById("save-list");
@@ -266,7 +304,6 @@
 
   <div class="toolbar file">
     <div class="file-menu" data-file="file">File</div>
-    <div class="file-menu" data-file="settings">Settings</div>
   </div>
 
   <div class="file-menu-content" id="file">
@@ -277,11 +314,6 @@
       <li class="button" data-file="import"><svg data-src="icons/upload.svg"></svg>Import</li>
       <li class="button" data-file="export-scene"><svg data-src="icons/download.svg"></svg>Export scene</li>
       <li class="button" data-file="main-menu"><svg data-src="icons/exit-to-app.svg"></svg>Exit to main menu</li>
-    </ul>
-  </div>
-  <div class="file-menu-content" id="settings">
-    <ul>
-      <li class="button">Coming soon!</li>
     </ul>
   </div>
 
@@ -372,7 +404,7 @@
     </div>
     <div class="main-menu" style="display: none;" id="main-menu">
       <div class="top-menu"><img src="media/logo.svg" alt="Simulo logo">
-        <div class="settings button" id="settings-button" onclick="alert('Coming soon!')">
+        <div class="settings button" id="settings-button" onclick="alert('never')">
           <svg data-src="icons/cog.svg"></svg>
         </div>
       </div>
@@ -399,6 +431,15 @@
       </div>
       <h1>News</h1>
       <div class="news-menu">
+        <div class="news-item">
+          <div class="news-item-header">
+            <h3>Bimulo v0.10 (End)</h3>
+            <div class="news-item-date">2024-05-24</div>
+          </div>
+          <div class="news-item-description">
+            <p>The final Bimulo release. We are now working on the rewrite, see simulo.org.</p>
+          </div>
+        </div>
         <div class="news-item">
           <div class="news-item-header">
             <h3>Simulo v0.9.0 release</h3>
@@ -576,7 +617,7 @@
         </div>
       </div>
       <h1>Browse</h1>
-      <p>Coming soon! Here there will be public scenes and objects people published.</p>
+      <p>This was gonna be where there would be be public scenes and objects people published.</p>
     </div>
   </div>
   <div id="page-mask" class="hidden">

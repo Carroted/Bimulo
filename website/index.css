@@ -229,6 +229,7 @@ h2 {
     padding: 0;
     line-height: 1.2;
     margin-top: 1rem;
+max-width:60rem;
 }
 
 .buttons {
@@ -263,13 +264,22 @@ h2 {
     background: rgb(189, 255, 159);
 }
 
-.buttons a:last-child {
+.buttons a.discord {
     background: #8c67f2;
     color: #000;
 }
 
-.buttons a:last-child:hover {
+.buttons a.discord:hover {
     background: #b093ff;
+}
+
+.buttons a.history {
+    background: #ffffff;
+    color: #000;
+}
+
+.buttons a.history:hover {
+    background: #ffffff;
 }
 
 header {

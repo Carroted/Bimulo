@@ -2431,7 +2431,7 @@ class SimuloPhysicsServer {
                         id: rData.id,
                         zDepth: rData.zDepth,
                         circleCake: false,
-                        radius: 0.1,
+                        radius: 0.5,
                     } as SimuloCircle);
                 }
                 catch (e) {
@@ -2483,7 +2483,7 @@ class SimuloPhysicsServer {
                         id: wData.id,
                         zDepth: wData.zDepth,
                         circleCake: false,
-                        radius: 0.1,
+                        radius: 0.5,
                     } as SimuloCircle);
                 }
                 catch (e) {

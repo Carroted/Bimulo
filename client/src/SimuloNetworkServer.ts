@@ -62,6 +62,8 @@ class SimuloNetworkServer {
 
     offered: RTCPeerConnection[] = [];
 
+    joinCode: string | null = null;
+
     connect() {
         let pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
         pc.onicecandidate = (e) => {
@@ -71,6 +73,8 @@ class SimuloNetworkServer {
             }; // ok
             //alert(encodeURIComponent(pc.localDescription!.sdp)); // if its null we cry about it
             console.log('on ice candidate, the sdp is:', encodeURIComponent(pc.localDescription!.sdp));
+            this.joinCode = encodeURIComponent(pc.localDescription!.sdp);
+            this.emit("joinCode", this.joinCode);
         };
         pc.ondatachannel = (e) => {
             let dc = e.channel;

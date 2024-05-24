@@ -15,7 +15,6 @@ const style = `/*canvas.simulo-viewer.fullscreen {
 canvas.simulo-viewer {
     border: none;
     outline: none;
-    cursor: none;
     overflow: hidden;
     margin: 0;
     padding: 0;

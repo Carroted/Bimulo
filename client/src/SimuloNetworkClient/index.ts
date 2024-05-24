@@ -52,7 +52,7 @@ class SimuloNetworkClient implements SimuloClient {
      * Connect to the server in both WebRTC and WebSocket. Fires `connect` event when WebSocket connects, and `ready` event when WebRTC connects.
     */
     connect(offerSdp: string) {
-        console.log('network client connecting with offersdp')
+        console.log('network client connecting with offersdp of', offerSdp);
         let desc = new RTCSessionDescription({ type: 'offer', sdp: offerSdp });
         let pc = new RTCPeerConnection({
             iceServers: [
